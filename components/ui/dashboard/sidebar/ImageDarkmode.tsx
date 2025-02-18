@@ -18,15 +18,14 @@ export const ImageDarkmode = () => {
     }
 
     return (
-        
-            <Image
-                src={theme === 'light' ? '/images/logo.png' : '/images/logo-dark.png'}
-                alt="logo"
-                width={136}
-                height={100}
-                quality={100}
-                className="w-fit h-8 dark:h-10"
-                priority
-            />
+        <Image
+            src={theme === 'light' ? '/images/logo.png' : '/images/logo-dark.png'}
+            alt="logo"
+            width={136}
+            height={100}
+            quality={100}
+            className="w-fit h-8 dark:h-10"
+            priority
+        />
     );
 };

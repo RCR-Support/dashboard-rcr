@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 const { auth: middleware } = NextAuth(authConfig);
 
-const publicRoutes = ['/', '/login', '/register'];
+const publicRoutes = ['/', '/login'];
 
 export default middleware((req) => {
 
