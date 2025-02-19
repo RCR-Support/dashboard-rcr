@@ -6,9 +6,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
         <main className="bg-[#f0f0f0] dark:bg-[#1a202c] flex ">
 
-            <div className="flex flex-col w-64">
-                <SidebarDashboard />
-            </div>
+            <SidebarDashboard />
 
             <div className="flex flex-col min-h-screen flex-1 gap-4 p-4">
                 <NavDashboard/>

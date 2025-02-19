@@ -47,15 +47,15 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email }) => {
                         <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">{email}</span>
                     </div>
                 </DropdownItem>
-                <DropdownItem key="settings" textValue='My Settings'>My Settings</DropdownItem>
-                <DropdownItem key="team_settings" textValue='Team Settings'>Team Settings</DropdownItem>
-                <DropdownItem key="analytics" textValue='Analytics'>Analytics</DropdownItem>
-                <DropdownItem key="system" textValue='System'>System</DropdownItem>
-                <DropdownItem key="configurations" textValue='Configurations'>Configurations</DropdownItem>
-                <DropdownItem key="help_and_feedback" textValue='Help & Feedback'>Help & Feedback</DropdownItem>
-                <DropdownItem key="logout" color="danger" 
-                            className='text-red-500 dark:text-red-400' textValue='Logout'
-                            onPress={handleLogout}>
+                <DropdownItem   key="settings" textValue='My Settings'>My Settings</DropdownItem>
+                <DropdownItem   key="team_settings" textValue='Team Settings'>Team Settings</DropdownItem>
+                <DropdownItem   key="analytics" textValue='Analytics'>Analytics</DropdownItem>
+                <DropdownItem   key="system" textValue='System'>System</DropdownItem>
+                <DropdownItem   key="configurations" textValue='Configurations'>Configurations</DropdownItem>
+                <DropdownItem   key="help_and_feedback" textValue='Help & Feedback'>Help & Feedback</DropdownItem>
+                <DropdownItem   key="logout" color="danger"
+                                className='text-red-500 dark:text-red-400' textValue='Logout'
+                                onPress={handleLogout}>
                     Salir
                 </DropdownItem>
             </DropdownMenu>

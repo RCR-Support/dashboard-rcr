@@ -12,7 +12,7 @@ export default async function UserProfile() {
         user: 'Usuario',
     };
 
-    const role = roles[session?.user?.role as keyof typeof roles];
+    const role = roles[user?.role as keyof typeof roles];
 
     if (!session) {
         return <div>Not authenticated</div>;

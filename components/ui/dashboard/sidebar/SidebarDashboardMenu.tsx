@@ -8,12 +8,23 @@ import { Accordion, AccordionItem } from '@heroui/react';
 import { FaRegCircle } from "react-icons/fa6";
 import { IoIosList } from "react-icons/io";
 import { useSession } from "next-auth/react";
+import { useUIStore } from "@/store/ui/ui-store";
+import { useWindowSize } from "@/hooks/useWindowSize";
 
 export const SidebarDashboardMenu = () => {
+    const closeMenu = useUIStore((state) => state.closeSideMenu)
     const { data: session } = useSession()
     const isAdmin = ( session?.user?.role === "admin" )
-    // Routing de next
+
+    const { width } = useWindowSize();
+
     const router = usePathname();
+
+    const handleClick = () => {
+        if (width !== undefined && width <= 1023) { // Ajusta este valor según tu definición de LG
+            closeMenu();
+        }
+    };
     return (
         <>
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
@@ -84,7 +95,11 @@ export const SidebarDashboardMenu = () => {
                                         ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg " 
                                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                                     `}>
-                                        <Link href="/dashboard/admin" className="font-normal rounded-lg flex items-center p-2 group justify-between">
+                                        <Link 
+                                        href="/dashboard/admin" 
+                                        className="font-normal rounded-lg flex items-center p-2 group justify-between"
+                                        onClick={handleClick}
+                                        >
                                             <div className="flex items-center">
                                                 <FaUserPlus />
                                                 <span className="ml-3">Pagina Administrador</span>
