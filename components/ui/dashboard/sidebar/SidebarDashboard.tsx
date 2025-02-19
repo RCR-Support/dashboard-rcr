@@ -55,7 +55,7 @@ export const SidebarDashboard = () => {
                         isSideMenuOpen ? "translate-x-0" : "-translate-x-full"
                     )}
                 >
-                    <div className="relative flex-1 flex flex-col min-h-0 bg-white dark:bg-[#282c34] text-slate-800 dark:text-white">
+                    <div className="relative flex-1 flex flex-col min-h-0 bg-white dark:bg-[#282c34] text-slate-800 dark:text-white overflow-y-auto">
                         <div className="px-3 w-full flex h-24 items-center justify-center">
                             <span className="w-full py-4 text-2xl font-semibold text-center whitespace-nowrap border-1 border-gray-200 dark:border-gray-600">
                                 LOGO
