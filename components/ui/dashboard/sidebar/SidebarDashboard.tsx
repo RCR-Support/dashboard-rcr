@@ -1,4 +1,4 @@
-import Image from "next/image"
+'use client'
 import { SidebarDashboardMenu } from "./SidebarDashboardMenu"
 import { FaRegCopyright } from "react-icons/fa6"
 import { ImageDarkmode } from "./ImageDarkmode"
