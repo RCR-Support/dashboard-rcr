@@ -20,13 +20,13 @@ export const SidebarDashboardMenu = () => {
 
     const handleClick = () => {
         if (width !== undefined && width <= 1023) { // Ajusta este valor según tu definición de LG
-            setTimeout(closeMenu, 300); // Agregar un retraso para permitir el desplazamiento
+            setTimeout(closeMenu, 3000); // Agregar un retraso para permitir el desplazamiento
         }
     };
 
     return (
         <>
-            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto pointer-events-auto">
+            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-scroll pointer-events-auto">
                 <div className="flex-1 px-3 bg-white dark:bg-[#282c34] text-slate-600 dark:text-white divide-y space-y-1">
                     <ul className="flex-1 space-y-2">
                         <li className="text-[#757575] dark:text-[#f6f7cf] mb-6">Home</li>
