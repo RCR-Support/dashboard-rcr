@@ -30,8 +30,12 @@ export const SidebarDashboard = () => {
                 className="lg:hidden fade-in fixed top-0 left-0 w-screen h-screen z-10 backdrop-filter backdrop-blur-sm"
             />
         )}
-
-        <aside className="fixed  z-20 h-full top-0 left-0  flex lg:flex flex-shrink-0 flex-col w-64 transition-width duration-75 ">
+        <aside
+            className={clsx(
+                "fixed  z-20 h-full top-0 left-0  flex lg:flex flex-shrink-0 flex-col w-64 transition-width duration-75",
+                isSideMenuOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+        >
             <div className="relative flex-1 flex flex-col min-h-0 bg-white dark:bg-[#282c34] text-slate-800 dark:text-white ">
 
                 <div className="px-3 w-full flex h-24 items-center justify-center">
