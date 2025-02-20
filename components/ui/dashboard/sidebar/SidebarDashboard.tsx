@@ -1,4 +1,4 @@
-'use client'
+import Image from "next/image"
 import { SidebarDashboardMenu } from "./SidebarDashboardMenu"
 import { FaRegCopyright } from "react-icons/fa6"
 import { ImageDarkmode } from "./ImageDarkmode"
@@ -31,20 +31,11 @@ export const SidebarDashboard = () => {
             />
         )}
 
-        <aside
-            className={clsx(
-                "fixed z-20 h-full top-0 left-0 lg:flex flex-shrink-0 flex-col w-64 transform transition-all duration-300 ease-in-out",
-                isSideMenuOpen ? "translate-x-0" : "-translate-x-full"
-            )}
-        >
+        <aside className="fixed  z-20 h-full top-0 left-0  flex lg:flex flex-shrink-0 flex-col w-64 transition-width duration-75 ">
             <div className="relative flex-1 flex flex-col min-h-0 bg-white dark:bg-[#282c34] text-slate-800 dark:text-white ">
 
                 <div className="px-3 w-full flex h-24 items-center justify-center">
                     <span className="w-full py-4 text-2xl font-semibold text-center whitespace-nowrap border-1 border-gray-200 dark:border-gray-600 ">LOGO</span>
-                </div>
-
-                <div className="absolute top-24 right-4 cursor-pointer">
-                    <IoCloseOutline onClick={closeMenu} className="w-6 h-6 text-gray-800 dark:text-white border-1 border-gray-300 dark:border-gray-500" />
                 </div>
 
                 <SidebarDashboardMenu />
