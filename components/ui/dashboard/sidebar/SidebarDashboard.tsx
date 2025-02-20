@@ -51,9 +51,15 @@ export const SidebarDashboard = () => {
                 className="lg:hidden fade-in fixed top-0 left-0 w-screen h-screen z-10 backdrop-filter backdrop-blur-sm"
             />
         )}
+        <div className={
+            clsx(
+                "lg:w-64",
+                isSideMenuOpen ? "" : "lg:-ml-64"
+            )
+        }>
         <aside
             className={clsx(
-                "fixed z-20 h-full top-0 left-0 flex lg:flex flex-shrink-0 flex-col w-64 transition-transform duration-300 ease-in-out",
+                "fixed z-20 h-full top-0 left-0 flex flex-shrink-0 flex-col w-64 transition-transform duration-300 ease-in-out",
                 isSideMenuOpen ? "translate-x-0" : "-translate-x-full"
             )}
         >
@@ -63,7 +69,7 @@ export const SidebarDashboard = () => {
                     <span className="w-full py-4 text-2xl font-semibold text-center whitespace-nowrap border-1 border-gray-200 dark:border-gray-600 ">LOGO</span>
                 </div>
 
-                <div className="absolute top-24 right-4 cursor-pointer">
+                <div className="absolute top-24 right-4 cursor-pointer lg:hidden">
                     <IoCloseOutline onClick={closeMenu} className="w-6 h-6 text-gray-800 dark:text-white border-1 border-gray-300 dark:border-gray-500" />
                 </div>
                 <SidebarDashboardMenu />
@@ -80,6 +86,7 @@ export const SidebarDashboard = () => {
                 </div>
             </div>
         </aside>
+        </div>
         </SessionProvider>
     )
 }
