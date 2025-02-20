@@ -38,6 +38,9 @@ export const SidebarDashboard = () => {
                     <span className="w-full py-4 text-2xl font-semibold text-center whitespace-nowrap border-1 border-gray-200 dark:border-gray-600 ">LOGO</span>
                 </div>
 
+                <div className="absolute top-24 right-4 cursor-pointer">
+                    <IoCloseOutline onClick={closeMenu} className="w-6 h-6 text-gray-800 dark:text-white border-1 border-gray-300 dark:border-gray-500" />
+                </div>
                 <SidebarDashboardMenu />
 
                 <div className="flex flex-col items-center justify-center gap-2 pb-2 pt-4
