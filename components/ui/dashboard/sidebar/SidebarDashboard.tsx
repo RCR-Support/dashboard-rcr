@@ -53,7 +53,7 @@ export const SidebarDashboard = () => {
         )}
         <aside
             className={clsx(
-                "fixed  z-20 h-full top-0 left-0  flex lg:flex flex-shrink-0 flex-col w-64 transition-width duration-75",
+                "fixed z-20 h-full top-0 left-0 flex lg:flex flex-shrink-0 flex-col w-64 transition-transform duration-300 ease-in-out",
                 isSideMenuOpen ? "translate-x-0" : "-translate-x-full"
             )}
         >
