@@ -8,12 +8,33 @@ import { IoCloseOutline } from "react-icons/io5";
 
 import { useUIStore } from "@/store/ui/ui-store";
 import clsx from "clsx";
+import { useEffect } from "react"
 
 export const SidebarDashboard = () => {
 
     const isSideMenuOpen = useUIStore((state) => state.isSideMenuOpen);
     const closeMenu = useUIStore((state) => state.closeSideMenu);
     const openMenu = useUIStore((state) => state.openSideMenu);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) { // Ajusta este valor según tu definición de LG
+                openMenu();
+            } else {
+                closeMenu();
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Llamar a handleResize inicialmente para establecer el estado correcto
+        return () => window.removeEventListener('resize', handleResize);
+    }, [openMenu, closeMenu]);
+
+    useEffect(() => {
+        if (window.innerWidth >= 1024) { // Ajusta este valor según tu definición de LG
+            openMenu();
+        }
+    }, [openMenu]);
 
     return (
         <SessionProvider>
