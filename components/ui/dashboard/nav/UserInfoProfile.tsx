@@ -32,7 +32,7 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email }) => {
         <Dropdown placement="bottom-end">
             <DropdownTrigger>
                 <div className="flex items-center gap-2 cursor-pointer">
-                    <Avatar {...stringAvatar(name)} src="" className="bg-[#03c9d7] dark:bg-[#327f84]" />
+                    <Avatar {...stringAvatar(name)} src="/images/hmg.jpg" className="bg-[#03c9d7] dark:bg-[#327f84]" />
                     <div className="flex flex-col">
                         <p className="font-semibold truncate text-ellipsis max-w-44">{name}</p>
                         <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">{email}</span>

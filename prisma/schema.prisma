@@ -9,18 +9,26 @@ datasource db {
 }
 
 enum Role {
-  user
   admin
+  sheq
+  adminContractor
+  user
+  credential
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String?
-  emailVerified DateTime?
-  image         String?
-  role          Role      @default(user)
+  id             String    @id @default(cuid())
+  firstName      String
+  middleName     String?
+  lastName       String
+  secondLastName String?
+  displayName    String
+  userName       String
+  email          String    @unique
+  password       String?
+  emailVerified  DateTime?
+  image          String?
+  role           Role      @default(user)
 
   accounts Account[]
 

@@ -58,7 +58,7 @@ export const SidebarDashboardMenu = () => {
                         </li>
 
                         <li className={`px-2 py-1
-                            ${router === "/reports"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
@@ -110,31 +110,31 @@ export const SidebarDashboardMenu = () => {
                             <AccordionItem className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white" key="1" startContent={<IoIosList />} aria-label="Dashboard" title="Accordions Title">
                                 <ul className="pl-2">
                                     <li className={`px-2 py-1
-                                        ${router === "/subpage1"
+                                        ${router === "/"
                                         ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                                     `}>
-                                        <Link href="/subpage1" className="font-normal rounded-lg flex items-center p-2 group">
+                                        <Link href="/" className="font-normal rounded-lg flex items-center p-2 group">
                                             <FaRegCircle className="text-[6px]" />
                                             <span className="ml-3">Subpage 1</span>
                                         </Link>
                                     </li>
                                     <li className={`px-2 py-1
-                                        ${router === "/subpage2"
+                                        ${router === "/"
                                         ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                                     `}>
-                                        <Link href="/subpage2" className="font-normal rounded-lg flex items-center p-2 group">
+                                        <Link href="/" className="font-normal rounded-lg flex items-center p-2 group">
                                             <FaRegCircle className="text-[6px]" />
                                             <span className="ml-3">Subpage 2</span>
                                         </Link>
                                     </li>
                                     <li className={`px-2 py-1
-                                        ${router === "/subpage3"
+                                        ${router === "/"
                                         ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                                     `}>
-                                        <Link href="/subpage3" className="font-normal rounded-lg flex items-center p-2 group">
+                                        <Link href="/" className="font-normal rounded-lg flex items-center p-2 group">
                                             <FaRegCircle className="text-[6px]" />
                                             <span className="ml-3">Subpage 3</span>
                                         </Link>
@@ -145,51 +145,51 @@ export const SidebarDashboardMenu = () => {
 
                         <li className="text-[#757575] dark:text-[#f6f7cf] mb-6">Estadísticas</li>
                         <li className={`px-2 py-1
-                            ${router === "/analytics"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/analytics" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <MdAnalytics />
                                 <span className="ml-3">Análisis</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/sales"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/sales" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaMoneyBillWave />
                                 <span className="ml-3">Ventas</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/customers"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/customers" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaUsers />
                                 <span className="ml-3">Clientes</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/products"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/products" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaProductHunt />
                                 <span className="ml-3">Productos</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/settings"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/settings" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <AiFillSetting />
                                 <span className="ml-3">Configuraciones</span>
                             </Link>
@@ -197,31 +197,31 @@ export const SidebarDashboardMenu = () => {
 
                         <li className="text-[#757575] dark:text-[#f6f7cf] mb-6">Finanzas</li>
                         <li className={`px-2 py-1
-                            ${router === "/budget"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/budget" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaFileInvoiceDollar />
                                 <span className="ml-3">Presupuesto</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/expenses"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/expenses" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <MdOutlineAttachMoney />
                                 <span className="ml-3">Gastos</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/revenue"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/revenue" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaMoneyBillWave />
                                 <span className="ml-3">Ingresos</span>
                             </Link>
@@ -229,31 +229,31 @@ export const SidebarDashboardMenu = () => {
 
                         <li className="text-[#757575] dark:text-[#f6f7cf] mb-6">Recursos Humanos</li>
                         <li className={`px-2 py-1
-                            ${router === "/employees"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/employees" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaUserTie />
                                 <span className="ml-3">Empleados</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/payroll"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/payroll" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaFileInvoiceDollar />
                                 <span className="ml-3">Nómina</span>
                             </Link>
                         </li>
                         <li className={`px-2 py-1
-                            ${router === "/recruitment"
+                            ${router === "/"
                             ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
                             : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                         `}>
-                            <Link href="/recruitment" className={`font-normal rounded-lg flex items-center p-2 group`}>
+                            <Link href="/" className={`font-normal rounded-lg flex items-center p-2 group`}>
                                 <FaUserTie />
                                 <span className="ml-3">Reclutamiento</span>
                             </Link>

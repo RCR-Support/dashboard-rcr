@@ -7,21 +7,21 @@ const { auth: middleware } = NextAuth(authConfig);
 const publicRoutes = ['/', '/login', '/register'];
 
 export default middleware((req) => {
-  console.log('Middleware ejecutado');
+  // console.log('Middleware ejecutado');
 
   const { nextUrl, auth } = req;
   const isLoggedIn = !!auth?.user;
 
-  console.log('Ruta solicitada:', nextUrl.pathname);
-  console.log('Estado de autenticación:', isLoggedIn);
+  // console.log('Ruta solicitada:', nextUrl.pathname);
+  // console.log('Estado de autenticación:', isLoggedIn);
 
   // Protected routes: /dashboard and /admin
   if (!publicRoutes.includes(nextUrl.pathname) && !isLoggedIn) {
-    console.log('Redirigiendo a /login');
+    // console.log('Redirigiendo a /login');
     return NextResponse.redirect(new URL('/login', nextUrl));
   }
 
-  console.log('Acceso permitido');
+  // console.log('Acceso permitido');
   return NextResponse.next();
 });
 

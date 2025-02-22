@@ -9,6 +9,7 @@ export default async function UserProfile() {
 
     const roles = {
         admin: 'Administrador',
+        sheq: 'Sheq',
         user: 'Usuario',
     };
 
