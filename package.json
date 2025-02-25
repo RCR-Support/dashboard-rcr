@@ -16,6 +16,8 @@
     "@emotion/styled": "^11.14.0",
     "@heroui/dropdown": "^2.3.10",
     "@heroui/react": "^2.0.0",
+    "@heroui/theme": "^2.4.9",
+    "@heroui/toast": "^2.0.3",
     "@hookform/resolvers": "^3.10.0",
     "@mui/material": "^6.4.2",
     "@radix-ui/react-label": "^2.1.2",

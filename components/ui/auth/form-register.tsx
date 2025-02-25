@@ -1,10 +1,12 @@
 "use client";
 
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { registerSchema } from "@/lib/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,9 +17,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { registerAction } from '@/actions/register-action';
+import { registerAction } from "@/actions/register-action";
+import {addToast, ToastProvider} from "@heroui/toast";
 
 const FormRegister = () => {
   const [error, setError] = useState<string | null>(null);
@@ -29,12 +30,12 @@ const FormRegister = () => {
     defaultValues: {
       email: "",
       password: "",
-      firstName: "",
+      name: "",
       middleName: "",
       lastName: "",
       secondLastName: "",
       userName: "",
-      role: "user", // Asegúrate de que el rol tenga un valor por defecto
+      role: "user",
     },
   });
 
@@ -46,10 +47,22 @@ const FormRegister = () => {
         if (response.error) {
           setError(response.error);
         } else {
-          router.push("/dashboard");
+          form.reset();
+          addToast({
+            title: "Usuario creado correctamente",
+            description: "Redirigiendo al dashboard...",
+            timeout: 2000, // 2 segundos
+            icon: "✅",
+            color: "success",
+            variant: "flat",
+            radius: "md",
+            shouldShowTimeoutProgess: true,
+          });
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 2000);
         }
       } catch (error) {
-        console.error("Error during registration:", error);
         setError("An unexpected error occurred. Please try again.");
       }
     });
@@ -59,101 +72,111 @@ const FormRegister = () => {
     <div className="flex flex-col gap-4">
       <h1>Register</h1>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="grid grid-cols-2 gap-4"
+        >
           <FormField
+            name="name"
             control={form.control}
-            name="firstName"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="First Name" type="text" {...field} />
+                  <Input {...field} placeholder="First Name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="middleName"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Middle Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Middle Name" type="text" {...field} />
+                  <Input {...field} placeholder="Middle Name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="lastName"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Last Name" type="text" {...field} />
+                  <Input {...field} placeholder="Last Name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="secondLastName"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Second Name</FormLabel>
+                <FormLabel>Second Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Second Name" type="text" {...field} />
+                  <Input {...field} placeholder="Second Last Name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="userName"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>User Name</FormLabel>
+                <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input placeholder="User Name" type="text" {...field} />
+                  <Input {...field} placeholder="Username" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="email"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Email" type="email" {...field} />
+                  <Input type="email" {...field} placeholder="Email" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="password"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input placeholder="Password" type="password" {...field} />
+                  <Input type="password" {...field} placeholder="Password" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
             name="role"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Role</FormLabel>
@@ -170,7 +193,8 @@ const FormRegister = () => {
               </FormItem>
             )}
           />
-          {error && <FormMessage>{error}</FormMessage>}
+
+          {error && <p className="text-red-500">{error}</p>}
           <Button type="submit" disabled={isPending}>
             Submit
           </Button>

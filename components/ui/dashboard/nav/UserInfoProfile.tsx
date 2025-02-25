@@ -8,10 +8,14 @@ import {
     DropdownMenu,
     DropdownItem
 } from "@heroui/dropdown";
+import { user } from "@heroui/react";
 
 interface UserInfoProfileProps {
     name: string;
+    userName: string;
     email: string;
+    role: string;
+    image?: string;
 }
 
 function stringAvatar(name: string) {
@@ -20,7 +24,7 @@ function stringAvatar(name: string) {
     };
 }
 
-const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email }) => {
+const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email, role,userName }) => {
 
     const handleLogout = async () => {
         await signOut({
@@ -42,7 +46,7 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email }) => {
             </DropdownTrigger>
             <DropdownMenu aria-label="Profile Actions" variant="flat">
                 <DropdownItem key="profile" className="h-14 gap-2" textValue='Profile'>
-                    <p className="font-semibold truncate text-ellipsis max-w-44">{name}</p>
+                    <p className="font-semibold truncate text-ellipsis max-w-44">{userName}</p>
                     <div className="flex items-center gap-1">
                         <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">{email}</span>
                     </div>

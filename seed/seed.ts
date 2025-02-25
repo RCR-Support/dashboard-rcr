@@ -1,7 +1,7 @@
 import bcryptjs from 'bcryptjs';
 
 interface SeedUser{
-    firstName: string;
+    name: string;
     middleName?: string;
     lastName: string;
     secondLastName?: string;
@@ -19,7 +19,7 @@ interface SeedData{
 export const initialData : SeedData = {
     users: [
         {
-            firstName: 'Héctor',
+            name: 'Héctor',
             middleName: 'Javier',
             lastName: 'Matcovich',
             secondLastName: 'González',
@@ -30,7 +30,7 @@ export const initialData : SeedData = {
             role: 'admin'
         },
         {
-            firstName: 'Sheq',
+            name: 'Sheq',
             middleName: '',
             lastName: 'Prueba',
             secondLastName: '',
@@ -41,7 +41,7 @@ export const initialData : SeedData = {
             role: 'sheq'
         },
         {
-            firstName: 'Admin Contrato',
+            name: 'Admin Contrato',
             middleName: '',
             lastName: 'Prueba',
             secondLastName: '',
@@ -52,7 +52,7 @@ export const initialData : SeedData = {
             role: 'adminContractor'
         },
         {
-            firstName: 'Usuario',
+            name: 'Usuario',
             middleName: '',
             lastName: 'Prueba',
             secondLastName: '',
@@ -63,7 +63,7 @@ export const initialData : SeedData = {
             role: 'user'
         },
         {
-            firstName: 'Imprimir',
+            name: 'Imprimir',
             middleName: '',
             lastName: 'Prueba',
             secondLastName: '',

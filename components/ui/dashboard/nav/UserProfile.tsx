@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
-import Avatar from '@mui/material/Avatar';
+
+import { db } from "@/lib/db";
+
 import { FaBell } from 'react-icons/fa';
 import UserInfoProfile from "./UserInfoProfile";
 
@@ -15,6 +17,15 @@ export default async function UserProfile() {
 
     const role = roles[user?.role as keyof typeof roles];
 
+    // Obtener los datos del usuario desde Prisma
+    const userData = await db.user.findUnique({
+        where: {
+            email: user?.email as string,
+        },
+    })
+    // console.log('los datos del usuario son:');
+    // console.log(userData);
+
     if (!session) {
         return <div>Not authenticated</div>;
     }
@@ -29,7 +40,13 @@ export default async function UserProfile() {
                     3
                 </span>
             </div>
-            <UserInfoProfile name={user?.name || ''} email={user?.email || ''} />
+            <UserInfoProfile
+                name={`${userData?.displayName as string}`}
+                userName={userData?.userName as string}
+                email={userData?.email as string}
+                role={role}
+                image={userData?.image as string}
+            />
         </div>
     );
 }

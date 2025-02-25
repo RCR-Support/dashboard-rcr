@@ -13,11 +13,11 @@ export default {
             password: { label: "Password", type: "password" },
         },
         authorize: async (credentials) => {
-            console.log("Credentials received:", credentials);
+            // console.log("Credentials received:", credentials);
             const { data, success } = loginSchema.safeParse(credentials);
 
             if (!success) {
-            console.log("Invalid credentials schema");
+            // console.log("Invalid credentials schema");
             throw new Error("Invalid credentials");
             }
 
@@ -29,18 +29,18 @@ export default {
             });
 
             if (!user || !user.password) {
-            console.log("User not found or password not set");
+            // console.log("User not found or password not set");
             throw new Error("User not found - Invalid credentials");
             }
 
             // Verificar si la contraseña es correcta
             const isValid = await bcryptjs.compare(data.password, user.password);
             if (!isValid) {
-            console.log("Invalid password");
+            // console.log("Invalid password");
             throw new Error("Invalid credentials");
             }
 
-            console.log("User authenticated:", user);
+            // console.log("User authenticated:", user);
             return user;
         },
         }),
