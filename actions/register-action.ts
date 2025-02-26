@@ -20,7 +20,7 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
 
     if (userExists) {
       const hasOAuth = userExists.accounts.some((account) => account.type === "oauth");
-      return { error: hasOAuth ? "Sign in with your existing OAuth account." : "User already exists" };
+      return { error: hasOAuth ? "Sign in with your existing OAuth account." : "El usuario ya esta registrado" };
     }
 
     // Hashear la contraseña

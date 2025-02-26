@@ -1,11 +1,11 @@
-'use client'
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AiFillDashboard, AiFillHome, AiFillSetting } from "react-icons/ai";
 import { FaRegChartBar, FaUsers, FaProductHunt, FaMoneyBillWave, FaFileInvoiceDollar, FaUserTie, FaUserPlus } from "react-icons/fa";
 import { MdAnalytics, MdOutlineAttachMoney } from "react-icons/md";
 import { Accordion, AccordionItem } from '@heroui/react';
-import { FaRegCircle } from "react-icons/fa6";
 import { IoIosList } from "react-icons/io";
 import { useSession } from "next-auth/react";
 import { useUIStore } from "@/store/ui/ui-store";
@@ -14,7 +14,7 @@ import { useWindowSize } from "@/hooks/useWindowSize";
 export const SidebarDashboardMenu = () => {
     const closeMenu = useUIStore((state) => state.closeSideMenu);
     const { data: session } = useSession();
-    const isAdmin = (session?.user?.role === "admin");
+    const isAdmin = session?.user?.role === "admin";
     const { width } = useWindowSize();
     const router = usePathname();
 
@@ -23,6 +23,9 @@ export const SidebarDashboardMenu = () => {
             setTimeout(closeMenu, 300); // Agregar un retraso para permitir el desplazamiento
         }
     };
+
+    const isUsersRoute = router.includes('dashboard/users');
+
 
     return (
         <>
@@ -106,37 +109,33 @@ export const SidebarDashboardMenu = () => {
                                 </li>
                             </>
                         )}
-                        <Accordion>
-                            <AccordionItem className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white" key="1" startContent={<IoIosList />} aria-label="Dashboard" title="Accordions Title">
+                        <Accordion defaultExpandedKeys={isUsersRoute ? ["users"] : []}>
+                            <AccordionItem
+                                className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white"
+                                key="users"
+                                startContent={<FaUsers />}
+                                aria-label="Dashboard"
+                                title="Usuarios Sistema"
+                            >
                                 <ul className="pl-2">
                                     <li className={`px-2 py-1
-                                        ${router === "/"
-                                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
+                                        ${router === "/dashboard/users"
+                                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white "
                                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                                     `}>
-                                        <Link href="/" className="font-normal rounded-lg flex items-center p-2 group">
-                                            <FaRegCircle className="text-[6px]" />
-                                            <span className="ml-3">Subpage 1</span>
+                                        <Link href="/dashboard/users" className="font-normal rounded-lg flex items-center p-2 group">
+                                            <IoIosList className="text-[16px]" />
+                                            <span className="ml-3">Listado</span>
                                         </Link>
                                     </li>
                                     <li className={`px-2 py-1
-                                        ${router === "/"
-                                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
+                                        ${router === "/dashboard/users/createUser"
+                                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white "
                                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
                                     `}>
-                                        <Link href="/" className="font-normal rounded-lg flex items-center p-2 group">
-                                            <FaRegCircle className="text-[6px]" />
-                                            <span className="ml-3">Subpage 2</span>
-                                        </Link>
-                                    </li>
-                                    <li className={`px-2 py-1
-                                        ${router === "/"
-                                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg "
-                                        : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45] "}
-                                    `}>
-                                        <Link href="/" className="font-normal rounded-lg flex items-center p-2 group">
-                                            <FaRegCircle className="text-[6px]" />
-                                            <span className="ml-3">Subpage 3</span>
+                                        <Link href="/dashboard/users/createUser" className="font-normal rounded-lg flex items-center p-2 group">
+                                            <FaUserPlus className="text-[16px]" />
+                                            <span className="ml-3">Crear Usuario</span>
                                         </Link>
                                     </li>
                                 </ul>
