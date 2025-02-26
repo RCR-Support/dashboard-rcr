@@ -1,6 +1,16 @@
+import { auth } from '@/auth';
 import FormRegister from "@/components/ui/dashboard/user/form-register";
 
-const CreateUserPage = () => {
+import { redirect } from 'next/navigation';
+
+const CreateUserPage = async () => {
+
+    const session = await auth();
+
+    if (session?.user?.role !== 'admin') {
+        redirect('/dashboard')
+    }
+
     return (
         <div className="flex flex-col justify-center items-center">
             <div className="grid grid-cols-12 grid-rows-auto gap-4 w-full lg:max-w-[1024px] card-box ">
