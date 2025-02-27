@@ -25,7 +25,7 @@ export const initialData : SeedData = {
             secondLastName: 'González',
             userName: 'Héctor Matcovich',
             displayName: 'Héctor Matcovich',
-            email: 'matcovich@gmail.com',
+            email: 'matcovich@gmail.com'.toLocaleLowerCase(),
             password: bcryptjs.hashSync('123456', 10), //    '123456',
             role: 'admin'
         },
@@ -36,7 +36,7 @@ export const initialData : SeedData = {
             secondLastName: '',
             userName: 'sheq de prueba',
             displayName: 'Sheq de prueba',
-            email: 'sheq@correo.com',
+            email: 'sheq@correo.com'.toLocaleLowerCase(),
             password: bcryptjs.hashSync('123456', 10), // '123456',
             role: 'sheq'
         },
@@ -47,7 +47,7 @@ export const initialData : SeedData = {
             secondLastName: '',
             userName: 'adminContrato de prueba',
             displayName: 'Admin Contrato de prueba',
-            email: 'adminContrato@correo.com',
+            email: 'adminContrato@correo.com'.toLocaleLowerCase(),
             password: bcryptjs.hashSync('123456', 10), // '123456',
             role: 'adminContractor'
         },
@@ -58,7 +58,7 @@ export const initialData : SeedData = {
             secondLastName: '',
             userName: 'usuario de prueba',
             displayName: 'Usuario de prueba',
-            email: 'usuario@correo.com',
+            email: 'usuario@correo.com'.toLocaleLowerCase(),
             password: bcryptjs.hashSync('123456', 10), // '123456',
             role: 'user'
         },
@@ -69,7 +69,7 @@ export const initialData : SeedData = {
             secondLastName: '',
             userName: 'Imprimir de prueba',
             displayName: 'Imprimir de prueba',
-            email: 'credencial@correo.com',
+            email: 'credencial@correo.com'.toLocaleLowerCase(),
             password: bcryptjs.hashSync('123456', 10), // '123456',
             role: 'credential'
         }

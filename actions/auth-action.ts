@@ -11,7 +11,7 @@ import { z } from "zod";
 export const loginAction = async (values: z.infer<typeof loginSchema>) => {
         try {
         await signIn("credentials", {
-            email: values.email,
+            email: values.email.toLowerCase(),
             password: values.password,
             redirect: false,
         });

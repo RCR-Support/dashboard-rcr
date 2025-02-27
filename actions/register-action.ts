@@ -29,7 +29,7 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
     // Crear el usuario en la base de datos
     await db.user.create({
       data: {
-        email: data.email,
+        email: data.email.toLowerCase(),
         name: data.name,
         middleName: data.middleName,
         lastName: data.lastName,
