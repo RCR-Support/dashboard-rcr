@@ -12,7 +12,9 @@ export default async function UserProfile() {
     const roles = {
         admin: 'Administrador',
         sheq: 'Sheq',
+        adminContractor: 'Administrador de Contrato',
         user: 'Usuario',
+        credential: 'Credenciales',
     };
 
     const role = roles[user?.role as keyof typeof roles];

@@ -16,21 +16,129 @@ enum Role {
   credential
 }
 
-model User {
+model Company {
+  id          String        @id @default(cuid())
+  name        String?
+  rut         String        @unique
+  phone       String        @default("")
+  User        User[]
+  Contract    Contract[]
+  application application[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contract {
   id             String    @id @default(cuid())
+  contractName   String
+  contractNumber String    @unique
+  initialDate    DateTime
+  finalDate      DateTime
+  deletedAt      DateTime?
+
+  // Relaciones
+  Company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  userAc   User   @relation(fields: [useracId], references: [id])
+  useracId String
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  application application[]
+}
+
+model User {
+  id             String     @id @default(cuid())
   name           String
   middleName     String?
   lastName       String
   secondLastName String?
   displayName    String
   userName       String
-  email          String    @unique
+  email          String     @unique
+  run            String
+  phoneNumber    String
+  category       String
+  deletedLogic   Boolean?
   password       String?
   emailVerified  DateTime?
   image          String?
-  role           Role      @default(user)
+  role           Role       @default(user)
+  Contract       Contract[]
+
+  // Relaciones
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
 
   accounts Account[]
+
+  application        application[] @relation("UserApplications") // Aplicaciones creadas por este usuario
+  applicationsAsAc   application[] @relation("AdminContractorApplications") // Aplicaciones recibidas como adminContractor
+  applicationsAsSheq application[] @relation("SheqApplications") // Aplicaciones recibidas como Sheq
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Status {
+  primeraVez
+  renovacion
+}
+
+enum License {
+  a1
+  a2
+  a3
+  a4
+  a5
+  b
+  c
+  d
+}
+
+enum StateAc {
+  aprobado
+  pendiente
+  adjuntar
+}
+
+enum StateSheq {
+  aprobado
+  pendiente
+  rechazado
+}
+
+model application {
+  id                String    @id @default(cuid())
+  status            Status    @default(primeraVez)
+  workerName        String
+  workerPaternal    String
+  workerMaternal    String
+  workerRun         String
+  displayWorkerName String
+  license           License?
+  licenseExpiration DateTime?
+
+  stateAc   StateAc
+  stateSheq StateSheq
+
+  // Relaciones
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+
+  user   User?   @relation("UserApplications", fields: [userId], references: [id]) // Usuario que crea la aplicación
+  userId String?
+
+  userAc   User?   @relation("AdminContractorApplications", fields: [userAcId], references: [id]) // adminContractor que la recibe
+  userAcId String?
+
+  userSheq   User?   @relation("SheqApplications", fields: [userSheqId], references: [id]) // Sheq que la aprueba
+  userSheqId String?
+
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  contractId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

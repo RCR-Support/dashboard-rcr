@@ -1,20 +1,23 @@
-import { db } from '@/lib/db';
 
-const UsersPage = async () => {
-  const users = await db.user.findMany();
 
-  return (
-    <div>
-      <h1>Users Page Data</h1>
-      <ul>
-        {users.map((user) => (
-          <li key={user.id}>
-            {user.name} {user.lastName} ({user.email} - {user.role})
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+import { fetchUserData } from "@/actions";
+import { redirect } from "next/navigation";
+import UsersView from "./UsersView";
+
+
+
+export default async function UsersPage() {
+
+  const { ok, users = [] } = await fetchUserData();
+
+  // console.log("que trae users");
+  // console.log(users);
+
+
+    if ( !ok ) {
+      redirect('/login')
+    }
+
+  return <UsersView users={users} />;
 };
 
-export default UsersPage;

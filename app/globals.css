@@ -32,7 +32,7 @@
 
 /* ===== Custom CSS ===== */
 .card-box {
-  @apply bg-white shadow-md rounded-lg p-4 min-h-36 dark:bg-[#282c34] dark:text-white;
+  @apply bg-white shadow-md rounded-lg p-4 min-h-8 dark:bg-[#282c34] dark:text-white;
 }
 
 .btn-primary {

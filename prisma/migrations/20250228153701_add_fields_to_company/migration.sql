@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Company" ADD COLUMN     "phone" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "run" TEXT NOT NULL DEFAULT '';

@@ -4,7 +4,7 @@ import { SidebarDashboard } from "../../components/ui/dashboard/sidebar/SidebarD
 
 export default function DashboardLayout({ children }: { children: React.ReactNode;}) {
     return (
-        <main className="bg-[#f0f0f0] dark:bg-[#1a202c] flex ">
+        <main className="bg-[#f0f0f0] dark:bg-[#1a202c] text-gray-500 dark:text-white flex ">
 
             <SidebarDashboard/>
 

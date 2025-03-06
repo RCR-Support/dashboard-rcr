@@ -20,7 +20,7 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
 
     if (userExists) {
       const hasOAuth = userExists.accounts.some((account) => account.type === "oauth");
-      return { error: hasOAuth ? "Sign in with your existing OAuth account." : "El usuario ya esta registrado" };
+      return { error: hasOAuth ? "Sign in with your existing OAuth account." : "El usuario ya existe" };
     }
 
     // Hashear la contraseña
@@ -29,7 +29,7 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
     // Crear el usuario en la base de datos
     await db.user.create({
       data: {
-        email: data.email.toLowerCase(),
+        email: data.email,
         name: data.name,
         middleName: data.middleName,
         lastName: data.lastName,
@@ -38,6 +38,9 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
         displayName: `${data.name} ${data.lastName}`,
         password: passwordHash,
         role: data.role,
+        run: data.run, // Agregar si es obligatorio
+        phoneNumber: data.phoneNumber, // Agregar si es obligatorio
+        category: data.category, // Agregar si es obligatorio
       },
     });
 
