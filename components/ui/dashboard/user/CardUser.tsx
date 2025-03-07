@@ -33,14 +33,14 @@ export const CardUser = ({ users }: Props) => {
     return (
         <div className="grid grid-cols-12 grid-rows-auto gap-4 w-full col-span-12 mt-6">
             {users.map((user) => (
-                <button key={user.id} onClick={() => openModal(user)} className="col-span-3 card-box">
+                <button key={user.id} onClick={() => openModal(user)} className="col-span-12 md:col-span-6 xl:col-span-3 card-box">
                     <div className="flex gap-4 items-center justify-between">
                         <Avatar {...stringAvatar(user.displayName.toUpperCase())} src="" className="bg-[#03c9d7] dark:bg-[#327f84]" />
                         <div className='flex flex-col'>
-                            <div className="font-semibold truncate text-ellipsis max-w-44">
+                            <div className="font-semibold truncate text-ellipsis max-w-36 xl:max-w-44">
                                 {user.displayName}
                             </div>
-                            <div className="truncate text-ellipsis max-w-44">
+                            <div className="truncate text-ellipsis max-w-36 2xl:max-w-44">
                                 {user.email}
                             </div>
                         </div>

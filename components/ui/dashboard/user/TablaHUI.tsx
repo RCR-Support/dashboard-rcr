@@ -24,7 +24,7 @@ import { CiSearch } from "react-icons/ci";
 import { HiMiniChevronDown } from "react-icons/hi2";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { TbUserEdit } from "react-icons/tb";
-import { User } from "@/interfaces"; // Asegúrate de que esta ruta sea correcta
+import { User } from "@/interfaces";
 
 interface Props {
   users: User[];
@@ -90,11 +90,10 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
 
 const INITIAL_VISIBLE_COLUMNS = ["name","run","role", "status", "actions"];
 
-// Definir el tipo para el objeto roleMapping
 interface RoleMapping {
   [key: string]: string;
 }
-// Definir el objeto `role`
+
 const roleMapping: RoleMapping = {
   admin: 'Administrador',
   sheq: 'Sheq',
@@ -310,7 +309,7 @@ export default function App({ users }: Props) {
               </DropdownMenu>
             </Dropdown>
             <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
+              <DropdownTrigger className="">
                 <Button
                   endContent={<HiMiniChevronDown className="text-small" />}
                   size="sm"
@@ -334,7 +333,7 @@ export default function App({ users }: Props) {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button className="bg-foreground text-background" endContent={<HiOutlinePlus />} size="sm">
+            <Button className="bg-foreground text-background hidden sm:flex" endContent={<HiOutlinePlus />} size="sm">
               Crear nuevo usuario
             </Button>
           </div>
