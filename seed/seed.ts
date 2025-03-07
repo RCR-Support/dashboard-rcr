@@ -49,6 +49,23 @@ export const initialData: SeedData = {
             companyId: 'cm7p8ogxg0009vdjk6gcp0h2r', // Se establecerá más adelante
         },
         {
+            name: 'Rodrigo',
+            middleName: 'Andres',
+            lastName: 'Larenas',
+            secondLastName: 'Matcovich',
+            userName: 'Rodrigo Larenas Matcovich',
+            displayName: 'Rodrigo Larenas',
+            email: 'rodrigo.larenas@rcrsupport.cl'.toLocaleLowerCase(),
+            run: '12345678-9',
+            phoneNumber: '+56912345678',
+            category: 'Category1',
+            deletedLogic: false,
+            password: bcryptjs.hashSync('123456', 10),
+            image: 'path/to/image1.jpg',
+            role: 'admin',
+            companyId: 'cm7p8ogxg0009vdjk6gcp0h2r', // Se establecerá más adelante
+        },
+        {
             name: 'Sheq',
             middleName: '',
             lastName: 'Prueba',
