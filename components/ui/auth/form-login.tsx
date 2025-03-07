@@ -52,7 +52,7 @@ const FormLogin = () => {
     return (
         <div>
             <h1>
-                Formulario de ingreso
+                Formulario de ingreso de usuario
             </h1>
             <Form {...form}>
                 <form
