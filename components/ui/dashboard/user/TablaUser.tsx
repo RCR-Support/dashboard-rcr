@@ -1,7 +1,5 @@
 'use client'
 import type { User } from "@/interfaces";
-// import {Table, TableHeader, TableColumn, TableBody, TableRow, TableCell} from "@heroui/react";
-// import { Avatar } from "@mui/material";
 import App from "./TablaHUI";
 
 

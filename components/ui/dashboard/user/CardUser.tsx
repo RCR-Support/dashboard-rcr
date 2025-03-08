@@ -33,31 +33,35 @@ export const CardUser = ({ users }: Props) => {
     return (
         <div className="grid grid-cols-12 grid-rows-auto gap-4 w-full col-span-12 mt-6">
             {users.map((user) => (
-                <button key={user.id} onClick={() => openModal(user)} className="col-span-12 md:col-span-6 xl:col-span-3 card-box">
-                    <div className="flex gap-4 items-center justify-between">
+                <button key={user.id} onClick={() => openModal(user)} className="col-span-6 md:col-span-6 xl:col-span-3 card-box">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                         <Avatar {...stringAvatar(user.displayName.toUpperCase())} src="" className="bg-[#03c9d7] dark:bg-[#327f84]" />
                         <div className='flex flex-col'>
                             <div className="font-semibold truncate text-ellipsis max-w-36 xl:max-w-44">
                                 {user.displayName}
                             </div>
-                            <div className="truncate text-ellipsis max-w-36 2xl:max-w-44">
+                            <div className="hidden md:block truncate text-ellipsis max-w-36 2xl:max-w-44">
                                 {user.email}
                             </div>
                         </div>
-                        <TfiPlus className="text-2xl text-[#03c9d7] dark:text-[#327f84]" />
+                        <TfiPlus className="hidden md:block text-2xl text-[#03c9d7] dark:text-[#327f84]" />
                     </div>
                 </button>
             ))}
 
             <Modal isOpen={isOpen} onClose={closeModal} size="md" backdrop='blur'>
                 <ModalContent>
-                    <ModalHeader>Información del Usuario</ModalHeader>
+                    <ModalHeader className='flex flex-col'>Información de contacto de:  <span className="text-[#03c9d7] text-xs font-semibold">{selectedUser?.userName}</span></ModalHeader>
                     <ModalBody>
                         {selectedUser && (
                             <div className="space-y-4">
-                                <p><strong>Nombre:</strong> {selectedUser.displayName}</p>
-                                <p><strong>Email:</strong> {selectedUser.email}</p>
-                                <p><strong>Rol:</strong> {selectedUser.role}</p>
+                                <p className='flex justify-start items-center gap-2'><span className="font-semibold">Nombre:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.name} {selectedUser.middleName} {selectedUser.lastName} {selectedUser.secondLastName} </span></p>
+                                <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.email}</span> </p>
+                                <p className='flex justify-start items-center gap-2'><span className="font-semibold">N° Telefono:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.phoneNumber}</span></p>
+                                <div className="border-b border-gray-200 dark:border-gray-800"></div>
+                                <p className='flex justify-start items-center gap-2'><span className="font-semibold">Empresa:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.name}</span></p>
+                                <p className='flex justify-start items-center gap-2'><span className="font-semibold">RUT:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.rut}</span></p>
+                                <p><span className="font-semibold">N° Telefono: </span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.phone}</span></p>
                             </div>
                         )}
                     </ModalBody>
