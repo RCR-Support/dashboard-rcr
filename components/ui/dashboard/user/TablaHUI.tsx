@@ -135,7 +135,7 @@ export default function App({ users }: Props) {
     if (hasSearchFilter) {
       const normalizedFilter = normalizeText(filterValue.toLowerCase());
       filteredUsers = filteredUsers.filter((user) =>
-        normalizeText(`${user.name} ${user.lastName}`).toLowerCase().includes(normalizedFilter) ||
+        normalizeText(`${user.name} ${user.lastName} ${user.secondLastName}`).toLowerCase().includes(normalizedFilter) ||
         user.run?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
@@ -266,96 +266,97 @@ export default function App({ users }: Props) {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            classNames={{
-              base: "w-full sm:max-w-[44%]",
-              inputWrapper: "border-1",
-            }}
-            placeholder="Buscar por nombre o RUN..."
-            size="sm"
-            startContent={<CiSearch className="text-default-300" />}
-            value={filterValue}
-            variant="bordered"
-            onClear={() => setFilterValue("")}
-            onValueChange={onSearchChange}
-          />
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<HiMiniChevronDown className="text-small" />}
-                  size="sm"
-                  variant="flat"
+      <div className=" w-fullcol-span-12">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between gap-3 items-end">
+            <Input
+              isClearable
+              classNames={{
+                inputWrapper: "border-1",
+              }}
+              placeholder="Buscar por nombre o RUN..."
+              size="sm"
+              startContent={<CiSearch className="text-default-300" />}
+              value={filterValue}
+              variant="bordered"
+              onClear={() => setFilterValue("")}
+              onValueChange={onSearchChange}
+            />
+            <div className="flex gap-3">
+              <Dropdown>
+                <DropdownTrigger className="hidden sm:flex">
+                  <Button
+                    endContent={<HiMiniChevronDown className="text-small" />}
+                    size="sm"
+                    variant="flat"
+                  >
+                    Status
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  disallowEmptySelection
+                  aria-label="Table Columns"
+                  closeOnSelect={false}
+                  selectedKeys={statusFilter}
+                  selectionMode="multiple"
+                  onSelectionChange={setStatusFilter}
                 >
-                  Status
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={statusFilter}
-                selectionMode="multiple"
-                onSelectionChange={setStatusFilter}
-              >
-                {deletedLogicOptions.map((status) => (
-                  <DropdownItem key={String(status.uid)} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="">
-                <Button
-                  endContent={<HiMiniChevronDown className="text-small" />}
-                  size="sm"
-                  variant="flat"
+                  {deletedLogicOptions.map((status) => (
+                    <DropdownItem key={String(status.uid)} className="capitalize">
+                      {capitalize(status.name)}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+              <Dropdown>
+                <DropdownTrigger className="">
+                  <Button
+                    endContent={<HiMiniChevronDown className="text-small" />}
+                    size="sm"
+                    variant="flat"
+                  >
+                    Columnas
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  disallowEmptySelection
+                  aria-label="Table Columns"
+                  closeOnSelect={false}
+                  selectedKeys={visibleColumns}
+                  selectionMode="multiple"
+                  onSelectionChange={setVisibleColumns}
                 >
-                  Columnas
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Button className="bg-foreground text-background hidden sm:flex" endContent={<HiOutlinePlus />} size="sm">
-              Crear nuevo usuario
-            </Button>
+                  {columns.map((column) => (
+                    <DropdownItem key={column.uid} className="capitalize">
+                      {capitalize(column.name)}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+              <Button className="bg-foreground text-background hidden sm:flex" endContent={<HiOutlinePlus />} size="sm">
+                Crear nuevo usuario
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {users.length} {users.length === 1 ? "usuario" : "usuarios"}
-          </span>
-          <label className="flex items-center text-default-400 text-small">
-            Filas por página:
-            <select
-              value={rowsPerPage}
-              onChange={onRowsPerPageChange}
-              className="bg-transparent outline-none"
-            >
-              {[5, 15,30, 40, 50].map((rows) => (
-                <option key={rows} value={rows} className="text-default-400 p-2 ">
-                  {rows}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex justify-between items-center">
+            <span className="text-default-400 text-small">
+              Total {users.length} {users.length === 1 ? "usuario" : "usuarios"}
+            </span>
+            <label className="flex items-center text-default-400 text-small">
+              Filas por página:
+              <select
+                value={rowsPerPage}
+                onChange={onRowsPerPageChange}
+                className="bg-transparent outline-none"
+              >
+                {[5, 15,30, 40, 50].map((rows) => (
+                  <option key={rows} value={rows} className="text-default-400 p-2 ">
+                    {rows}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
       </div>
     );
@@ -402,7 +403,7 @@ export default function App({ users }: Props) {
   );
 
   return (
-    <div className="card-box ">
+    <div className="w-full card-box col-span-12">
       <Table
         aria-label="Tabla de usuarios"
         bottomContent={bottomContent}

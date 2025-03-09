@@ -4,7 +4,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FaAddressCard } from "react-icons/fa6";
 import { PiUserListFill } from "react-icons/pi";
 import { Tooltip } from "@heroui/tooltip";
-import Link from "next/link";
 import { CardUser } from "@/components/ui/dashboard/user/CardUser";
 import { TablaUser } from "@/components/ui/dashboard/user/TablaUser";
 

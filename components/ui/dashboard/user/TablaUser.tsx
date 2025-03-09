@@ -8,9 +8,5 @@ interface Props {
 }
 
 export const TablaUser = ({ users }: Props)  => {
-    return (
-        <div className=" w-full  col-span-12">
-            <App users={users} />
-        </div>
-    )
+    return ( <App users={users} /> );
 }
