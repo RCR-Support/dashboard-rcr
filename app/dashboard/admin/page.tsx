@@ -5,7 +5,10 @@ import BackButton from '@/components/ui/button-back';
 const AdminPage = async () => {
     const session = await auth();
 
-    if (session?.user?.role !== 'admin') {
+    console.log('session XD');
+    console.log(session?.user?.roles);
+
+    if (!session?.user?.roles?.includes('admin')) {
         return (
             <div className="flex flex-col justify-center items-center gap-4">
                 <div className="text-red-400 dark:text-red-300 text-2xl text-center mt-4">

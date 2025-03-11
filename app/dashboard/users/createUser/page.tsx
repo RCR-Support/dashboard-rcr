@@ -7,7 +7,7 @@ const CreateUserPage = async () => {
 
     const session = await auth();
 
-    if (session?.user?.role !== 'admin') {
+    if (session?.user?.roles?.includes('admin')) {
         redirect('/dashboard')
     }
 

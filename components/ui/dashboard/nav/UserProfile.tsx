@@ -1,13 +1,14 @@
 import { auth } from "@/auth";
-
 import { db } from "@/lib/db";
-
 import { FaBell } from 'react-icons/fa';
 import UserInfoProfile from "./UserInfoProfile";
 
 export default async function UserProfile() {
     const session = await auth();
     const user = session && session.user;
+
+    console.log('session XD');
+    console.log(session?.user?.roles);
 
     const roles = {
         admin: 'Administrador',
@@ -17,16 +18,15 @@ export default async function UserProfile() {
         credential: 'Credenciales',
     };
 
-    const role = roles[user?.role as keyof typeof roles];
+    // Obtener el rol del usuario desde los roles de la sesión
+    const role = user?.roles ? roles[user.roles[0] as keyof typeof roles] : 'Usuario';
 
     // Obtener los datos del usuario desde Prisma
     const userData = await db.user.findUnique({
         where: {
             email: user?.email as string,
         },
-    })
-    // console.log('los datos del usuario son:');
-    // console.log(userData);
+    });
 
     if (!session) {
         return <div>Not authenticated</div>;

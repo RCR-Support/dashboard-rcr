@@ -1,23 +1,20 @@
-
-
 import { fetchUserData } from "@/actions";
 import { redirect } from "next/navigation";
 import UsersView from "./UsersView";
-
-
+import { User } from "@/interfaces";
 
 export default async function UsersPage() {
-
   const { ok, users = [] } = await fetchUserData();
 
-  // console.log("que trae users");
-  // console.log(users);
+  if (!ok) {
+    redirect('/login');
+  }
 
+  // Mapear los datos de los usuarios para incluir todos los roles
+  const mappedUsers: User[] = users.map((user) => ({
+    ...user,
+    roles: user.roles.map((role) => role.role.name), // Asignar todos los roles
+  }));
 
-    if ( !ok ) {
-      redirect('/login')
-    }
-
-  return <UsersView users={users} />;
-};
-
+  return <UsersView users={mappedUsers} />;
+}

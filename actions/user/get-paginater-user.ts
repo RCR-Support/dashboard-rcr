@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 export const getPaginatedUser = async () => {
     const session = await auth();
 
-    if ( session?.user?.role !== 'admin' ) {
+    if ( session?.user?.roles?.includes('admin') === false ) {
         return {
             ok: false,
             message: 'No tienes permiso de administrador'

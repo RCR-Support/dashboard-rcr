@@ -1,4 +1,3 @@
-import { run } from 'node:test';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -34,7 +33,7 @@ export const registerSchema = z.object({
     password: z.string({ required_error: "La contraseña es requerida" })
         .min(6, "La contraseña debe tener más de 6 caracteres")
         .max(16, "La contraseña debe tener menos de 16 caracteres"),
-    role: z.enum(["admin", "sheq", "adminContractor", "user", "credential"]).optional(),
+    roles: z.coerce.string().transform(val => val.split(",")).optional(), // Cambiado a un array de roles
     image: z.string().optional(),
     run: z.string({ required_error: "El run es requerido" })
         .min(8, "El run debe tener al menos 8 caracteres")

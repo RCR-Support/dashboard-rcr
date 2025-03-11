@@ -6,6 +6,8 @@ export default async function Dashboard() {
 
     const session = await auth();
 
+    console.log('session xxdd');
+    console.log(session?.user?.roles);
     if (session && session.user) {
       // console.log(session.user.name);
     }

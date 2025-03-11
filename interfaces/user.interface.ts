@@ -1,4 +1,5 @@
-// user.interface.ts
+import { RoleEnum } from '@prisma/client'; // Asegúrate de que la importación sea correcta
+
 export interface Company {
     id: string;
     name: string | null;
@@ -21,7 +22,7 @@ export interface User {
     deletedLogic: boolean | null;
     password: string | null;
     image?: string | null;
-    role: string;
+    roles: string[]; // Cambiado a un array de strings
     companyId: string | null;
     company?: Company | null;
 }

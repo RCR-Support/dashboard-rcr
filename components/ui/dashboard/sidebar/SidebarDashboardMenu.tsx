@@ -14,11 +14,14 @@ import { useWindowSize } from "@/hooks/useWindowSize";
 export const SidebarDashboardMenu = () => {
     const closeMenu = useUIStore((state) => state.closeSideMenu);
     const { data: session } = useSession();
-    const isAdmin = session?.user?.role === "admin";
-    const isSheq = session?.user?.role === "sheq";
-    const isAdminContractor = session?.user?.role === "adminContractor";
-    const isUser = session?.user?.role === "user";
-    const isCredential = session?.user?.role === "credential";
+    console.log('session desde SidebarDashboardMenu');
+    console.log(session);
+
+    const isAdmin = session?.user?.roles?.includes('admin');
+    const isSheq = session?.user?.roles?.includes('sheq');
+    const isAdminContractor = session?.user?.roles?.includes('adminContractor');
+    const isUser = session?.user?.roles?.includes('user');
+    const isCredential = session?.user?.roles?.includes('credential');
 
     const { width } = useWindowSize();
     const router = usePathname();

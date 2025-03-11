@@ -18,7 +18,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Aquí es donde puedes agregar información adicional al token.
             jwt({ token, user }) {
             if (user) {
-                token.role = user.role;
+                token.roles = user.roles;
             }
             return token;
             },
@@ -26,7 +26,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // lo que hace que esté disponible en el cliente.
             session({ session, token }) {
             if (session.user) {
-                session.user.role = token.role;
+                session.user.roles = token.roles;
+                console.log('session.user.roles');
+                console.log(session.user.roles);
             }
             return session;
             },

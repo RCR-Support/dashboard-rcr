@@ -47,7 +47,6 @@ export const columns = [
 
 export const deletedLogicOptions = [
   { name: "Activo", uid: false },
-  // { name: "Pausado", uid: "paused" },
   { name: "Eleminado", uid: true },
 ];
 
@@ -101,7 +100,6 @@ const roleMapping: RoleMapping = {
   user: 'Usuario',
   credential: 'Credenciales',
 };
-
 
 export default function App({ users }: Props) {
 
@@ -196,7 +194,7 @@ export default function App({ users }: Props) {
     case "role":
       return (
         <div className="flex flex-col  min-w-48 ">
-          <p className="text-bold text-small capitalize">{roleMapping[user.role] ?? cellValue}</p>
+          <p className="text-bold text-small capitalize">{user.roles.map((role) => roleMapping[role]).join(', ')}</p>
           <p className="text-bold text-tiny capitalize text-default-500 truncate text-ellipsis max-w-48">{user.userName ?? "N/A"}</p>
         </div>
       );

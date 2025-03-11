@@ -35,7 +35,7 @@ const FormRegister = () => {
       lastName: "",
       secondLastName: "",
       userName: "",
-      role: "user",
+      // role: "user",
     },
   });
 
@@ -174,7 +174,7 @@ const FormRegister = () => {
             )}
           />
 
-          <FormField
+          {/* <FormField
             name="role"
             control={form.control}
             render={({ field }) => (
@@ -192,7 +192,7 @@ const FormRegister = () => {
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           {error && <p className="text-red-500">{error}</p>}
           <Button type="submit" disabled={isPending}>

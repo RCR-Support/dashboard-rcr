@@ -1,43 +1,83 @@
 import { initialData } from "./seed";
 import { db } from "../lib/db";
-
+import { RoleEnum } from "@prisma/client"; // Importa RoleEnum de Prisma
 async function main() {
-    try {
-        // Eliminar empresas existentes
-        await db.company.deleteMany({});
+    console.log('Seeding database...');
 
-        // Eliminar usuarios existentes
-        await db.user.deleteMany();
+    // Eliminar datos existentes
+    await db.userRole.deleteMany({});
+    await db.user.deleteMany({});
+    await db.company.deleteMany({});
+    await db.role.deleteMany({}); // Asegúrate de eliminar los roles existentes
 
-        // Crear empresas y obtener sus IDs
-        const companies = await Promise.all(
-            initialData.companies.map(company =>
-                db.company.create({
-                    data: company
-                })
-            )
-        );
+    // Crear roles
+    const roles: RoleEnum[] = [RoleEnum.admin, RoleEnum.sheq, RoleEnum.adminContractor, RoleEnum.user, RoleEnum.credential];
+    for (const role of roles) {
+        await db.role.create({
+            data: { name: role },
+        });
+    }
 
-        // Asignar IDs de empresas a los usuarios
-        const usersWithCompanyIds = initialData.users.map((user, index) => ({
-            ...user,
-            companyId: companies[index % companies.length].id
-        }));
+    // Crear empresas y obtener sus IDs
+    const companies = await Promise.all(
+        initialData.companies.map(company =>
+            db.company.create({
+                data: company,
+            })
+        )
+    );
 
-        // Crear usuarios con los IDs de las empresas asignados
-        await db.user.createMany({
-            data: usersWithCompanyIds
+    // Crear usuarios y asignar roles
+    for (const user of initialData.users) {
+        const company = companies.find(c => c.name === 'RCR-Support'); // Ajusta esto según tus necesidades
+        if (company) {
+            user.companyId = company.id;
+        }
+
+        const createdUser = await db.user.create({
+            data: {
+                name: user.name,
+                middleName: user.middleName,
+                lastName: user.lastName,
+                secondLastName: user.secondLastName,
+                userName: user.userName,
+                displayName: user.displayName,
+                email: user.email,
+                run: user.run,
+                phoneNumber: user.phoneNumber,
+                category: user.category,
+                deletedLogic: user.deletedLogic,
+                password: user.password,
+                image: user.image,
+                companyId: user.companyId,
+            },
         });
 
-        console.log('Seed ejecutado correctamente');
-    } catch (error) {
-        console.error('Error al ejecutar el seed:', error);
-    } finally {
-        await db.$disconnect();
+        // Asignar roles al usuario
+        for (const role of user.roles) {
+            const roleRecord = await db.role.findUnique({
+                where: { name: role },
+            });
+
+            if (roleRecord) {
+                await db.userRole.create({
+                    data: {
+                        userId: createdUser.id,
+                        roleId: roleRecord.id,
+                    },
+                });
+            }
+        }
     }
+
+    console.log('Database seeded successfully.');
 }
 
-(() => {
-    if (process.env.NODE_ENV === 'production') return;
-    main();
-})();
+main()
+    .catch((e) => {
+        console.error('Error al ejecutar el seed:', e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await db.$disconnect();
+    });

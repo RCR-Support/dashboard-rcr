@@ -8,78 +8,135 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum Role {
-  admin
-  sheq
-  adminContractor
-  user
-  credential
-}
-
 model Company {
   id          String        @id @default(cuid())
   name        String?
-  rut         String        @unique
   phone       String        @default("")
-  User        User[]
+  rut         String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   Contract    Contract[]
+  User        User[]
   application application[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Contract {
-  id             String    @id @default(cuid())
-  contractName   String
-  contractNumber String    @unique
-  initialDate    DateTime
+  id             String        @id @default(cuid())
   finalDate      DateTime
   deletedAt      DateTime?
-
-  // Relaciones
-  Company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
-  userAc   User   @relation(fields: [useracId], references: [id])
-  useracId String
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  application application[]
+  companyId      String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  useracId       String
+  contractName   String
+  contractNumber String        @unique
+  initialDate    DateTime
+  Company        Company       @relation(fields: [companyId], references: [id])
+  userAc         User          @relation(fields: [useracId], references: [id])
+  application    application[]
 }
 
 model User {
-  id             String     @id @default(cuid())
-  name           String
-  middleName     String?
-  lastName       String
-  secondLastName String?
-  displayName    String
-  userName       String
-  email          String     @unique
-  run            String
-  phoneNumber    String
-  category       String
-  deletedLogic   Boolean?
-  password       String?
-  emailVerified  DateTime?
-  image          String?
-  role           Role       @default(user)
-  Contract       Contract[]
+  id                 String        @id @default(cuid())
+  email              String        @unique
+  password           String?
+  emailVerified      DateTime?
+  image              String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  displayName        String
+  name               String
+  lastName           String
+  middleName         String?
+  userName           String
+  secondLastName     String?
+  category           String
+  companyId          String?
+  deletedLogic       Boolean?
+  phoneNumber        String
+  run                String
+  accounts           Account[]
+  Contract           Contract[]
+  company            Company?      @relation(fields: [companyId], references: [id])
+  applicationsAsAc   application[] @relation("AdminContractorApplications")
+  application        application[] @relation("UserApplications")
+  applicationsAsSheq application[] @relation("SheqApplications")
+  // Nueva relación con la tabla intermedia
+  roles              UserRole[]
+}
 
-  // Relaciones
-  company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?
+model application {
+  id                String    @id @default(cuid())
+  status            Status    @default(primeraVez)
+  workerName        String
+  workerPaternal    String
+  workerMaternal    String
+  workerRun         String
+  displayWorkerName String
+  license           License?
+  licenseExpiration DateTime?
+  stateAc           StateAc
+  stateSheq         StateSheq
+  companyId         String?
+  userId            String?
+  contractId        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  userAcId          String?
+  userSheqId        String?
+  company           Company?  @relation(fields: [companyId], references: [id])
+  contract          Contract? @relation(fields: [contractId], references: [id])
+  userAc            User?     @relation("AdminContractorApplications", fields: [userAcId], references: [id])
+  user              User?     @relation("UserApplications", fields: [userId], references: [id])
+  userSheq          User?     @relation("SheqApplications", fields: [userSheqId], references: [id])
+}
 
-  accounts Account[]
+model Role {
+  id    String     @id @default(cuid())
+  name  RoleEnum   @unique
+  users UserRole[]
+}
 
-  application        application[] @relation("UserApplications") // Aplicaciones creadas por este usuario
-  applicationsAsAc   application[] @relation("AdminContractorApplications") // Aplicaciones recibidas como adminContractor
-  applicationsAsSheq application[] @relation("SheqApplications") // Aplicaciones recibidas como Sheq
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@id([userId, roleId])
+}
+
+enum RoleEnum {
+  user
+  admin
+  sheq
+  adminContractor
+  credential
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String   @id @unique
+  token      String
+  expires    DateTime
 }
 
 enum Status {
@@ -108,67 +165,4 @@ enum StateSheq {
   aprobado
   pendiente
   rechazado
-}
-
-model application {
-  id                String    @id @default(cuid())
-  status            Status    @default(primeraVez)
-  workerName        String
-  workerPaternal    String
-  workerMaternal    String
-  workerRun         String
-  displayWorkerName String
-  license           License?
-  licenseExpiration DateTime?
-
-  stateAc   StateAc
-  stateSheq StateSheq
-
-  // Relaciones
-  company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?
-
-  user   User?   @relation("UserApplications", fields: [userId], references: [id]) // Usuario que crea la aplicación
-  userId String?
-
-  userAc   User?   @relation("AdminContractorApplications", fields: [userAcId], references: [id]) // adminContractor que la recibe
-  userAcId String?
-
-  userSheq   User?   @relation("SheqApplications", fields: [userSheqId], references: [id]) // Sheq que la aprueba
-  userSheqId String?
-
-  contract   Contract? @relation(fields: [contractId], references: [id])
-  contractId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([provider, providerAccountId])
-}
-
-model VerificationToken {
-  identifier String   @unique
-  token      String
-  expires    DateTime
-
-  @@id([identifier])
 }

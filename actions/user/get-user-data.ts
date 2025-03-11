@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 export const fetchUserData = async () => {
     const session = await auth();
 
-    if (!session?.user || session.user.role !== 'admin') {
+    if (!session?.user || session.user.roles?.includes('admin') === false) {
         return {
             ok: false,
             message: 'No tienes permiso de administrador'
@@ -15,7 +15,14 @@ export const fetchUserData = async () => {
 
     const users = await db.user.findMany({
         orderBy: { createdAt: 'desc' },
-        include: { company: true } // Relación con la empresa
+        include: {
+            company: true,  // Relación con la empresa
+            roles:{         // Relación con los roles
+                include: {
+                    role: true
+                }
+            }
+        }
     });
 
 

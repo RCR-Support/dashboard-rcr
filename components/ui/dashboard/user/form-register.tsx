@@ -18,13 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { registerAction } from "@/actions/register-action";
 import { addToast } from "@heroui/toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { MultiSelect } from "../../multi-select";
 
 const FormRegister = () => {
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +36,7 @@ const FormRegister = () => {
       lastName: "",
       secondLastName: "",
       userName: "",
-      role: "user",
+      roles: ["user"],
     },
   });
 
@@ -191,29 +185,29 @@ const FormRegister = () => {
           />
 
           <FormField
-            name="role"
+            name="roles"
             control={form.control}
             render={({ field }) => (
               <FormItem className="col-span-12 md:col-span-6">
                 <FormLabel>Distintos roles del sistema</FormLabel>
                 <FormControl>
                   <Controller
-                    name="role"
+                    name="roles"
                     control={form.control}
                     render={({ field }) => (
-                      <Select {...field} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Seleccione un rol" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-gray-800">
-                          <SelectItem value="admin" className="hover:bg-gray-100 dark:hover:bg-gray-900 cursor-pointer">Administrador de sistema</SelectItem>
-                          <SelectItem value="sheq" className="hover:bg-gray-100 dark:hover:bg-gray-900 cursor-pointer">El SHEQ</SelectItem>
-                          <SelectItem value="adminContractor" className="hover:bg-gray-100 dark:hover:bg-gray-900 cursor-pointer">Administrador de Contrato</SelectItem>
-                          <SelectItem value="user" className="hover:bg-gray-100 dark:hover:bg-gray-900 cursor-pointer">Usuario de la plataforma</SelectItem>
-                          <SelectItem value="credential" className="hover:bg-gray-100 dark:hover:bg-gray-900 cursor-pointer">El que imprimirá</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                      <MultiSelect
+                        {...field} onValueChange={field.onChange}
+                        options={[
+                          { value: "admin", label: "Administrador de sistema" },
+                          { value: "sheq", label: "El SHEQ" },
+                          { value: "adminContractor", label: "Administrador de Contrato" },
+                          { value: "user", label: "Usuario de la plataforma" },
+                          { value: "credential", label: "El que imprimirá" },
+                        ]}
+                        placeholder="Seleccione uno o más roles"
+                      />
+                    )
+                  }
                   />
                 </FormControl>
                 <FormMessage className="text-red-500" />
