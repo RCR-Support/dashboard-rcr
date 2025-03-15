@@ -1,0 +1,5 @@
+DIRECT_URL="postgresql://postgres.wviwvydbshlccqxjfzlw:yr38v6bmU4HOhwDF@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://postgres.wviwvydbshlccqxjfzlw:yr38v6bmU4HOhwDF@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+NEXTAUTH_URL="https://dashboard-rcr.vercel.app/"
+AUTH_SECRET="ZNqxE6mY+Wi0+RsgcR9+KSP6lEfEZGcAOuwywR9If/M="
+
