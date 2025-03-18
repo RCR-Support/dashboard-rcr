@@ -7,24 +7,30 @@ const { auth: middleware } = NextAuth(authConfig);
 const publicRoutes = ['/', '/login', '/register'];
 
 export default middleware((req) => {
-  // console.log('Middleware ejecutado');
-
   const { nextUrl, auth } = req;
   const isLoggedIn = !!auth?.user;
 
-  // console.log('Ruta solicitada:', nextUrl.pathname);
-  // console.log('Estado de autenticación:', isLoggedIn);
-
-  // Protected routes: /dashboard and /admin
-  if (!publicRoutes.includes(nextUrl.pathname) && !isLoggedIn) {
-    // console.log('Redirigiendo a /login');
-    return NextResponse.redirect(new URL('/login', nextUrl));
+  // Si es una ruta pública y el usuario está autenticado, redirigir al dashboard
+  if (publicRoutes.includes(nextUrl.pathname) && isLoggedIn && nextUrl.pathname !== '/') {
+    console.log('Usuario autenticado intentando acceder a ruta pública, redirigiendo a dashboard');
+    return NextResponse.redirect(new URL('/dashboard', nextUrl));
   }
 
-  // console.log('Acceso permitido');
+  // Si es una ruta protegida y el usuario no está autenticado
+  if (!publicRoutes.includes(nextUrl.pathname) && !isLoggedIn) {
+    console.log('Usuario no autenticado intentando acceder a ruta protegida');
+    const loginUrl = new URL('/login', nextUrl);
+    loginUrl.searchParams.set('callbackUrl', nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/",
+    "/(api|trpc)(.*)"
+  ],
 };

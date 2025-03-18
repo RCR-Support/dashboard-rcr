@@ -47,7 +47,7 @@ export const initialData: SeedData = {
             phoneNumber: '+56912345678',
             category: 'Category1',
             deletedLogic: false,
-            password: bcryptjs.hashSync('123456', 10),
+            password: bcryptjs.hashSync('uno1dos2', 10),
             image: 'path/to/image1.jpg',
             roles: ['admin', 'sheq', 'adminContractor', 'user', 'credential'],
             companyId: 'cm7p8ogxg0009vdjk6gcp0h2r', // Se establecerá más adelante

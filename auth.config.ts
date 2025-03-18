@@ -4,6 +4,7 @@ import bcryptjs from "bcryptjs";
 import { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
+import { RoleEnum } from "@prisma/client"
 export default {
     providers: [
         Credentials({
@@ -71,7 +72,7 @@ export default {
         },
         async session({ session, token }) {
         if (session.user) {
-            session.user.roles = token.roles;
+            session.user.roles = token.roles as RoleEnum[];
         }
         return session;
         },

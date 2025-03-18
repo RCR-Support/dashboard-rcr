@@ -2,7 +2,7 @@
 export default function Home() {
   return (
       <div className="flex justify-center items-center text-4xl ">
-        <h1>Pagina de inicio del Home OK</h1>
+        <h1>Pagina de inicio del Home A</h1>
       </div>
       );
 }

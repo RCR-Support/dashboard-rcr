@@ -10,7 +10,7 @@ export const NavDashboard = () => {
                     <div className="flex items-center justify-start">
                         <MenuButton />
                     </div>
-                    <UserProfile/>
+                    {/* <UserProfile/> */}
                 </div>
             </div>
         </nav>

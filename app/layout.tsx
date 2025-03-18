@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { roboto } from '@/config/fonts';
 
-import { Providers } from '@/app/providers'; // Importa el componente Providers
-import { SwitcherMini } from "@/components/ui/themeswitch/Switchermini"; // Importa el componente SwitcherMini
+import { Providers } from '@/app/providers';
+import { SwitcherMini } from "@/components/ui/themeswitch/Switchermini";
 
 export const metadata: Metadata = {
   title: 'New Dashboard RCRSupport',

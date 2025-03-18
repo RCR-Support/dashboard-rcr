@@ -1,7 +1,6 @@
 import NextAuth from "next-auth"
-
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
+import { RoleEnum } from "@prisma/client"
 
 import authConfig from "@/auth.config"
 
@@ -14,8 +13,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         strategy: "jwt"
     },
     callbacks: {
-            // jwt() se ejecuta cada vez que se crea o actualiza un token JWT.
-            // Aquí es donde puedes agregar información adicional al token.
             jwt({ token, user }) {
             if (user) {
                 token.roles = user.roles;
@@ -26,7 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // lo que hace que esté disponible en el cliente.
             session({ session, token }) {
             if (session.user) {
-                session.user.roles = token.roles;
+                session.user.roles = token.roles as RoleEnum[];
                 console.log('session.user.roles');
                 console.log(session.user.roles);
             }
