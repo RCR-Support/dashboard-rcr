@@ -1,14 +1,26 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { UserRoleProvider } from "@/context/UserRoleContext";
 import { useRoleStore } from "@/store/ui/roleStore";
 import RoleSelectionModal from "@/components/ui/dashboard/RoleSelectionModal";
 import RoleCapturer from "@/components/ui/dashboard/RoleCapturer";
 import { SidebarDashboard } from "@/components/ui/dashboard/sidebar/SidebarDashboard";
 import { NavDashboard } from "@/components/ui/dashboard/nav/NavDashboard";
+
+// Contexto para el modal de roles
+interface RoleModalContextType {
+  showRoleModal: boolean;
+  setShowRoleModal: (show: boolean) => void;
+}
+
+export const RoleModalContext = createContext<RoleModalContextType>({
+  showRoleModal: false,
+  setShowRoleModal: () => {},
+});
+
+export const useRoleModal = () => useContext(RoleModalContext);
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession({
@@ -22,6 +34,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { selectedRole } = useRoleStore();
   const [showRoleModal, setShowRoleModal] = useState(false);
   const initialized = useRef(false);
+
+  const previousRole = useRef(selectedRole);
 
   useEffect(() => {
     if (status === "authenticated" && !initialized.current) {
@@ -50,25 +64,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <UserRoleProvider>
-      <RoleCapturer />
-      <main className="bg-[#f0f0f0] dark:bg-[#1a202c] text-gray-500 dark:text-white flex">
-        <SidebarDashboard />
-        <div className="flex flex-col min-h-screen flex-1 gap-4 p-4">
-          <NavDashboard />
-          <div className="container mx-auto mt-6">{children}</div>
-        </div>
-        {showRoleModal && session?.user?.roles && (
-          <RoleSelectionModal
-            isOpen={showRoleModal}
-            availableRoles={session.user.roles}
-            onRoleSelected={() => {
-              console.log("Rol seleccionado, cerrando modal");
-              setShowRoleModal(false);
-            }}
-          />
-        )}
-      </main>
-    </UserRoleProvider>
+    <RoleModalContext.Provider value={{ showRoleModal, setShowRoleModal }}>
+      <UserRoleProvider>
+        <RoleCapturer />
+        <main className="bg-[#f0f0f0] dark:bg-[#1a202c] text-gray-500 dark:text-white flex">
+          <SidebarDashboard />
+          <div className="flex flex-col min-h-screen flex-1 gap-4 p-4">
+            <NavDashboard />
+            <div className="container mx-auto mt-6">{children}</div>
+          </div>
+          {showRoleModal && session?.user?.roles && (
+            <RoleSelectionModal
+              isOpen={showRoleModal}
+              availableRoles={session.user.roles}
+              onRoleSelected={() => {
+                console.log("Rol seleccionado, cerrando modal");
+                setShowRoleModal(false);
+              }}
+            />
+          )}
+        </main>
+      </UserRoleProvider>
+    </RoleModalContext.Provider>
   );
 }
