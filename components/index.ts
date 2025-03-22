@@ -13,3 +13,5 @@ export * from "./ui/footer/Footer"
 export * from "./ui/dashboard/user/form-register"
 export * from "./ui/dashboard/user/CardUser"
 export * from "./ui/dashboard/user/TablaUser"
+
+export * from "./ui/auth/withPermission"

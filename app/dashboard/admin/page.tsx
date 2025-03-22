@@ -1,40 +1,26 @@
-// app/dashboard/admin/page.tsx
-import { auth } from '@/auth';
-import { cookies } from 'next/headers';
+'use client';
+
+import { useSession } from 'next-auth/react';
 import LogoutButton from '@/components/ui/auth/logout-button';
-import BackButton from '@/components/ui/button-back';
+import { withPermission } from '@/components/ui/auth/withPermission';
 
-const AdminPage = async () => {
-    // Obtenemos la sesión
-    const session = await auth();
-
-    // Obtenemos la cookie con el rol seleccionado
-    const cookieStore = cookies();
-    const activeRole = cookieStore.get("role-storage")?.value; // Aquí se asume que se guarda el rol en esta cookie
-
-    console.log('session XD');
-    console.log(session?.user?.roles);
-    console.log("Active role from cookie:", activeRole);
-
-    // Verificamos el rol activo en lugar del array completo de roles
-    if (activeRole !== "admin") {
-        return (
-        <div className="flex flex-col justify-center items-center gap-4">
-            <div className="text-red-400 dark:text-red-300 text-2xl text-center mt-4">
-            No tienes permiso de administrador
-            </div>
-            <BackButton />
-        </div>
-        );
-    }
+const AdminPage = () => {
+    const { data: session } = useSession();
+    
 
     return (
-        <div>
-        <h1>Admin Page</h1>
-        <pre>{JSON.stringify(session, null, 2)}</pre>
-        <LogoutButton />
+        <div className="p-4">
+            <h1 className="text-2xl font-bold mb-4">Panel de Administración</h1>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <pre className="overflow-auto">
+                    {JSON.stringify(session, null, 2)}
+                </pre>
+                <div className="mt-4">
+                    <LogoutButton />
+                </div>
+            </div>
         </div>
     );
 };
 
-export default AdminPage;
+export default withPermission(AdminPage, '/dashboard/admin');

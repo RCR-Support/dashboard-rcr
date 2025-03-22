@@ -1,5 +1,5 @@
 "use client";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Avatar from '@mui/material/Avatar';
 import { RiArrowDropDownLine } from "react-icons/ri";
 import {
@@ -31,6 +31,8 @@ function stringAvatar(name: string) {
 const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email, role, image }) => {
   const resetRole = useRoleStore((state) => state.resetRole);
   const { setShowRoleModal } = useUserRoleContext();
+  
+  const { data: session } = useSession(); // Añadimos esto para verificar los roles disponibles
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -50,6 +52,20 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email
     resetRole();
     // Forzamos un refresh de la página para que el DashboardLayout detecte que el rol es null y muestre el modal.
     window.location.reload();
+  };
+  const renderChangeRoleItem = () => {
+    if (session?.user?.roles && session.user.roles.length > 1) {
+      return (
+        <DropdownItem
+          key="change_role"
+          textValue="Cambiar rol"
+          onPress={handleChangeRole}
+        >
+          Cambiar rol
+        </DropdownItem>
+      );
+    }
+    return null;
   };
 
   return (
@@ -76,13 +92,7 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email
         <DropdownItem key="analytics" textValue="Analytics">Analytics</DropdownItem>
         <DropdownItem key="system" textValue="System">System</DropdownItem>
         <DropdownItem key="configurations" textValue="Configurations">Configurations</DropdownItem>
-        <DropdownItem 
-          key="change_role" 
-          textValue="Cambiar rol"
-          onPress={handleChangeRole}
-        >
-          Cambiar rol
-        </DropdownItem>
+        {renderChangeRoleItem()}
         <DropdownItem
           key="logout"
           color="danger"

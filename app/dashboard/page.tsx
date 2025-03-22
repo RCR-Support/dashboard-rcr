@@ -4,15 +4,22 @@ import LogoutButton from "@/components/ui/auth/logout-button";
 
 export default async function Dashboard() {
 
-  const session = await auth();
-  console.log('Session server-side:', {
-      roles: session?.user?.roles,
-      authenticated: !!session
-  });
+    const session = await auth();
 
-  if (!session) {
-      return null; // El layout se encargará de la redirección
-  }
+    console.log('session xxdd');
+    console.log(session?.user?.roles);
+    if (session && session.user) {
+      // console.log(session.user.name);
+    }
+
+    if (!session) {
+        return <div>Not authenticated</div>;
+    }
+
+    // if ( !session.user ) {
+    //   redirect('/login')
+    // }
+
 
     return (
         <div className="flex flex-col justify-center items-center text-4xl ">

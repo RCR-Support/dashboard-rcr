@@ -5,7 +5,7 @@ import { roleMapping } from "@/lib/roleMapping";
 import { useRoleStore } from "@/store/ui/roleStore";
 import { FaBell } from "react-icons/fa";
 import UserInfoProfile from "./UserInfoProfile";
-
+import {Tooltip} from "@heroui/react";
 const UserProfile = () => {
     const { data: session } = useSession();
     const selectedRole = useRoleStore((state) => state.selectedRole);
@@ -50,9 +50,11 @@ const UserProfile = () => {
     return (
         <div className="flex items-center space-x-4 max-w-80">
             <div className="relative">
-                <div className="rounded-full p-4 cursor-pointer">
-                    <FaBell />
-                </div>
+                <Tooltip content="Notificaciones (funcionalidad pendiente)" showArrow={true}>
+                    <div className="rounded-full p-4 cursor-pointer">
+                        <FaBell />
+                    </div>
+                </Tooltip>
                 <span className="absolute top-0 right-0 inline-flex items-center justify-center h-5 w-5 text-xs font-bold leading-none text-red-100 bg-[#fb9678] rounded-full">
                     3
                 </span>
