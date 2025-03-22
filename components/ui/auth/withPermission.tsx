@@ -1,17 +1,16 @@
-// app/components/auth/withPermission.tsx
 'use client';
 
 import { usePermissions } from "@/hooks/usePermissions";
 import { redirect } from "next/navigation";
-import { ComponentType, useEffect, useState, useCallback } from "react";
+import { ComponentType, useEffect, useState, useCallback, memo } from "react";
 import { useRoleStore } from "@/store/ui/roleStore";
 import { useRoleModal } from "@/app/dashboard/layout";
 
 export function withPermission<P extends object>(
-    WrappedComponent: ComponentType<P>,
+    WrappedComponent: ComponentType<P>, 
     requiredPath: string
 ): ComponentType<P> {
-    function ProtectedComponent(props: P) {
+    const ProtectedComponent = memo(function ProtectedComponent(props: P) {
         const { hasPermission } = usePermissions();
         const { selectedRole } = useRoleStore();
         const { showRoleModal } = useRoleModal();
@@ -32,7 +31,7 @@ export function withPermission<P extends object>(
         }
 
         return <WrappedComponent {...props} />;
-    }
+    });
 
     ProtectedComponent.displayName = `withPermission(${
         WrappedComponent.displayName || WrappedComponent.name || 'Component'
