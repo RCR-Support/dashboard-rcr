@@ -2,40 +2,29 @@
 
 import { usePermissions } from "@/hooks/usePermissions";
 import { redirect } from "next/navigation";
-import { ComponentType, useEffect, useState, useCallback, memo } from "react";
+import { ComponentType, useEffect, useState } from "react";
 import { useRoleStore } from "@/store/ui/roleStore";
 import { useRoleModal } from "@/app/dashboard/layout";
+import { usePathname } from 'next/navigation';
 
 export function withPermission<P extends object>(
     WrappedComponent: ComponentType<P>, 
     requiredPath: string
 ): ComponentType<P> {
-    const ProtectedComponent = memo(function ProtectedComponent(props: P) {
+    return function ProtectedComponent(props: P) {
+        const pathname = usePathname();
         const { hasPermission } = usePermissions();
         const { selectedRole } = useRoleStore();
         const { showRoleModal } = useRoleModal();
-        const [shouldRedirect, setShouldRedirect] = useState(false);
 
-        const checkPermission = useCallback(() => {
-            if (!showRoleModal && selectedRole && !hasPermission(requiredPath)) {
-                setShouldRedirect(true);
-            }
-        }, [showRoleModal, selectedRole, hasPermission]);
-
-        useEffect(() => {
-            checkPermission();
-        }, [checkPermission]);
-
-        if (shouldRedirect) {
-            redirect('/unauthorized');
+        // Verificación inmediata para navegación manual
+        if (!showRoleModal && selectedRole && !hasPermission(requiredPath)) {
+            console.log('Acceso denegado a:', pathname);
+            // Usar window.location para evitar problemas con el router en carga manual
+            window.location.href = '/unauthorized';
+            return null;
         }
 
         return <WrappedComponent {...props} />;
-    });
-
-    ProtectedComponent.displayName = `withPermission(${
-        WrappedComponent.displayName || WrappedComponent.name || 'Component'
-    })`;
-
-    return ProtectedComponent;
+    };
 }
