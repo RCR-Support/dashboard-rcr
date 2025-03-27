@@ -218,7 +218,7 @@ export const SidebarDashboardMenu = () => {
                         : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
                     }`}
                 >
-                    <Link href="/dashboard/profile" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
+                    <Link href="/dashboard" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
                     <FaUserTie />
                     <span className="ml-3">Perfil</span>
                     </Link>

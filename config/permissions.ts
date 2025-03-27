@@ -20,8 +20,13 @@ export const permissions: PermissionsMapping = {
         roles: [RoleEnum.admin],
         description: 'Gestión de usuarios'
     },
+    '/dashboard/users/createUser': {
+        roles: [RoleEnum.admin],
+        description: 'Crear usuario'
+    },
     '/dashboard/user': {
         roles: [RoleEnum.user, RoleEnum.user],
         description: 'Pagina vista ejemplo de  usuario'
-    }
+    },
+
 };

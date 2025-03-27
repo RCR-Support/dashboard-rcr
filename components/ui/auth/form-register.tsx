@@ -56,7 +56,7 @@ const FormRegister = () => {
             color: "success",
             variant: "flat",
             radius: "md",
-            shouldShowTimeoutProgess: true,
+            shouldShowTimeoutProgress: true,
           });
           setTimeout(() => {
             router.push("/dashboard");

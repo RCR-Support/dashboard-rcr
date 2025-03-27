@@ -13,6 +13,9 @@ model Company {
   name        String?
   phone       String        @default("")
   rut         String        @unique
+  status      Boolean       @default(true) // Agregamos este campo para ver si esta activa o no
+  url         String?
+  city        String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   Contract    Contract[]
@@ -21,48 +24,57 @@ model Company {
 }
 
 model Contract {
-  id             String        @id @default(cuid())
-  finalDate      DateTime
-  deletedAt      DateTime?
-  companyId      String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  useracId       String
-  contractName   String
-  contractNumber String        @unique
-  initialDate    DateTime
-  Company        Company       @relation(fields: [companyId], references: [id])
-  userAc         User          @relation(fields: [useracId], references: [id])
-  application    application[]
+  id              String            @id @default(cuid())
+  finalDate       DateTime
+  deletedAt       DateTime?
+  companyId       String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  useracId        String
+  contractName    String
+  contractNumber  String            @unique
+  initialDate     DateTime
+  Company         Company           @relation(fields: [companyId], references: [id])
+  userAc          User              @relation(fields: [useracId], references: [id])
+  application     application[]
+  ReassignmentLog ReassignmentLog[]
 }
 
 model User {
-  id                 String        @id @default(cuid())
-  email              String        @unique
+  id                 String         @id @default(cuid())
+  email              String         @unique
   password           String?
-  emailVerified      DateTime?
-  image              String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  displayName        String
+  run                String         @unique
   name               String
-  lastName           String
   middleName         String?
-  userName           String
+  lastName           String
   secondLastName     String?
+  displayName        String
+  userName           String
+  image              String?
+  phoneNumber        String
   category           String
   companyId          String?
   deletedLogic       Boolean?
-  phoneNumber        String
-  run                String
+  lastActive         DateTime?
+  emailVerified      DateTime?
+  isActive           Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  //Relación con la tabla intermedia
   accounts           Account[]
   Contract           Contract[]
-  company            Company?      @relation(fields: [companyId], references: [id])
-  applicationsAsAc   application[] @relation("AdminContractorApplications")
-  application        application[] @relation("UserApplications")
-  applicationsAsSheq application[] @relation("SheqApplications")
-  // Nueva relación con la tabla intermedia
+  company            Company?       @relation(fields: [companyId], references: [id])
+  applicationsAsAc   application[]  @relation("AdminContractorApplications")
+  application        application[]  @relation("UserApplications")
+  applicationsAsSheq application[]  @relation("SheqApplications")
   roles              UserRole[]
+  Notification       Notification[]
+
+  // Relaciones con ReassignmentLog
+  previousReassignments ReassignmentLog[] @relation("PreviousAC")
+  newReassignments      ReassignmentLog[] @relation("NewAC")
+  reassignmentsOwned    ReassignmentLog[] @relation("ReassignmentOwner")
 }
 
 model application {
@@ -84,6 +96,8 @@ model application {
   updatedAt         DateTime  @updatedAt
   userAcId          String?
   userSheqId        String?
+  lastReviewedAt    DateTime?
+  reviewDeadline    DateTime?
   company           Company?  @relation(fields: [companyId], references: [id])
   contract          Contract? @relation(fields: [contractId], references: [id])
   userAc            User?     @relation("AdminContractorApplications", fields: [userAcId], references: [id])
@@ -112,6 +126,39 @@ enum RoleEnum {
   sheq
   adminContractor
   credential
+}
+
+model ReassignmentLog {
+  id           String   @id @default(cuid())
+  previousAcId String
+  newAcId      String
+  contractId   String
+  userId       String? // Hacemos el campo opcional
+  reason       String
+  createdAt    DateTime @default(now())
+
+  previousAc User     @relation("PreviousAC", fields: [previousAcId], references: [id])
+  newAc      User     @relation("NewAC", fields: [newAcId], references: [id])
+  contract   Contract @relation(fields: [contractId], references: [id])
+  owner      User?    @relation("ReassignmentOwner", fields: [userId], references: [id]) // Hacemos la relación opcional
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+enum NotificationType {
+  INACTIVE_REQUEST
+  REASSIGNMENT
+  REQUEST_APPROVED
+  REQUEST_REJECTED
 }
 
 model Account {

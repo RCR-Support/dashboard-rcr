@@ -20,6 +20,15 @@
   }
 }
 
+/* Prevenir el salto del scroll */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  scrollbar-gutter: auto | stable && both-edges?;
+}
+
 .fade-in {
   -webkit-animation-duration: 0.5s;
   animation-duration: 0.5s;

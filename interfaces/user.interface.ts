@@ -5,6 +5,9 @@ export interface Company {
     name: string | null;
     rut: string;
     phone: string;
+    city: string | null;
+    url: string | null;
+    status: boolean;
 }
 
 export interface User {

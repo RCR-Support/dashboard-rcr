@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formatRun, validateRun } from './validations';
 
 export const loginSchema = z.object({
     email: z.string({ required_error: "El correo es requerido" })
@@ -37,10 +38,17 @@ export const registerSchema = z.object({
     image: z.string().optional(),
     run: z.string({ required_error: "El run es requerido" })
         .min(8, "El run debe tener al menos 8 caracteres")
-        .max(9, "El run debe tener menos de 9 caracteres"),
-    phoneNumber: z.string({ required_error: "El telefono es requerido" })
-        .min(9, "El telefono debe tener al menos 9 caracteres")
-        .max(15, "El telefono debe tener menos de 15 caracteres"),
+        .max(9, "El run debe tener menos de 9 caracteres").regex(/^[0-9]{1,2}\.?[0-9]{3}\.?[0-9]{3}[-]?[0-9kK]{1}$/, "Formato de RUN inválido")
+        .refine((val) => validateRun(val), {
+            message: "RUN inválido"
+        })
+        .transform(formatRun), // Formatea el RUN automáticamente
+
+    phoneNumber: z.string({ required_error: "El teléfono es requerido" })
+    .regex(/^\d{8}$/, "El número debe tener exactamente 8 dígitos")
+    .transform(value => `+569${value}`),
+
+    companyId: z.coerce.string().transform(val => val.split(",")).optional(),
     category: z.string({ required_error: "La categoria es requerida" })
         .min(2, "La categoria debe tener al menos 2 caracteres")
         .max(32, "La categoria debe tener menos de 32 caracteres"),
