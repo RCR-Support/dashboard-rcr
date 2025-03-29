@@ -185,7 +185,7 @@ if (hasErrors) {
             name="roles"
             control={form.control}
             render={({ field }) => (
-              <FormItem className="col-span-12 lg:col-span-6">
+              <FormItem className="col-span-12 md:col-span-6">
                 <FormLabel>Distintos roles del sistema</FormLabel>
                 <FormControl>
                   <Controller
@@ -217,14 +217,32 @@ if (hasErrors) {
             )}
           />
 
-
-
+          {watchedRoles?.includes('user') && (
+              <FormField
+                  name="adminId"
+                  control={form.control}
+                  render={({ field }) => (
+                      <FormItem className="col-span-12 md:col-span-6 md:col-start-7 fade-in">
+                          <FormLabel>Seleccionar Administrador</FormLabel>
+                          <FormControl className="fade-in border-amber-500 text-amber-500">
+                              <SearchSelect
+                                  {...field}
+                                  onValueChange={field.onChange}
+                                  options={admins}
+                                  placeholder="Buscar administrador..."
+                              />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+              />
+          )}
 
           <FormField
             name="companyId"
             control={form.control}
             render={({ field }) => (
-              <FormItem className="col-span-12 lg:col-span-6">
+              <FormItem className="col-span-12 md:col-span-6 md:col-start-1 md:row-start-6">
                 <FormLabel>Empresa del usuario </FormLabel>
                 <FormControl>
                   <Controller
@@ -244,37 +262,16 @@ if (hasErrors) {
             )}
           />
 
-          {watchedRoles?.includes('user') && (
-              <FormField
-                  name="adminId"
-                  control={form.control}
-                  render={({ field }) => (
-                      <FormItem className="col-span-12 lg:col-span-6 fade-in">
-                          <FormLabel>Seleccionar Administrador</FormLabel>
-                          <FormControl>
-                              <SearchSelect
-                                  {...field}
-                                  onValueChange={field.onChange}
-                                  options={admins}
-                                  placeholder="Buscar administrador..."
-                              />
-                          </FormControl>
-                          <FormMessage />
-                      </FormItem>
-                  )}
-              />
-          )}
-
           {needsFiller && (
-                <div className="col-span-12 lg:col-span-6 lg:col-start-7 hidden lg:block" />
+                <div className="col-span-12 md:col-span-6 md:col-start-7 hidden md:block" />
           )}
 
 
-          <div className="col-span-12 lg:col-span-6 mt-8">
+          <div className="col-span-7 mt-8 ">
             {error && <p className="text-red-500">{error}</p>}
-            { hasErrors  &&(<p className="text-red-600 dark:text-red-400 text-sm fade-in">Revisa los <strong>campos marcados</strong> antes de enviar el formulario.</p>)}
+            { hasErrors  &&(<p className="text-red-600 dark:text-red-400 text-sm fade-in flex gap-2">Revisa los <strong>campos marcados</strong> <span className="hidden md:block">antes de enviar el formulario.</span></p>)}
           </div>
-        <div className="col-span-12 lg:col-span-6 flex justify-end mt-8">
+        <div className="col-span-5 flex justify-end mt-8">
           <Button
             type="submit"
             variant="default"
