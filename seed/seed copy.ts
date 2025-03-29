@@ -317,7 +317,7 @@ export const initialData: SeedData = {
 };
 
 async function main() {
-    console.log('Seeding database...');
+    // console.log('Seeding database...');
 
     // Eliminar datos existentes
     await db.userRole.deleteMany({});
@@ -376,12 +376,12 @@ async function main() {
         }
     }
 
-    console.log('Database seeded successfully.');
+    // console.log('Database seeded successfully.');
 }
 
 main()
     .catch((e) => {
-        console.error('Error al ejecutar el seed:', e);
+        // console.error('Error al ejecutar el seed:', e);
         process.exit(1);
     })
     .finally(async () => {

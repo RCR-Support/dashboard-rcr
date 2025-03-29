@@ -1,7 +1,7 @@
 "use client";
 import { FormInput } from "@/components/ui/form/FormInput";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { registerSchema } from "@/lib/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
@@ -21,15 +21,25 @@ import { MultiSelect } from "../../multi-select";
 import { Mail, Lock, Phone, User, Fingerprint } from 'lucide-react';
 import { SearchSelect } from "../../search-select";
 import { fetchCompanies } from "@/actions";
+import { fetchAdmins } from "@/actions/user/get-admincContractor";
 // Definimos la interfaz para las opciones
 interface CompanyOption {
   value: string;
   label: string;
   description?: string;
 }
+interface AdminOption {
+  value: string;
+  label: string;
+}
+interface AdminOption {
+  value: string;
+  label: string;
+}
+
 const FormRegister = () => {
-// Tipamos el estado correctamente
-const [companies, setCompanies] = useState<CompanyOption[]>([]);
+
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
   useEffect(() => {
     const loadCompanies = async () => {
       const response = await fetchCompanies();
@@ -58,14 +68,15 @@ const [companies, setCompanies] = useState<CompanyOption[]>([]);
       lastName: "",
       secondLastName: "",
       userName: "",
-      roles: ["user"],
-      image: "",
       run: "",
+      roles: [],
+      adminId: undefined,
+      companyId: undefined,
+      category: "No definido",
+      image: "",
       phoneNumber: "",
-      // category: "",
     },
   });
-
 
   // Observamos los errores y el estado del formulario
   const hasErrors = Object.keys(form.formState.errors).length > 0;
@@ -83,7 +94,6 @@ if (!hasAttempted) {
 if (hasErrors) {
   return;
 }
-
 
   setError(null);
 
@@ -128,8 +138,37 @@ if (hasErrors) {
     { name: "phoneNumber", label:"Teléfono", placeholder:"tu numero de contacto", required:true, icon:Phone, small:"Formato: +569xxxxxxxx" },
   ]
 
+  const [admins, setAdmins] = useState<AdminOption[]>([]);
+  const watchedRoles = form.watch("roles");
 
-  const isFormInputsEven = FormInputs.length % 2 === 0;
+  useEffect(() => {
+      const loadAdmins = async () => {
+          if (watchedRoles?.includes('user')) {
+              const response = await fetchAdmins();
+              if (response.ok && response.admins) {
+                  // Aseguramos que siempre sea un array
+                  setAdmins(response.admins);
+              }
+          }
+      };
+      loadAdmins();
+  }, [watchedRoles]);
+
+  // Creamos una función para contar los FormField visibles
+  const countVisibleFormFields = () => {
+    let count = FormInputs.length; // Campos base
+
+    // Si el rol 'user' está seleccionado, sumamos el SearchSelect
+    if (watchedRoles?.includes('user')) {
+      count++;
+    }
+    return count;
+  };
+
+  // En el componente, antes del return
+  const visibleFieldsCount = countVisibleFormFields();
+  const needsFiller = visibleFieldsCount % 2 !== 0;
+
   return (
     <>
       <Form {...form}>
@@ -168,16 +207,25 @@ if (hasErrors) {
                   }
                   />
                 </FormControl>
-                <FormMessage className="text-red-500" />
+                <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
+                {watchedRoles?.includes('user') && (
+                  <p className="text-amber-500 text-xs fade-in">
+                    Un usuario debe tener un administrador asociado
+                  </p>
+                )}
               </FormItem>
             )}
           />
+
+
+
+
           <FormField
             name="companyId"
             control={form.control}
             render={({ field }) => (
               <FormItem className="col-span-12 lg:col-span-6">
-                <FormLabel>Empresa del usuario</FormLabel>
+                <FormLabel>Empresa del usuario </FormLabel>
                 <FormControl>
                   <Controller
                     name="companyId"
@@ -191,26 +239,46 @@ if (hasErrors) {
                     )}
                   />
                 </FormControl>
-                <FormMessage className="text-red-500" />
+                <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
               </FormItem>
             )}
           />
 
-          <div className={`col-span-12 mt-8 hidden ${
-            isFormInputsEven
-              ? 'lg:col-span-12 lg:col-start-1 bg-green-400 ' // Si es par, ocupa 6 columnas y empieza en la 7
-              : 'lg:col-span-6 col-start-1 lg:block' // Si es impar, ocupa las 12 columnas
-          }`}></div>
+          {watchedRoles?.includes('user') && (
+              <FormField
+                  name="adminId"
+                  control={form.control}
+                  render={({ field }) => (
+                      <FormItem className="col-span-12 lg:col-span-6 fade-in">
+                          <FormLabel>Seleccionar Administrador</FormLabel>
+                          <FormControl>
+                              <SearchSelect
+                                  {...field}
+                                  onValueChange={field.onChange}
+                                  options={admins}
+                                  placeholder="Buscar administrador..."
+                              />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+              />
+          )}
+
+          {needsFiller && (
+                <div className="col-span-12 lg:col-span-6 lg:col-start-7 hidden lg:block" />
+          )}
+
+
           <div className="col-span-12 lg:col-span-6 mt-8">
             {error && <p className="text-red-500">{error}</p>}
-            { hasErrors  &&(<p className="text-red-500 text-xs">Revisa los <strong>campos marcados</strong> antes de enviar el formulario.</p>)}
+            { hasErrors  &&(<p className="text-red-600 dark:text-red-400 text-sm fade-in">Revisa los <strong>campos marcados</strong> antes de enviar el formulario.</p>)}
           </div>
         <div className="col-span-12 lg:col-span-6 flex justify-end mt-8">
           <Button
             type="submit"
             variant="default"
-            disabled={hasErrors || isPending}
-            className={`${hasErrors ? 'opacity-50 bg-slate-500' : ''}`}
+            className={`${hasErrors ? 'opacity-50 bg-slate-500 fade-in' : ''}`}
           >
             {isPending ? 'Enviando...' : 'Enviar Registro'}
           </Button>

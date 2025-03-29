@@ -4,63 +4,141 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/zod";
 import { z } from "zod";
-import { RoleEnum } from "@prisma/client";
+import { RoleEnum, Prisma } from "@prisma/client";
 
 export const registerAction = async (values: z.infer<typeof registerSchema>) => {
   try {
+    // 1. Validación del schema
     const parsed = registerSchema.safeParse(values);
     if (!parsed.success) {
-      return { error: "Invalid data" };
+      const errors = parsed.error.errors.map(error => ({
+        path: error.path.join('.'),
+        message: error.message
+      }));
+      // console.log('Errores de validación:', errors);
+      return {
+        error: "Datos inválidos",
+        validationErrors: parsed.error.errors.map(error => ({
+          path: error.path.join('.'),
+          message: error.message,
+          received: error.code === "invalid_type" ? error.received : undefined
+        }))
+      };
     }
 
     const data = parsed.data;
 
-    // Verificar si el usuario ya existe
-    const userExists = await db.user.findUnique({
-      where: { email: data.email },
+    // 2. Verificación de duplicados
+    const userExists = await db.user.findFirst({
+      where: {
+        OR: [
+          { email: data.email },
+          { run: data.run }
+        ]
+      },
       include: { accounts: true },
     });
 
     if (userExists) {
-      const hasOAuth = userExists.accounts.some((account) => account.type === "oauth");
-      return { error: hasOAuth ? "El correo ya esta en uso." : "El usuario ya existe" };
+      if (userExists.email === data.email) {
+        const hasOAuth = userExists.accounts.some((account) => account.type === "oauth");
+        return {
+          error: hasOAuth ? "El correo ya está en uso con una cuenta OAuth" : "El correo ya está registrado",
+          field: "email"
+        };
+      }
+      return {
+        error: "El RUN ya está registrado en el sistema",
+        field: "run"
+      };
     }
 
-    // Hashear la contraseña
+    // 3. Hashear contraseña
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    // Obtener los roles de la base de datos
+    // 4. Obtener y validar roles
     const roles = await db.role.findMany({
-      where: { name: { in: data.roles as RoleEnum[] } },
-    });
-
-    if (roles.length === 0) {
-      return { error: "Roles inválidos" };
-    }
-    // Crear el usuario en la base de datos
-    await db.user.create({
-      data: {
-        email: data.email,
-        name: data.name,
-        middleName: data.middleName,
-        lastName: data.lastName,
-        secondLastName: data.secondLastName,
-        userName: data.userName,
-        displayName: `${data.name} ${data.lastName}`,
-        password: passwordHash,
-        roles: {
-          create: roles.map((role) => ({
-            roleId: role.id, // Aquí conectamos con el ID del rol
-          })),
-        },
-        run: data.run, // Agregar si es obligatorio
-        phoneNumber: data.phoneNumber, // Agregar si es obligatorio
-        category: data.category, // Agregar si es obligatorio
+      where: {
+        name: {
+          in: data.roles as RoleEnum[]
+        }
       },
     });
 
-    return { success: true }; // Ya no llamamos signIn aquí
+    if (roles.length === 0) {
+      return {
+        error: "Los roles seleccionados no son válidos",
+        field: "roles"
+      };
+    }
+
+    // 5. Preparar datos del usuario
+    const userData: Prisma.UserCreateInput = {
+      email: data.email,
+      name: data.name,
+      middleName: data.middleName,
+      lastName: data.lastName,
+      secondLastName: data.secondLastName,
+      userName: data.userName,
+      displayName: `${data.name} ${data.lastName}`,
+      password: passwordHash,
+      run: data.run,
+      phoneNumber: data.phoneNumber,
+      category: data.category,
+      isActive: true,
+      // Manejo de compañía
+      company: data.companyId ? {
+        connect: {
+          id: Array.isArray(data.companyId) ? data.companyId[0] : data.companyId
+        }
+      } : undefined,
+      // Manejo de roles
+      roles: {
+        create: roles.map((role) => ({
+          role: {
+            connect: { id: role.id }
+          }
+        }))
+      }
+    };
+
+    // 6. Crear usuario
+    const newUser = await db.user.create({
+      data: userData,
+      include: {
+        company: true,
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
+    // 7. Retornar éxito
+    return { 
+      success: true,
+      userId: newUser.id,
+      user: {
+        email: newUser.email,
+        name: newUser.name,
+        roles: newUser.roles.map(r => r.role.name)
+      }
+    };
+
   } catch (error) {
-    return { error: "Internal Server Error" };
+    // console.error("Error en registro:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return { 
+          error: "Ya existe un usuario con ese correo o RUN",
+          field: error.meta?.target as string
+        };
+      }
+    }
+    return { 
+      error: "Error interno del servidor",
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    };
   }
 };

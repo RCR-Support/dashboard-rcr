@@ -38,6 +38,15 @@ body {
   -webkit-animation-name: fadeIn;
   animation-name: fadeIn;
 }
+.fade-out {
+  -webkit-animation-duration: 0.5s;
+  animation-duration: 0.5s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+
+  -webkit-animation-name: fadeOut;
+  animation-name: fadeOut;
+}
 
 /* ===== Custom CSS ===== */
 .card-box {

@@ -38,7 +38,6 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email
   const handleLogout = async () => {
     resetRole();
     const result = await signOut({ redirect: false, callbackUrl: "/login" });
-    console.log("Resultado de signOut:", result);
     if (result.url) {
       window.location.href = result.url;
     } else {
@@ -47,7 +46,6 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email
   };
 
   const handleChangeRole = () => {
-    console.log("UserInfoProfile: Cambiar rol - reseteando role-storage");
     // Borramos el rol seleccionado
     resetRole();
     // Forzamos un refresh de la página para que el DashboardLayout detecte que el rol es null y muestre el modal.

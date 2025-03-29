@@ -34,22 +34,33 @@ export const registerSchema = z.object({
     password: z.string({ required_error: "La contraseña es requerida" })
         .min(6, "La contraseña debe tener más de 6 caracteres")
         .max(16, "La contraseña debe tener menos de 16 caracteres"),
-    roles: z.coerce.string().transform(val => val.split(",")).optional(), // Cambiado a un array de roles
+    // roles: z.coerce.string().transform(val => val.split(",")).optional(), // Cambiado a un array de roles
     image: z.string().optional(),
+
     run: z.string({ required_error: "El run es requerido" })
         .min(8, "El run debe tener al menos 8 caracteres")
-        .max(9, "El run debe tener menos de 9 caracteres").regex(/^[0-9]{1,2}\.?[0-9]{3}\.?[0-9]{3}[-]?[0-9kK]{1}$/, "Formato de RUN inválido")
+        .max(9, "El run debe tener menos de 9 caracteres")
+        .regex(/^[0-9]{1,2}\.?[0-9]{3}\.?[0-9]{3}[-]?[0-9kK]{1}$/, "Formato de RUN inválido")
         .refine((val) => validateRun(val), {
             message: "RUN inválido"
-        })
-        .transform(formatRun), // Formatea el RUN automáticamente
+        }),
+       // .transform(formatRun), // Formatea el RUN automáticamente
 
     phoneNumber: z.string({ required_error: "El teléfono es requerido" })
-    .regex(/^\d{8}$/, "El número debe tener exactamente 8 dígitos")
-    .transform(value => `+569${value}`),
+    .regex(/^\d{8}$/, "El número debe tener exactamente 8 dígitos"),
+    // .transform(value => `+569${value}`),
 
-    companyId: z.coerce.string().transform(val => val.split(",")).optional(),
+    companyId: z.string({ required_error: "La empresa en la que trabajas es requerida" })
+        .min(1, "La empresa en la que trabajas es requerida"),
+        // .transform(val => val.split(",")),
     category: z.string({ required_error: "La categoria es requerida" })
         .min(2, "La categoria debe tener al menos 2 caracteres")
         .max(32, "La categoria debe tener menos de 32 caracteres"),
+
+    roles: z.array(z.string())
+        .min(1, "Debe seleccionar al menos un rol"),
+
+    adminId: z.string().optional(),
 });
+
+

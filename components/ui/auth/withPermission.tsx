@@ -19,7 +19,6 @@ export function withPermission<P extends object>(
 
         // Verificación inmediata para navegación manual
         if (!showRoleModal && selectedRole && !hasPermission(requiredPath)) {
-            console.log('Acceso denegado a:', pathname);
             // Usar window.location para evitar problemas con el router en carga manual
             window.location.href = '/unauthorized';
             return null;

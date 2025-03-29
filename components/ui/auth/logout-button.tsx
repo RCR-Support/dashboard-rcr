@@ -12,7 +12,6 @@ const LogoutButton = () => {
 
         // Llamamos a signOut sin redirección automática para capturar la respuesta
         const result = await signOut({ redirect: false, callbackUrl: "/login" });
-        console.log("Resultado de signOut:", result);
 
         // Puedes manejar si result.url no viene o se produce algún error
         if (result.url) {

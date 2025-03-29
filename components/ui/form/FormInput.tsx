@@ -60,7 +60,7 @@ export const FormInput = ({
                         </FormControl>
                         {Icon && <Icon className="absolute top-[10px] right-2 transform" />}
                     </div>
-                    <FormMessage className="text-red-600 dark:text-red-400 text-[12px] " />
+                    <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
                 </FormItem>
             )}
         />

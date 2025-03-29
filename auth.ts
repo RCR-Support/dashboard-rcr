@@ -24,8 +24,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             session({ session, token }) {
             if (session.user) {
                 session.user.roles = token.roles as RoleEnum[];
-                console.log('session.user.roles');
-                console.log(session.user.roles);
             }
             return session;
             },

@@ -14,13 +14,13 @@ export default {
             password: { label: "Password", type: "password" },
         },
         authorize: async (credentials) => {
-            console.log("Credentials received:", credentials);
+            // console.log("Credentials received:", credentials);
 
             // Validar el esquema de credenciales con Zod
             const { data, success } = loginSchema.safeParse(credentials);
 
             if (!success) {
-            console.log("Invalid credentials schema");
+            // console.log("Invalid credentials schema");
             throw new Error("Invalid credentials");
             }
 
@@ -39,7 +39,7 @@ export default {
             });
 
             if (!user || !user.password) {
-            console.log("User not found or password not set");
+            // console.log("User not found or password not set");
             throw new Error("User not found - Invalid credentials");
             }
 
@@ -51,7 +51,7 @@ export default {
             }
 
             // Devolver el usuario autenticado con los roles
-            console.log("User authenticated:", user);
+            // console.log("User authenticated:", user);
             return {
                 ...user,
                 roles: user.roles.map((userRole) => userRole.role.name),

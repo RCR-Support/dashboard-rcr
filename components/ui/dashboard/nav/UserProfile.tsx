@@ -18,12 +18,9 @@ const UserProfile = () => {
                 const response = await getProfileUserData();
                 if (response.ok && response.user) {
                     setProfileData(response.user);
-                    console.log("Datos del perfil cargados:", response.user);
                 } else {
-                    console.error("Error:", response.message);
                 }
             } catch (error) {
-                console.error("Error al cargar datos del perfil:", error);
             } finally {
                 setLoading(false);
             }

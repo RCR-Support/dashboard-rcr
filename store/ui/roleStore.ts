@@ -12,7 +12,7 @@ export const useRoleStore = create<RoleState>()(
     (set) => ({
       selectedRole: null,
       setRole: (role) => {
-        console.log('Guardando rol en store:', role);
+        // console.log('Guardando rol en store:', role);
         set({ selectedRole: role });
       },
       resetRole: () => set({ selectedRole: null }),

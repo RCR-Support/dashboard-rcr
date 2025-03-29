@@ -64,21 +64,21 @@ export const getProfileUserData = async (): Promise<ProfileUserResponse> => {
         });
 
         if (!user) {
-            console.log('Usuario no encontrado:', session.user.email);
+            // console.log('Usuario no encontrado:', session.user.email);
             return {
                 ok: false,
                 message: 'Usuario no encontrado'
             };
         }
 
-        console.log('Usuario encontrado:', user.email);
+        // console.log('Usuario encontrado:', user.email);
         return {
             ok: true,
             user: user as ProfileUserResponse['user']
         };
 
     } catch (error) {
-        console.error('Error al obtener datos del perfil:', error);
+        // console.error('Error al obtener datos del perfil:', error);
         return {
             ok: false,
             message: 'Error al obtener datos del perfil'

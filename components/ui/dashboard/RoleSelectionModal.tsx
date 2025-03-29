@@ -20,15 +20,12 @@ const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
 
   const handleSelect = (role: string) => {
     try {
-      console.log("RoleSelectionModal: seleccionando rol:", role);
       setRole(role);
       const storedRole = document.cookie
         .split("; ")
         .find((row) => row.startsWith("role-storage="));
-      console.log("Role almacenado en cookie:", storedRole);
       onRoleSelected();
     } catch (error) {
-      console.error("Error al guardar el rol:", error);
     }
   };
 

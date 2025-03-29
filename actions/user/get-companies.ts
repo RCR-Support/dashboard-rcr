@@ -50,7 +50,7 @@ export const fetchCompanies = async () => {
             companies: formattedCompanies
         };
     } catch (error) {
-        console.error('Error al obtener empresas:', error);
+        // console.error('Error al obtener empresas:', error);
         return {
             ok: false,
             message: 'Error al cargar las empresas'

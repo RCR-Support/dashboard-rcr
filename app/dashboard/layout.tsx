@@ -26,7 +26,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: session, status } = useSession({
     required: true,
     onUnauthenticated() {
-      console.log("Redirigiendo a login por falta de autenticación");
       window.location.href = "/login";
     },
   });
