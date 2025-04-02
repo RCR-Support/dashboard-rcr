@@ -1,7 +1,7 @@
 "use client";
+import { useEffect, useState, useTransition } from "react";
 import { FormInput } from "@/components/ui/form/FormInput";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { registerSchema } from "@/lib/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
@@ -27,10 +27,6 @@ interface CompanyOption {
   value: string;
   label: string;
   description?: string;
-}
-interface AdminOption {
-  value: string;
-  label: string;
 }
 interface AdminOption {
   value: string;

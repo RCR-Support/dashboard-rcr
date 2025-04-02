@@ -6,12 +6,13 @@ import { AiFillDashboard, AiFillHome } from "react-icons/ai";
 import { FaRegChartBar, FaUsers, FaUserPlus, FaUserTie } from "react-icons/fa";
 import { MdAnalytics } from "react-icons/md";
 import { Accordion, AccordionItem } from "@heroui/react";
-import { IoIosList } from "react-icons/io";
 import { useSession } from "next-auth/react";
 import { useUIStore } from "@/store/ui/ui-store";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { useRoleStore } from "@/store/ui/roleStore";
-
+import { IoIosList } from "react-icons/io";
+import { IoBusinessSharp } from "react-icons/io5";
+import { MdOutlineAddBusiness } from "react-icons/md";
 export const SidebarDashboardMenu = () => {
     const closeMenu = useUIStore((state) => state.closeSideMenu);
     const { data: session } = useSession();
@@ -91,24 +92,6 @@ export const SidebarDashboardMenu = () => {
 
             {isAdmin && (
                 <>
-                <li
-                    className={`px-2 py-1 ${
-                    router === "/register"
-                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg"
-                        : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
-                    }`}
-                >
-                    <Link
-                    href="/register"
-                    onClick={handleClick}
-                    className="font-normal rounded-lg flex items-center p-2 group justify-between"
-                    >
-                    <div className="flex items-center">
-                        <FaUserPlus />
-                        <span className="ml-3">Nuevo Usuario</span>
-                    </div>
-                    </Link>
-                </li>
 
                 <li
                     className={`px-2 py-1 ${
@@ -165,7 +148,44 @@ export const SidebarDashboardMenu = () => {
                     </ul>
                     </AccordionItem>
                 </Accordion>
-                </>
+
+                <Accordion defaultExpandedKeys={isUsersRoute ? ["companies"] : []}>
+                    <AccordionItem
+                    className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white"
+                    key="companies"
+                    startContent={<IoBusinessSharp />}
+                    aria-label="Empresas del Sistema"
+                    title="Empresas Sistema"
+                    >
+                    <ul className="pl-2">
+                        <li
+                        className={`px-2 py-1 ${
+                            router === "/dashboard/companies"
+                            ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white"
+                            : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
+                        }`}
+                        >
+                        <Link href="/dashboard/companies" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
+                            <IoIosList className="text-[16px]" />
+                            <span className="ml-3">Listado </span>
+                        </Link>
+                        </li>
+                        <li
+                        className={`px-2 py-1 ${
+                            router === "/dashboard/companies/createCompany"
+                            ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white"
+                            : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
+                        }`}
+                        >
+                        <Link href="/dashboard/companies/createCompany" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
+                            <MdOutlineAddBusiness className="text-[16px]" />
+                            <span className="ml-3">Crear Empresa</span>
+                        </Link>
+                        </li>
+                    </ul>
+                    </AccordionItem>
+                </Accordion>
+            </>
             )}
 
             {isSheq && (

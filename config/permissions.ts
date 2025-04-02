@@ -28,5 +28,11 @@ export const permissions: PermissionsMapping = {
         roles: [RoleEnum.user, RoleEnum.user],
         description: 'Pagina vista ejemplo de  usuario'
     },
+    '/dashboard/companies': {
+        roles: [
+            RoleEnum.admin
+        ],
+        description: 'Gestión de empresas'
+    },
 
 };

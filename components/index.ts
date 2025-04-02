@@ -15,3 +15,7 @@ export * from "./ui/dashboard/user/CardUser"
 export * from "./ui/dashboard/user/TablaUser"
 
 export * from "./ui/auth/withPermission"
+
+export * from "./ui/dashboard/company/companies-table"
+export * from "./ui/dashboard/company/CardCompany"
+export * from "./ui/dashboard/company/company-form"

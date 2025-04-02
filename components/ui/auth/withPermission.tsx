@@ -1,8 +1,7 @@
 'use client';
 
 import { usePermissions } from "@/hooks/usePermissions";
-import { redirect } from "next/navigation";
-import { ComponentType, useEffect, useState } from "react";
+import { ComponentType} from "react";
 import { useRoleStore } from "@/store/ui/roleStore";
 import { useRoleModal } from "@/app/dashboard/layout";
 import { usePathname } from 'next/navigation';
