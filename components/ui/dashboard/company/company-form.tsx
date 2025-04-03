@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { FormInput } from "@/components/ui/form/FormInput";
 import { useRouter } from "next/navigation";
 import { companySchema } from "@/lib/validation-company";
@@ -9,11 +9,18 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { createCompany } from "@/actions/company/company-actions";
+import { createCompany, updateCompany } from "@/actions/company/company-actions";
 import { addToast } from "@heroui/toast";
 import { Building2, Phone, Globe, MapPin } from 'lucide-react';
+import { CompanySelectEdit } from "@/interfaces/CompanySelectEdit";
 
-const CompanyForm = () => {
+
+interface CompanyFormProps {
+  initialData?: CompanySelectEdit;
+  isEditing?: boolean;
+}
+
+const CompanyForm = ( { initialData, isEditing = false }: CompanyFormProps ) => {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [hasAttempted, setHasAttempted] = useState(false);
@@ -23,12 +30,11 @@ const CompanyForm = () => {
     resolver: zodResolver(companySchema),
     mode: "all",
     defaultValues: {
-      name: "",
-      phone: "",
-      rut: "",
-      status: true,
-      url: "",
-      city: "",
+      name: initialData?.name || "",
+      phone: initialData?.phone || "",
+      rut: initialData?.rut || "",
+      url: initialData?.url || "",
+      city: initialData?.city || "",
     },
   });
 
@@ -36,40 +42,58 @@ const CompanyForm = () => {
   const isDirty = form.formState.isDirty;
 
   const FormInputs = [
-    { 
-      name: "name", 
-      label: "Nombre de la Empresa", 
-      placeholder: "ej: Empresa S.A.", 
+    {
+      name: "name",
+      label: "Nombre de la Empresa",
+      placeholder: "ej: Empresa S.A.",
       required: true,
-      icon: Building2 
+      icon: Building2
     },
-    { 
-      name: "rut", 
-      label: "RUT", 
-      placeholder: "ej: 12.345.678-9", 
-      required: true 
+    {
+      name: "rut",
+      label: "RUT",
+      placeholder: "ej: 12.345.678-9",
+      required: true
     },
-    { 
-      name: "phone", 
-      label: "Teléfono", 
-      placeholder: "12345678", 
+    {
+      name: "phone",
+      label: "Teléfono",
+      placeholder: "12345678",
       required: true,
       icon: Phone,
-      small: "Solo números, sin +56" 
+      small: "Solo números, sin +56"
+
     },
-    { 
-      name: "city", 
-      label: "Ciudad", 
+    {
+      name: "city",
+      label: "Ciudad",
       placeholder: "ej: Santiago",
-      icon: MapPin 
+      icon: MapPin
     },
-    { 
-      name: "url", 
-      label: "Sitio Web", 
+    {
+      name: "url",
+      label: "Sitio Web",
       placeholder: "https://ejemplo.com",
-      icon: Globe 
+      icon: Globe
     },
   ];
+
+
+  // Agregar un estado para rastrear si el formulario está completo
+  const formValues = form.watch();
+  const isFormComplete = Object.values(formValues).every(value =>
+    value !== undefined && value !== ""
+  );
+
+  // Verificar si hay cambios comparando con los datos iniciales
+  const hasChanges = isEditing && (Object.keys(formValues) as Array<keyof typeof formValues>).some(key =>
+    formValues[key] !== form.formState.defaultValues?.[key]
+  );
+
+  // Determinar si el botón debe estar deshabilitado
+  const isButtonDisabled = isEditing ?
+    (!hasChanges || !isFormComplete || hasErrors) :
+    (!isFormComplete || hasErrors);
 
   const onSubmit = async (values: z.infer<typeof companySchema>) => {
     if (!hasAttempted) {
@@ -78,22 +102,21 @@ const CompanyForm = () => {
       if (!isValid) return;
     }
 
-    if (hasErrors) {
-      return;
-    }
+    if (hasErrors) return;
 
     setError(null);
     startTransition(async () => {
       try {
-        const response = await createCompany(values);
+        const response = isEditing
+          ? await updateCompany({ ...values, id: initialData!.value })
+          : await createCompany(values);
+
         if (response.error) {
           setError(response.error);
         } else {
-          form.reset();
-          setHasAttempted(false);
           addToast({
-            title: "Empresa creada correctamente",
-            description: "La empresa ha sido registrada en el sistema",
+            title: `Empresa ${isEditing ? 'actualizada' : 'creada'} correctamente`,
+            description: `La empresa ha sido ${isEditing ? 'actualizada' : 'registrada'} en el sistema`,
             timeout: 2000,
             icon: "✅",
             color: "success",
@@ -101,6 +124,13 @@ const CompanyForm = () => {
             radius: "md",
             shouldShowTimeoutProgress: true,
           });
+
+          if (!isEditing) {
+            form.reset();
+            setHasAttempted(false);
+          }
+
+          router.push("/dashboard/companies");
           router.refresh();
         }
       } catch (error) {
@@ -132,12 +162,19 @@ const CompanyForm = () => {
         </div>
 
         <div className="col-span-5 flex justify-end mt-8">
-          <Button
+        <Button
             type="submit"
             variant="default"
-            className={`${hasErrors ? 'opacity-50 bg-slate-500 fade-in' : ''}`}
+            disabled={isButtonDisabled}
+            className={`${
+              isButtonDisabled 
+                ? 'opacity-50 bg-slate-500 cursor-not-allowed' 
+                : ''
+            }`}
           >
-            {isPending ? 'Creando...' : 'Crear Empresa'}
+            {isPending 
+              ? (isEditing ? 'Actualizando...' : 'Creando...') 
+              : (isEditing ? 'Actualizar Empresa' : 'Crear Empresa')}
           </Button>
         </div>
       </form>

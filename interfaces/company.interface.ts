@@ -1,4 +1,4 @@
-interface CompanyUser {
+export interface CompanyUser {
     id: string;
     email: string;
     name: string;
@@ -15,7 +15,7 @@ interface CompanyUser {
     }[];
 }
 
-export interface CompanySelect {
+export interface CompanySelect{
     value: string;
     label: string;
     description: string;

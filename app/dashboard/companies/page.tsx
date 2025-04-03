@@ -1,7 +1,11 @@
 import { fetchCompanies } from "@/actions"
 import CompaniesTable from "@/components/ui/dashboard/company/companies-table";
 import { CompanySelect } from "@/interfaces/company.interface";
+import { Button } from "@heroui/button";
 import { Suspense } from "react";
+import Link from 'next/link';
+import { MdOutlineAddBusiness } from "react-icons/md";
+
 
 
 export default async function CompaniesPage() {
@@ -19,6 +23,9 @@ export default async function CompaniesPage() {
         <div className="col-span-12 text-xl font-normal card-box flex justify-between">
 
             <h1>Listado de empresas</h1>
+            <Link href="/dashboard/companies/createCompany">
+              <Button size="sm" variant="ghost" color="success" startContent={<MdOutlineAddBusiness />}> <span className="flex items-center gap-2 hover:text-white">Crear empresa</span> </Button>
+            </Link>
         </div>
         <div className="col-span-12">
             <Suspense fallback={<div>Cargando...</div>}>

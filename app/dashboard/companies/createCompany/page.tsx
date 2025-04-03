@@ -1,6 +1,5 @@
 'use client'
 
-import FormRegister from "@/components/ui/dashboard/user/form-register";
 import { withPermission } from '@/components/ui/auth/withPermission';
 import CompanyForm from "@/components/ui/dashboard/company/company-form";
 

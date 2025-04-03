@@ -88,6 +88,59 @@ export const createCompany = async (values: z.infer<typeof companySchema>) => {
         return { error: "Error interno del servidor" };
     }
 };
+
+export const getCompanyById = async (id: string) => {
+    try {
+        const company = await db.company.findUnique({
+            where: { id },
+            include: {
+                User: {
+                    select: {
+                        id: true,
+                        name: true,
+                        lastName: true,
+                        run: true,
+                        email: true,
+                        roles: {
+                            select: {
+                                role: {
+                                    select: {
+                                        name: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!company) {
+            return { error: "Empresa no encontrada" };
+        }
+
+        // Transformar los datos al formato CompanySelect
+        const formattedCompany = {
+            value: company.id,
+            name: company.name,
+            rut: company.rut,
+            phone: company.phone,
+            status: company.status,
+            city: company.city,
+            url: company.url,
+            users: company.User
+        };
+
+        return {
+            success: true,
+            company: formattedCompany
+        };
+
+    } catch (error) {
+        console.error("Error al obtener empresa:", error);
+        return { error: "Error interno del servidor" };
+    }
+};
 export const updateCompany = async (values: z.infer<typeof companySchema> & { id: string }) => {
     try {
         const { id, ...data } = values;

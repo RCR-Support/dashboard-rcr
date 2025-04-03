@@ -38,7 +38,7 @@ export const FormInput = ({
                     </FormLabel>
                     <div className="relative">
                         <FormControl>
-                            {name === "phoneNumber" ? (
+                            {name === "phoneNumber" || name === "phone" ? (
                                 <div className="relative">
                                     <span className="absolute left-3 top-[10px] text-gray-500 dark:text-gray-300 bg-slate-200 dark:bg-slate-900 rounded-md px-2  text-sm">
                                         +56 9
