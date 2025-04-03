@@ -3,7 +3,7 @@ import { validateRun } from "./validations";
 
 export const companySchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-    phone: z.string().regex(/^\d{8}$/, "El número debe tener exactamente 8 dígitos"),
+    phone: z.string().regex(/^\d{9}$/, "El número debe tener exactamente 9 dígitos"),
     rut: z.string()
         .min(9, "El RUT debe tener al menos 9 caracteres")
         .max(10, "El RUT debe tener máximo 10 caracteres")

@@ -6,6 +6,8 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { TfiPlus } from "react-icons/tfi";
 import { Button, Input } from '@heroui/react';
 import { CiSearch } from "react-icons/ci";
+import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
+import { formatRun } from '../../../../lib/validations';
 
 interface Props {
     users: User[];
@@ -88,11 +90,11 @@ export const CardUser = ({ users }: Props) => {
                                 <div className="space-y-4">
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">Nombre:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.name} {selectedUser.middleName} {selectedUser.lastName} {selectedUser.secondLastName} </span></p>
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.email}</span> </p>
-                                    <p className='flex justify-start items-center gap-2'><span className="font-semibold">N° Telefono:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.phoneNumber}</span></p>
+                                    <p className='flex justify-start items-center gap-2'><span className="font-semibold">N° Telefono:</span> <span className="truncate text-ellipsis max-w-[360px]">{formatPhoneNumber(selectedUser.phoneNumber || "")}</span></p>
                                     <div className="border-b border-gray-200 dark:border-gray-800"></div>
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">Empresa:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.name}</span></p>
-                                    <p className='flex justify-start items-center gap-2'><span className="font-semibold">RUT:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.rut}</span></p>
-                                    <p><span className="font-semibold">N° Telefono: </span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.phone}</span></p>
+                                    <p className='flex justify-start items-center gap-2'><span className="font-semibold">RUT:</span> <span className="truncate text-ellipsis max-w-[360px]">{formatRun(selectedUser.company?.rut || "")}</span></p>
+                                    <p><span className="font-semibold">N° Telefono: </span> <span className="truncate text-ellipsis max-w-[360px]">{formatPhoneNumber(selectedUser.company?.phone || "")}</span></p>
                                 </div>
                             )}
                         </ModalBody>

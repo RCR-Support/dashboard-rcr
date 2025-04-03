@@ -41,13 +41,13 @@ export const FormInput = ({
                             {name === "phoneNumber" || name === "phone" ? (
                                 <div className="relative">
                                     <span className="absolute left-3 top-[10px] text-gray-500 dark:text-gray-300 bg-slate-200 dark:bg-slate-900 rounded-md px-2  text-sm">
-                                        +56 9
+                                        +56
                                     </span>
                                     <Input
                                         {...field}
                                         type="tel"
                                         placeholder={placeholder}
-                                        className="pl-[68px]"
+                                        className="pl-[58px]"
                                     />
                                 </div>
                             ) : (

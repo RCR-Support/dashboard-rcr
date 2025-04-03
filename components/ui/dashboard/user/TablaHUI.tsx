@@ -25,6 +25,8 @@ import { HiMiniChevronDown } from "react-icons/hi2";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { TbUserEdit } from "react-icons/tb";
 import { User } from "@/interfaces";
+import { formatRun } from "@/lib/validations";
+import { formatPhoneNumber } from "@/lib/formatPhoneNumber";
 
 interface Props {
   users: User[];
@@ -181,14 +183,16 @@ export default function App({ users }: Props) {
           />
           <div className="ml-2">
             <div className="font-bold">{user.name} {user.lastName}</div>
-            <div className="text-default-500 text-xs">{user.email}</div>
+            <div className="text-xs text-teal-600 dark:text-teal-200">{user.email}</div>
           </div>
         </div>
       );
     case "run":
       return (
         <div className="flex flex-col min-w-24">
-          <p className="text-bold text-small capitalize">{user.run ?? "N/A"}</p>
+          <p className="text-bold text-small capitalize">
+            {user.run ? formatRun(user.run) : "N/A"}
+          </p>
         </div>
       );
     case "role":
@@ -200,11 +204,21 @@ export default function App({ users }: Props) {
       );
     case "companyName":
         return (
-          <div className="flex flex-col w-56 ">
+          <div className="flex flex-col min-w-32 max-w-56 ">
             <p className="text-bold text-small capitalize truncate text-ellipsis max-w-56">{user?.company?.name}</p>
-            <p className="text-bold text-tiny capitalize text-default-500">{user?.company?.rut}</p>
+            <p className="text-bold text-tiny capitalize text-default-500">
+              {user?.company?.rut ? formatRun(user.company.rut) : "N/A"}
+            </p>
           </div>
         );
+    case "phoneNumber":
+      return (
+        <div className="flex flex-col min-w-32">
+          <p className="text-bold text-small capitalize">
+            {user.phoneNumber ?  formatPhoneNumber(user.phoneNumber) : "N/A"}
+          </p>
+        </div>
+      );
     case "status":
       const statusText = user.deletedLogic ? "Eliminado" : "Activo"; // Ajusta los textos según necesidad
       const chipColor = user.deletedLogic ? "danger" : "success";

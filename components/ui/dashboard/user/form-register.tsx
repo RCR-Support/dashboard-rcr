@@ -131,7 +131,7 @@ if (hasErrors) {
     { name: "email", label:"Correo Electrónico", type:"email", placeholder:"ej: nombre@dominio.com", required:true, icon:Mail },
     { name: "run", label:"RUN", placeholder:"ej: 12.345.678-9", required:true, icon:Fingerprint, small:"Sin puntos ni guión" },
     { name: "password", label:"Contraseña", type:"password", placeholder:"Contraseña", required:true, icon:Lock },
-    { name: "phoneNumber", label:"Teléfono", placeholder:"tu numero de contacto", required:true, icon:Phone, small:"Formato: +569xxxxxxxx" },
+    { name: "phoneNumber", label:"Teléfono", placeholder:"ej:52 2 23 24 25 ó 9 9876 1234", required:true, icon:Phone, small:"Formato: +56 xxxxxxxxx " },
   ]
 
   const [admins, setAdmins] = useState<AdminOption[]>([]);

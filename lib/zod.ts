@@ -38,16 +38,25 @@ export const registerSchema = z.object({
     image: z.string().optional(),
 
     run: z.string({ required_error: "El run es requerido" })
-        .min(8, "El run debe tener al menos 8 caracteres")
-        .max(9, "El run debe tener menos de 9 caracteres")
-        .regex(/^[0-9]{1,2}\.?[0-9]{3}\.?[0-9]{3}[-]?[0-9kK]{1}$/, "Formato de RUN inválido")
-        .refine((val) => validateRun(val), {
-            message: "RUN inválido"
-        }),
+    .min(1, "El run es requerido")
+    .transform(value => value.replace(/[.-]/g, '')) // Limpiamos puntos y guiones
+    .refine(value => {
+        // Validamos largo después de limpiar
+        const length = value.length;
+        return length >= 8 && length <= 9;
+    }, {
+        message: "El RUN debe tener entre 8 y 9 dígitos"
+    })
+    .refine(value => /^\d+[kK0-9]$/.test(value), {
+        message: "Formato de RUN inválido"
+    })
+    .refine(validateRun, {
+        message: "RUN inválido"
+    }),
        // .transform(formatRun), // Formatea el RUN automáticamente
 
     phoneNumber: z.string({ required_error: "El teléfono es requerido" })
-    .regex(/^\d{8}$/, "El número debe tener exactamente 8 dígitos"),
+    .regex(/^\d{9}$/, "El número debe tener exactamente 9 dígitos"),
     // .transform(value => `+569${value}`),
 
     companyId: z.string({ required_error: "La empresa en la que trabajas es requerida" })
