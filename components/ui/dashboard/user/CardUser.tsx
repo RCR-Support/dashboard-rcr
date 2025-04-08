@@ -10,49 +10,39 @@ import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { formatRun } from '../../../../lib/validations';
 
 import { useRouter } from "next/navigation";
-
 interface Props {
     users: User[];
 }
-
 export const CardUser = ({ users }: Props) => {
     const router = useRouter();
-
     const [isOpen, setIsOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-
     const openModal = (user: User) => {
         setSelectedUser(user);
         setIsOpen(true);
     };
-
     const closeModal = () => {
         setIsOpen(false);
         setSelectedUser(null);
     };
-
     const handleEdit = () => {
         if (selectedUser) {
             router.push(`/dashboard/users/edit/${selectedUser.id}`);
         }
     };
-
     function stringAvatar(displayName: string) {
         return {
             children: `${displayName.split(' ')[0][0]}${displayName.split(' ')[1][0]}`,
         };
     }
-
     const normalizeText = (text: string) =>
         text.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Elimina tildes y diéresis
-
     const normalizedFilter = normalizeText(searchTerm.toLowerCase());
     const filteredUsers = users.filter((user) =>
         normalizeText(`${user.name} ${user.lastName} ${user.secondLastName}`).toLowerCase().includes(normalizedFilter) ||
         user.run?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
     return (
         <>
             <div className="w-full card-box col-span-12">
@@ -111,7 +101,6 @@ export const CardUser = ({ users }: Props) => {
                                         <div className="border-b border-gray-200 dark:border-gray-800"></div>
                                         <p className='flex justify-start items-center gap-2'><span className="font-semibold">Nombre:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.adminContractor?.name} {selectedUser.adminContractor?.lastName} </span></p>
                                         <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.adminContractor?.email}</span> </p>
-                                        
                                         </>
                                     )}
                                 </div>
