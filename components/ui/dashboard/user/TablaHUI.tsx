@@ -27,7 +27,8 @@ import { TbUserEdit } from "react-icons/tb";
 import { User } from "@/interfaces";
 import { formatRun } from "@/lib/validations";
 import { formatPhoneNumber } from "@/lib/formatPhoneNumber";
-
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 interface Props {
   users: User[];
 }
@@ -104,6 +105,7 @@ const roleMapping: RoleMapping = {
 };
 
 export default function App({ users }: Props) {
+  const router = useRouter();
 
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<Selection>(
@@ -244,6 +246,7 @@ export default function App({ users }: Props) {
               <DropdownItem
               key="edit"
               startContent={<TbUserEdit size={16} className="text-primary" />}
+              onPress={() => router.push(`/dashboard/users/edit/${user.id}`)}
               >Editar</DropdownItem>
               <DropdownItem
               key="delete"
@@ -260,7 +263,7 @@ export default function App({ users }: Props) {
         return null;
       }
   }
-}, []);
+}, [router]);
 
   const onRowsPerPageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(Number(e.target.value));

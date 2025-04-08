@@ -21,7 +21,8 @@ export const fetchUserData = async () => {
                 include: {
                     role: true
                 }
-            }
+            },
+            adminContractor: true // Incluir la relación
         }
     });
 

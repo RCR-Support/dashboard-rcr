@@ -23,9 +23,18 @@ export interface User {
     phoneNumber?: string | null;
     category?: string;
     deletedLogic: boolean | null;
-    password: string | null;
+    password?: string | null;
     image?: string | null;
     roles: string[]; // Cambiado a un array de strings
     companyId: string | null;
     company?: Company | null;
+    adminContractorId?: string | null;
+    adminContractor?: {
+        id: string;
+        name: string;
+        lastName: string;
+        displayName: string;
+        phoneNumber?: string;
+        email?: string;
+    } | null;
 }

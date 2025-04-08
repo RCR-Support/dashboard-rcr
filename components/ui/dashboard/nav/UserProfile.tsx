@@ -6,6 +6,8 @@ import { useRoleStore } from "@/store/ui/roleStore";
 import { FaBell } from "react-icons/fa";
 import UserInfoProfile from "./UserInfoProfile";
 import {Tooltip} from "@heroui/react";
+
+
 const UserProfile = () => {
     const { data: session } = useSession();
     const selectedRole = useRoleStore((state) => state.selectedRole);
@@ -15,7 +17,7 @@ const UserProfile = () => {
     useEffect(() => {
         const loadProfileData = async () => {
             try {
-                const response = await getProfileUserData();
+                const response = await getProfileUserData(session?.user?.id || '');
                 if (response.ok && response.user) {
                     setProfileData(response.user);
                 } else {

@@ -31,7 +31,7 @@ function stringAvatar(name: string) {
 const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email, role, image }) => {
   const resetRole = useRoleStore((state) => state.resetRole);
   const { setShowRoleModal } = useUserRoleContext();
-  
+
   const { data: session } = useSession(); // Añadimos esto para verificar los roles disponibles
   const router = useRouter();
 

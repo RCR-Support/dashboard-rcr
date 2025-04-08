@@ -9,11 +9,15 @@ import { CiSearch } from "react-icons/ci";
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { formatRun } from '../../../../lib/validations';
 
+import { useRouter } from "next/navigation";
+
 interface Props {
     users: User[];
 }
 
 export const CardUser = ({ users }: Props) => {
+    const router = useRouter();
+
     const [isOpen, setIsOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -26,6 +30,12 @@ export const CardUser = ({ users }: Props) => {
     const closeModal = () => {
         setIsOpen(false);
         setSelectedUser(null);
+    };
+
+    const handleEdit = () => {
+        if (selectedUser) {
+            router.push(`/dashboard/users/edit/${selectedUser.id}`);
+        }
     };
 
     function stringAvatar(displayName: string) {
@@ -91,16 +101,25 @@ export const CardUser = ({ users }: Props) => {
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">Nombre:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.name} {selectedUser.middleName} {selectedUser.lastName} {selectedUser.secondLastName} </span></p>
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.email}</span> </p>
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">N° Telefono:</span> <span className="truncate text-ellipsis max-w-[360px]">{formatPhoneNumber(selectedUser.phoneNumber || "")}</span></p>
+
                                     <div className="border-b border-gray-200 dark:border-gray-800"></div>
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">Empresa:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.company?.name}</span></p>
                                     <p className='flex justify-start items-center gap-2'><span className="font-semibold">RUT:</span> <span className="truncate text-ellipsis max-w-[360px]">{formatRun(selectedUser.company?.rut || "")}</span></p>
                                     <p><span className="font-semibold">N° Telefono: </span> <span className="truncate text-ellipsis max-w-[360px]">{formatPhoneNumber(selectedUser.company?.phone || "")}</span></p>
+                                    {selectedUser.adminContractorId && (
+                                        <>
+                                        <div className="border-b border-gray-200 dark:border-gray-800"></div>
+                                        <p className='flex justify-start items-center gap-2'><span className="font-semibold">Nombre:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.adminContractor?.name} {selectedUser.adminContractor?.lastName} </span></p>
+                                        <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.adminContractor?.email}</span> </p>
+                                        
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </ModalBody>
-                        <ModalFooter>
-                            <Button color="success" variant="flat"  onPress={closeModal} >Editar</Button>
+                        <ModalFooter className='flex justify-between'>
                             <Button color="danger" variant="flat"  onPress={closeModal} >Eliminar</Button>
+                            <Button color="success" variant="flat"  onPress={handleEdit} >Editar</Button>
                         </ModalFooter>
                     </ModalContent>
                 </Modal>

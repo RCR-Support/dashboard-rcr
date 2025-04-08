@@ -27,6 +27,9 @@ async function main() {
         )
     );
 
+    // Almacenar referencia del adminContractor
+    let adminContractorUser = null;
+
     // Crear usuarios y asignar roles
     for (const user of initialData.users) {
         const company = companies.find(c => c.name === 'RCR-Support'); // Ajusta esto según tus necesidades
@@ -66,6 +69,21 @@ async function main() {
                         roleId: roleRecord.id,
                     },
                 });
+            }
+
+            // Almacenar referencia del adminContractor
+            if (role === RoleEnum.adminContractor) {
+                adminContractorUser = createdUser; // Guarda el usuario creado como adminContractor
+            }
+            // Si es un usuario normal, asignarle el adminContractor
+            if (user.roles.includes('user') && adminContractorUser) {
+                await db.user.update({
+                    where: { id: createdUser.id },
+                    data: {
+                        adminContractorId: adminContractorUser.id
+                    }
+                });
+                console.log(`Asignado adminContractor ${adminContractorUser.displayName} al usuario ${createdUser.displayName}`);
             }
         }
     }

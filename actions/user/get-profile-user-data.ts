@@ -24,7 +24,7 @@ export interface ProfileUserResponse {
     };
 }
 
-export const getProfileUserData = async (): Promise<ProfileUserResponse> => {
+export const getProfileUserData = async (id: string): Promise<ProfileUserResponse> => {
     try {
         const session = await auth();
 

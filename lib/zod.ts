@@ -10,7 +10,7 @@ export const loginSchema = z.object({
         .max(32, "La contraseña debe tener menos de 32 caracteres"),
 });
 
-export const registerSchema = z.object({
+export const baseUserSchema = z.object({
     name: z.string({ required_error: "El nombre es requerido" })
         .regex(/^([a-zA-Z]+)$/, "El nombre debe ser un solo nombre")
         .min(2, "El nombre debe tener al menos 2 caracteres")
@@ -31,12 +31,8 @@ export const registerSchema = z.object({
     email: z.string({ required_error: "El correo es requerido" })
         .min(6, "El correo es requerido")
         .email("Correo electrónico inválido"),
-    password: z.string({ required_error: "La contraseña es requerida" })
-        .min(6, "La contraseña debe tener más de 6 caracteres")
-        .max(16, "La contraseña debe tener menos de 16 caracteres"),
-    // roles: z.coerce.string().transform(val => val.split(",")).optional(), // Cambiado a un array de roles
-    image: z.string().optional(),
 
+    image: z.string().optional(),
     run: z.string({ required_error: "El run es requerido" })
     .min(1, "El run es requerido")
     .transform(value => value.replace(/[.-]/g, '')) // Limpiamos puntos y guiones
@@ -69,7 +65,23 @@ export const registerSchema = z.object({
     roles: z.array(z.string())
         .min(1, "Debe seleccionar al menos un rol"),
 
-    adminId: z.string().optional(),
+    adminContractorId: z.string().optional(),
 });
 
 
+// Schema para registro (password requerido)
+export const registerSchema = baseUserSchema.extend({
+    password: z.string()
+        .min(6, "La contraseña debe tener más de 6 caracteres")
+        .max(32, "La contraseña debe tener menos de 32 caracteres"),
+});
+
+// Schema para edición (password opcional)
+export const editSchema = baseUserSchema.extend({
+    password: z.string()
+        .max(32, "La contraseña debe tener menos de 32 caracteres")
+        .refine((value) => value === "" || value.length >= 6, "La contraseña debe tener más de 6 caracteres")
+        .optional(),
+});
+
+export type FormValues = z.infer<typeof registerSchema> | z.infer<typeof editSchema>;

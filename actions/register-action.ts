@@ -5,8 +5,9 @@ import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/zod";
 import { z } from "zod";
 import { RoleEnum, Prisma } from "@prisma/client";
+import { EditActionInput, RegisterActionInput } from "@/interfaces/action.interface";
 
-export const registerAction = async (values: z.infer<typeof registerSchema>) => {
+export const registerAction = async (values: RegisterActionInput | EditActionInput) => {
   try {
     // 1. Validación del schema
     const parsed = registerSchema.safeParse(values);
@@ -99,10 +100,16 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
             connect: { id: role.id }
           }
         }))
-      }
+      },
+      // Manejo de adminContractor
+      ...(data.roles.includes('user') && data.adminContractorId ? {
+        adminContractor: {
+          connect: { id: data.adminContractorId }
+        }
+      } : {})
     };
 
-    // 6. Crear usuario
+    // 6. Crear usuario con include actualizado
     const newUser = await db.user.create({
       data: userData,
       include: {
@@ -111,8 +118,15 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
           include: {
             role: true
           }
-        }
+        },
+        adminContractor: true // Incluimos la relación con el admin
       }
+    });
+    // Debug log
+    console.log('Usuario creado:', {
+      id: newUser.id,
+      roles: newUser.roles.map(r => r.role.name),
+      adminContractorId: newUser.adminContractorId
     });
 
     // 7. Retornar éxito
@@ -122,7 +136,8 @@ export const registerAction = async (values: z.infer<typeof registerSchema>) => 
       user: {
         email: newUser.email,
         name: newUser.name,
-        roles: newUser.roles.map(r => r.role.name)
+        roles: newUser.roles.map(r => r.role.name),
+        adminContractorId: newUser.adminContractorId // Agregamos esto para confirmar
       }
     };
 
