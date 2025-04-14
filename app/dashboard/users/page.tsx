@@ -12,7 +12,7 @@ export default async function UsersPage() {
 
     const mappedUsers: User[] = users.map((user) => ({
         ...user,
-        roles: user.roles.map((role) => role.role.name),
+        roles: user.roles
     }));
 
     return (

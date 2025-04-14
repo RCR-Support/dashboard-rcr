@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { RoleEnum } from "@prisma/client";
 
 export const fetchUserData = async () => {
     const session = await auth();
@@ -13,7 +14,11 @@ export const fetchUserData = async () => {
         };
     }
 
+    try {
     const users = await db.user.findMany({
+        where: {
+            deletedLogic: false,
+        },
         orderBy: { createdAt: 'desc' },
         include: {
             company: true,  // Relación con la empresa
@@ -22,17 +27,31 @@ export const fetchUserData = async () => {
                     role: true
                 }
             },
-            adminContractor: true // Incluir la relación
+            adminContractor: true,
+            assignedUsers: {
+                where: {
+                    deletedLogic: false
+                },
+                include: {
+                    company: true
+                }
+            } // Incluir la relación
         }
     });
 
-
-
-    // console.log("Usuarios desde el action:", users); // Se verá en la terminal
-    // console.log("Empresas:", users.map(user => user.company?.name ?? "Sin empresa")); // También en la terminal
-
     return {
         ok: true,
-        users
+        users: users.map(user => ({
+            ...user,
+            roles: user.roles.map(r => r.role.name as RoleEnum), // Asegúrate de que el tipo sea correcto
+        }))
     };
+    } catch (error) {
+        console.error("Error al obtener los datos de usuario:", error);
+        return {
+            ok: false,
+            message: 'Error al obtener los datos de usuario'
+        };
+    }
+
 };

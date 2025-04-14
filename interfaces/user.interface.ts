@@ -25,7 +25,7 @@ export interface User {
     deletedLogic: boolean | null;
     password?: string | null;
     image?: string | null;
-    roles: string[]; // Cambiado a un array de strings
+    // roles: string[]; // Cambiado a un array de strings
     companyId: string | null;
     company?: Company | null;
     adminContractorId?: string | null;
@@ -37,4 +37,13 @@ export interface User {
         phoneNumber?: string;
         email?: string;
     } | null;
+    roles: RoleEnum[];  // Ahora es un array de RoleEnum directamente
+    assignedUsers?: {
+        id: string;
+        displayName: string;
+        email: string;
+        company?: {
+            name: string | null;
+        } | null;
+    }[];
 }

@@ -55,7 +55,7 @@ model User {
   phoneNumber        String
   category           String
   companyId          String?
-  deletedLogic       Boolean?
+  deletedLogic       Boolean?       @default(false)
   lastActive         DateTime?
   emailVerified      DateTime?
   isActive           Boolean        @default(true)
@@ -74,11 +74,12 @@ model User {
   // Relaciones con ReassignmentLog
   previousReassignments ReassignmentLog[] @relation("PreviousAC")
   newReassignments      ReassignmentLog[] @relation("NewAC")
-  reassignmentsOwned    ReassignmentLog[] @relation("ReassignmentOwner")
+
+  reassignmentsOwned ReassignmentLog[] @relation("ReassignmentOwner")
   // Relaciones con adminContractor
-  adminContractorId     String?
-  adminContractor       User?             @relation("UserToAdminContractor", fields: [adminContractorId], references: [id])
-  assignedUsers         User[]            @relation("UserToAdminContractor")
+  adminContractorId  String?
+  adminContractor    User?             @relation("UserToAdminContractor", fields: [adminContractorId], references: [id])
+  assignedUsers      User[]            @relation("UserToAdminContractor")
 }
 
 model application {

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import type { User } from "@/interfaces";
 import Avatar from '@mui/material/Avatar';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
@@ -8,8 +8,13 @@ import { Button, Input } from '@heroui/react';
 import { CiSearch } from "react-icons/ci";
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { formatRun } from '../../../../lib/validations';
+import { BlockDeleteModal } from '@/components/ui/block-delete-modal';
+import { checkAssignedUsers } from '@/actions/user/get-checkAsignedUser';
+import { AssignedUser } from '@/interfaces/admin.interface';
+
 
 import { useRouter } from "next/navigation";
+import { RoleEnum } from '@prisma/client';
 interface Props {
     users: User[];
 }
@@ -43,6 +48,36 @@ export const CardUser = ({ users }: Props) => {
         normalizeText(`${user.name} ${user.lastName} ${user.secondLastName}`).toLowerCase().includes(normalizedFilter) ||
         user.run?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+
+
+    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+    const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
+    const [isPending, startTransition] = useTransition();
+
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+        try {
+            // 1. Verificar si es adminContractor y tiene usuarios asignados
+            const adminCheck = await checkAssignedUsers(selectedUser.id);
+            console.log('Resultado check:', adminCheck);
+            if (adminCheck && adminCheck.assignedUsers.length > 0) {
+                console.log('Admin tiene usuarios asignados');
+                setAssignedUsers(adminCheck.assignedUsers);
+                setIsBlockModalOpen(true);
+                return;
+            }
+            // 2. Si no es admin o no tiene usuarios, confirmar eliminación
+            const confirmed = window.confirm("¿Estás seguro de eliminar este usuario?");
+            if (!confirmed) return;
+            startTransition(async () => {
+                // Aquí irá la lógica de eliminación
+                console.log('Procediendo con eliminación');
+            });
+        } catch (error) {
+            console.error('Error en handleDelete:', error);
+        }
+    };
     return (
         <>
             <div className="w-full card-box col-span-12">
@@ -82,6 +117,13 @@ export const CardUser = ({ users }: Props) => {
                     </button>
                 ))}
 
+                {/* Modal de bloqueo */}
+                <BlockDeleteModal
+                    isOpen={isBlockModalOpen}
+                    onClose={() => setIsBlockModalOpen(false)}
+                    assignedUsers={assignedUsers}
+                    adminName={selectedUser?.displayName || ''}
+                />
                 <Modal isOpen={isOpen} onClose={closeModal} size="md" backdrop='blur'>
                     <ModalContent>
                         <ModalHeader className='flex flex-col'>Información de contacto de:  <span className="text-[#03c9d7] text-xs font-semibold">{selectedUser?.userName}</span></ModalHeader>
@@ -103,16 +145,46 @@ export const CardUser = ({ users }: Props) => {
                                         <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.adminContractor?.email}</span> </p>
                                         </>
                                     )}
+                                    {/* Sección de usuarios asignados si es adminContractor */}
+                                        {selectedUser.roles?.includes('adminContractor' as RoleEnum) && selectedUser.assignedUsers && (
+                                            <>
+                                                <div className="border-b border-gray-200 dark:border-gray-800"></div>
+                                                <div className="space-y-2">
+                                                    <h3 className="font-semibold text-sm">Usuarios asignados a este administrador:</h3>
+                                                    <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                                                        <ul className="space-y-3">
+                                                            {selectedUser.assignedUsers.map((user) => (
+                                                                <li key={user.id} className="text-sm border-b pb-2 last:border-0">
+                                                                    <p className="font-medium">{user.displayName}</p>
+                                                                    <p className="text-gray-500 dark:text-gray-400 text-xs">
+                                                                        {user.email}
+                                                                    </p>
+                                                                    {user.company?.name && (
+                                                                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                                                                            {user.company.name}
+                                                                        </p>
+                                                                    )}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                    <p className="text-xs text-amber-500">
+                                                        Total usuarios asignados: {selectedUser.assignedUsers.length}
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
                                 </div>
                             )}
                         </ModalBody>
                         <ModalFooter className='flex justify-between'>
-                            <Button color="danger" variant="flat"  onPress={closeModal} >Eliminar</Button>
+                            <Button color="danger" variant="flat"  onPress={handleDelete} >Eliminar</Button>
                             <Button color="success" variant="flat"  onPress={handleEdit} >Editar</Button>
                         </ModalFooter>
                     </ModalContent>
                 </Modal>
             </div>
+
         </>
     );
 };
