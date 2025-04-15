@@ -3,9 +3,12 @@ import { secundaryFont } from "@/config/fonts"
 import Link from "next/link"
 import MenuIcon from "./MenuIcon"
 import { usePathname } from "next/navigation"
+import Image from "next/image"
 
+import { useTheme } from "next-themes";
 
 export const TopMenu = () => {
+    const { theme } = useTheme();
     const router = usePathname();
     return (
         <nav className="bg-gray-200 dark:bg-[#282c34]  w-full h-[94px] ">
@@ -14,8 +17,13 @@ export const TopMenu = () => {
                 <MenuIcon  />
                 <div>
                     <Link href="/">
-                        {/* <Image src="./img/logo.svg" alt="logo" width={136} height={100} quality={100} /> */}
-                        <h3 className="text-3xl font-bold bg:text-white text-slate-800 dark:text-white uppercase">Logo</h3>
+                        <Image
+                            src={theme === 'light' ? "/images/logoInv.svg" : "/images/logo.svg"}
+                            alt="logo"
+                            width={136}
+                            height={100}
+                            quality={100}
+                        />
                     </Link>
                 </div>
 

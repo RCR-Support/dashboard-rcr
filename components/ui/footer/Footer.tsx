@@ -16,7 +16,7 @@ export default function Footer() {
                         Copyright  
                         <FaRegCopyright /> 
                         <Image 
-                            src={theme === 'light' ? "/images/logo.png" : "/images/logo-dark.png"} 
+                            src={theme === 'light' ? "/images/logo.png" : "/images/logo-dark.png"}
                             alt="logo" 
                             width={136} 
                             height={100} 

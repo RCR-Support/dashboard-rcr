@@ -150,8 +150,8 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
                 return;
             }
 
-            form.reset();
-            setHasAttempted(false);
+            // form.reset();
+            // setHasAttempted(false);
             addToast({
                 title: isEditing ? "Usuario actualizado" : "Usuario creado",
                 description: "Redirigiendo al dashboard...",
@@ -162,10 +162,8 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
                 radius: "md",
                 shouldShowTimeoutProgress: true,
             });
-
-            setTimeout(() => {
-                router.push("/dashboard/users");
-            }, 2000);
+          router.push("/dashboard/users");
+          router.refresh();
 
         } catch (error) {
             setError("Ocurrió un error inesperado. Por favor, intente nuevamente.");

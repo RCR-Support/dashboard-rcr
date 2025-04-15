@@ -17,7 +17,7 @@ export default async function UsersPage() {
 
     return (
         <Suspense fallback={<div>Cargando...</div>}>
-            <UsersClientPage initialUsers={mappedUsers} />
+            <UsersClientPage key={`users-${Date.now()}`}  initialUsers={mappedUsers} />
         </Suspense>
     );
 }

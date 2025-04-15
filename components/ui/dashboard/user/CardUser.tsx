@@ -12,7 +12,6 @@ import { BlockDeleteModal } from '@/components/ui/block-delete-modal';
 import { checkAssignedUsers } from '@/actions/user/get-checkAsignedUser';
 import { AssignedUser } from '@/interfaces/admin.interface';
 
-
 import { useRouter } from "next/navigation";
 import { RoleEnum } from '@prisma/client';
 interface Props {
@@ -145,10 +144,18 @@ export const CardUser = ({ users }: Props) => {
                                         <p className='flex justify-start items-center gap-2'><span className="font-semibold">Email:</span> <span className="truncate text-ellipsis max-w-[360px]">{selectedUser.adminContractor?.email}</span> </p>
                                         </>
                                     )}
+
                                     {/* Sección de usuarios asignados si es adminContractor */}
                                         {selectedUser.roles?.includes('adminContractor' as RoleEnum) && selectedUser.assignedUsers && (
                                             <>
-                                                <div className="border-b border-gray-200 dark:border-gray-800"></div>
+                                            
+                                        {selectedUser.assignedUsers.length === 0 ? (
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                                    No hay usuarios asignados a este administrador.
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    <div className="border-b border-gray-200 dark:border-gray-800"></div>
                                                 <div className="space-y-2">
                                                     <h3 className="font-semibold text-sm">Usuarios asignados a este administrador:</h3>
                                                     <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
@@ -172,6 +179,9 @@ export const CardUser = ({ users }: Props) => {
                                                         Total usuarios asignados: {selectedUser.assignedUsers.length}
                                                     </p>
                                                 </div>
+                                                </>
+                                            )}
+                                                
                                             </>
                                         )}
                                 </div>

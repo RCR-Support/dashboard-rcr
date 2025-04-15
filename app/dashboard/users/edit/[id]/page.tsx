@@ -6,6 +6,8 @@ import { getUserById } from "@/actions/user/get-userById";
 import { useEffect, useState } from 'react';
 import { UserEdit } from '@/interfaces/user.interfaceEdit';
 
+import { useRouter } from "next/navigation";
+
 interface Props {
     params: {
         id: string;

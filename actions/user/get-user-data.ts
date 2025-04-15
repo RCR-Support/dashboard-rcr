@@ -5,6 +5,9 @@ import { db } from "@/lib/db";
 import { RoleEnum } from "@prisma/client";
 
 export const fetchUserData = async () => {
+
+    const timestamp = Date.now(); // Agregar timestamp para evitar caché
+
     const session = await auth();
 
     if (!session?.user || session.user.roles?.includes('admin') === false) {

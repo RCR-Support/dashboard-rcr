@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { editSchema } from "@/lib/zod";
 import { Prisma, RoleEnum } from "@prisma/client";
 import { EditActionInput } from "@/interfaces/action.interface";
+import { revalidatePath } from "next/cache";
 
 export const editAction = async (userId: string, values: EditActionInput) => {
   try {
@@ -134,6 +135,7 @@ export const editAction = async (userId: string, values: EditActionInput) => {
     });
 
     // 7. Retornar éxito con datos actualizados
+    revalidatePath('/dashboard/users');
     return {
       success: true,
       userId: updatedUser.id,

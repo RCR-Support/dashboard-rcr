@@ -9,7 +9,10 @@ import { IoCloseOutline } from "react-icons/io5";
 import { useUIStore } from "@/store/ui/ui-store";
 import clsx from "clsx";
 import { useEffect } from "react"
+import Link from "next/link"
+import Image from "next/image"
 
+import { useTheme } from "next-themes";
 export const SidebarDashboard = () => {
 
     const isSideMenuOpen = useUIStore((state) => state.isSideMenuOpen);
@@ -35,6 +38,8 @@ export const SidebarDashboard = () => {
             openMenu();
         }
     }, [openMenu]);
+
+    const { theme } = useTheme();
 
     return (
         <SessionProvider>
@@ -66,7 +71,15 @@ export const SidebarDashboard = () => {
             <div className="relative flex-1 flex flex-col min-h-0 bg-white dark:bg-[#282c34] text-slate-800 dark:text-white ">
 
                 <div className="px-3 w-full flex h-24 items-center justify-center">
-                    <span className="w-full py-4 text-2xl font-semibold text-center whitespace-nowrap border-1 border-gray-200 dark:border-gray-600 ">LOGO</span>
+                    <Link href="/">
+                        <Image
+                            src={theme === 'light' ? "/images/logoInv.svg" : "/images/logo.svg"}
+                            alt="logo"
+                            width={136}
+                            height={100}
+                            quality={100}
+                        />
+                    </Link>
                 </div>
 
                 <div className="absolute top-24 right-4 cursor-pointer lg:hidden">
