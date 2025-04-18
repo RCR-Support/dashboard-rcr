@@ -76,7 +76,7 @@ export const SidebarDashboard = () => {
                             src={theme === 'light' ? "/images/logoInv.svg" : "/images/logo.svg"}
                             alt="logo"
                             width={136}
-                            height={100}
+                            height={50}
                             quality={100}
                         />
                     </Link>

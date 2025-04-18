@@ -1,3 +1,18 @@
+import { User } from "./user.interface";
+import { Contract } from "./contract.interface";
+
+export interface Company {
+    id: string;
+    name: string | null;
+    rut: string;
+    phone: string;
+    city: string | null;
+    url: string | null;
+    status: boolean;
+    users?: User[];
+    contracts?: Contract[];
+}
+
 export interface CompanyUser {
     id: string;
     email: string;
@@ -15,7 +30,7 @@ export interface CompanyUser {
     }[];
 }
 
-export interface CompanySelect{
+export interface CompanySelect {
     value: string;
     label: string;
     description: string;

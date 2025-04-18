@@ -1,14 +1,5 @@
-import { RoleEnum } from '@prisma/client'; // Asegúrate de que la importación sea correcta
-
-export interface Company {
-    id: string;
-    name: string | null;
-    rut: string;
-    phone: string;
-    city: string | null;
-    url: string | null;
-    status: boolean;
-}
+import { RoleEnum } from '@prisma/client';
+import { Company } from './company.interface';
 
 export interface User {
     id: string;
@@ -25,7 +16,6 @@ export interface User {
     deletedLogic: boolean | null;
     password?: string | null;
     image?: string | null;
-    // roles: string[]; // Cambiado a un array de strings
     companyId: string | null;
     company?: Company | null;
     adminContractorId?: string | null;
@@ -37,7 +27,7 @@ export interface User {
         phoneNumber?: string;
         email?: string;
     } | null;
-    roles: RoleEnum[];  // Ahora es un array de RoleEnum directamente
+    roles: RoleEnum[];
     assignedUsers?: {
         id: string;
         displayName: string;

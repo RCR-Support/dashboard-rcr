@@ -24,20 +24,25 @@ model Company {
 }
 
 model Contract {
-  id              String            @id @default(cuid())
-  finalDate       DateTime
-  deletedAt       DateTime?
-  companyId       String
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  useracId        String
-  contractName    String
-  contractNumber  String            @unique
-  initialDate     DateTime
+  id             String    @id @default(cuid())
+  contractNumber String    @unique
+  contractName   String
+  initialDate    DateTime
+  finalDate      DateTime
+  companyId      String
+  useracId       String // ID del adminContractor asignado
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  // Relaciones
   Company         Company           @relation(fields: [companyId], references: [id])
   userAc          User              @relation(fields: [useracId], references: [id])
   application     application[]
   ReassignmentLog ReassignmentLog[]
+
+  @@index([companyId])
+  @@index([useracId])
 }
 
 model User {
