@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useCompanyStore } from '@/store/ui/useCompanyStore';
 import { Phone, Globe, MapPin } from "lucide-react";
 import { formatPhoneNumber } from "@/lib/formatPhoneNumber";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface CompanyModalProps {
     isOpen: boolean;
@@ -23,8 +25,12 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
             router.push(`/dashboard/companies/edit/${company.value}`);
         }
     };
+
+    console.log('company modal', company);
+    console.log('contracts modal', company?.contracts);
+    console.log('users modal', company?.users);
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="md" backdrop='blur'>
+        <Modal isOpen={isOpen} onClose={onClose} size="lg" backdrop='blur' scrollBehavior="inside">
             <ModalContent>
                 <ModalHeader className='flex flex-col'>
                         Información de la empresa
@@ -73,7 +79,7 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
                             return null;
                         })}
 
-{company?.users && company.users.length > 0 && (
+                        {company?.users && company.users.length > 0 && (
                             <>
                                 <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
                                 <div>
@@ -103,9 +109,57 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
                                 </div>
                             </>
                         )}
+
+                        {/* Sección de Contratos */}
+                        {company?.contracts && company.contracts.length > 0 && (
+                            <>
+                                <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+                                <div>
+                                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                                        Contratos
+                                        <span className="text-xs bg-primary/10 px-2 py-1 rounded-full text-amber-300">
+                                            {company.contracts.length}
+                                        </span>
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {company.contracts.map(contract => (
+                                            <div
+                                                key={contract.id}
+                                                className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg"
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-semibold uppercase text-sm dark:text-amber-100">
+                                                            {contract.contractName}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            N° de contrato: <span className="font-semibold dark:text-amber-100">{contract.contractNumber}</span>
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Inicio contrato: <span className="font-semibold text-amber-100">{format(new Date(contract.initialDate), 'dd MMM yyyy', { locale: es })}</span> {' - '} Final contrato: <span className="font-semibold text-amber-100">{format(new Date(contract.finalDate), 'dd MMM yyyy', { locale: es })}</span>
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Administrador: <span className="font-semibold text-amber-100">{contract.userAc?.displayName || 'Sin administrador'}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </ModalBody>
                 <ModalFooter>
+                    <Button
+                        color="default"
+                        className="text-default-500 hover:bg-default-100 dark:hover:bg-default-800"
+                        variant="flat"
+                        onPress={onClose}
+                    >
+                        Cerrar
+                    </Button>
                     <Button
                         color="success"
                         variant="flat"

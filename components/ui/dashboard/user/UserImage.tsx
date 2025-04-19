@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { User } from '../../../../interfaces/user.interface';
 
 interface Props {
     src?: string;
@@ -8,7 +9,7 @@ interface Props {
     height?: number;
 }
 
-export const CompanyImage = ({ src, alt, className, width = 100, height = 50 }: Props) => {
+export const UserImage = ({ src, alt, className, width = 100, height = 50 }: Props) => {
 
     const localSrc = ( src )
         ? src.includes('http') || src.includes('https')

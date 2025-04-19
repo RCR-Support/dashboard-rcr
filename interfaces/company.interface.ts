@@ -34,5 +34,30 @@ export interface CompanySelect {
     value: string;
     label: string;
     description: string;
-    users?: CompanyUser[];
+    users?: Array<{
+        id: string;
+        displayName: string;
+        email: string;
+        roles: Array<{
+            role: {
+                name: string;
+            }
+        }>
+    }>;
+    contracts?: Array<{
+        id: string;
+        contractNumber: string;
+        contractName: string;
+        initialDate: Date;
+        finalDate: Date;
+        userAc?: {
+            id: string;
+            displayName: string;
+            email: string;
+        }
+    }>;
+    summary?: {
+        totalUsers: number;
+        totalContracts: number;
+    };
 }

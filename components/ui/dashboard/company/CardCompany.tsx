@@ -20,14 +20,45 @@ export const CompaniesGrid = ({ companies }: Props) => {
     const [isEditing, setIsEditing] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
+    const loadCompanyData = async (companyId: string) => {
+        try {
+            const response = await getCompanyUsers(companyId);
+            if (response.success) {
+                return {
+                    users: response.users,
+                    contracts: response.contracts,
+                    summary: response.summary
+                };
+            }
+            console.error('Error:', response.error);
+            return null;
+        } catch (error) {
+            console.error('Error cargando datos:', error);
+            return null;
+        }
+    };
+
     const openModal = async (company: CompanySelect) => {
-        const { success, users } = await getCompanyUsers(company.value);
-        if (success && users) {
-            setSelectedCompany({
-                ...company,
-                users: users
-            });
-            setIsOpen(true);
+        try {
+            const response = await getCompanyUsers(company.value);
+            console.log('Respuesta de getCompanyUsers:', response); // Debug
+
+            if (response.success) {
+                setSelectedCompany({
+                    ...company,
+                    users: response.users || [],
+                    contracts: response.contracts || [], // Nota: Cambiado a Contract
+                    summary: {
+                        totalUsers: response.users?.length || 0,
+                        totalContracts: response.contracts?.length || 0
+                    }
+                });
+                setIsOpen(true);
+            } else {
+                console.error('Error al cargar datos:', response.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
         }
     };
 
@@ -93,7 +124,7 @@ export const CompaniesGrid = ({ companies }: Props) => {
                                 <div className="hidden md:flex items-center gap-3 truncate text-ellipsis max-w-36 2xl:max-w-44">
                                 <Phone className='h-4 w-4 text-cyan-500 dark:text-cyan-300' />
                                     {/* Removemos el emoji del teléfono del texto */}
-                                    +56 9 {formatPhoneNumber(company.description.split(' | ')[0].replace('📞', '').trim())}
+                                    {formatPhoneNumber(company.description.split(' | ')[0].replace('📞', '').trim())}
                                 </div>
                             </div>
                             <TfiPlus className="hidden md:block text-2xl text-[#03c9d7] dark:text-[#327f84]" />
