@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { FormInput } from "@/components/ui/form/FormInput";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { addToast } from "@heroui/toast";
 import { MultiSelect } from "../../multi-select";
-import { Mail, Lock, Phone, User, Fingerprint, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Phone, User, Fingerprint, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { SearchSelect } from "../../search-select";
 import { fetchCompanies } from "@/actions";
 import { fetchAdmins } from "@/actions/user/get-admincContractor";
@@ -27,6 +27,10 @@ import { UserEdit } from "@/interfaces/user.interfaceEdit";
 import { AdminOption } from "@/interfaces/admin.interface";
 import { RegisterActionInput, EditActionInput } from '@/interfaces/action.interface';
 import { FormValues, registerSchema, editSchema } from '@/lib/zod';
+import Image from "next/image";
+import { DebugForm } from "@/components/ui/debug-form";
+import { getCldImageUrl } from 'next-cloudinary';
+
 // Definimos la interfaz para las opciones
 interface CompanyOption {
   value: string;
@@ -57,6 +61,7 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [hasAttempted, setHasAttempted] = useState(false);
+  const [imageChanged, setImageChanged] = useState(false); // Nuevo estado para rastrear cambios en la imagen
   const router = useRouter();
 
   // Actualizar cómo obtenemos el adminId inicial
@@ -67,25 +72,25 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
     mode: "all", // Agrega esta línea
     defaultValues: {
       email: initialData?.email || "",
-      password:"",
+      password: "",
       name: initialData?.name || "",
-      middleName:initialData?.middleName || "",
+      middleName: initialData?.middleName || "",
       lastName: initialData?.lastName || "",
       secondLastName: initialData?.secondLastName || "",
       userName: initialData?.userName || "",
       run: initialData?.run || "",
       roles: initialData?.roles?.map(r => r.role.name) || [],
-      adminContractorId: initialData?.adminContractorId || undefined, // ✅ Correcto
+      adminContractorId: initialData?.adminContractorId || undefined,
       companyId: initialData?.companyId || undefined,
       category: "No definido",
-      image: "",
       phoneNumber: initialData?.phoneNumber || "",
+      image: initialData?.image || initialData?.images || undefined, // Aseguramos que se incluya el campo images
     },
   });
 
   // Observamos los errores y el estado del formulario
   const hasErrors = Object.keys(form.formState.errors).length > 0;
-  const isDirty = form.formState.isDirty;
+  const isDirty = form.formState.isDirty || imageChanged; // Modificamos la verificación de cambios
 
 
 
@@ -95,17 +100,18 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
     { name: "lastName", label: "Apellido Paterno", placeholder: "ej: González", required: true },
     { name: "secondLastName", label: "Apellido Materno", placeholder: "ej: Ramírez" },
     { name: "userName", label: "Nombre de Usuario", placeholder: "ej: Juan Gabriel", required: true, small: "Como te llamaremos en la plataforma" },
-    { name: "email", label:"Correo Electrónico", type:"email", placeholder:"ej: nombre@dominio.com", required:true, icon:Mail },
-    { name: "run", label:"RUN", placeholder:"ej: 12.345.678-9", required:true, icon:Fingerprint, small:"" },
-    { name: "password",
-      label:"Contraseña",
-      type:"password",
-      placeholder: isEditing ? "Dejar en blanco para mantener actual" : "Contraseña",
-      required:!isEditing,
-      icon:Lock,
+    { name: "email", label: "Correo Electrónico", type: "email", placeholder: "ej: nombre@dominio.com", required: true, icon: Mail },
+    { name: "run", label: "RUN", placeholder: "ej: 12.345.678-9", required: true, icon: Fingerprint, small: "" },
+    {
+      name: "password",
+      label: "Contraseña",
+      type: "password",
+      placeholder: isEditing ? "Dejar en blanco para mantener la contraseña actual" : "Contraseña",
+      required: !isEditing,
+      icon: Lock,
       small: isEditing ? "- Dejar vacío para mantener la contraseña actual" : "Mínimo 6 caracteres"
     },
-    { name: "phoneNumber", label:"Teléfono", placeholder:"ej:52 2 23 24 25 ó 9 9876 1234", required:true, icon:Phone, small:"Formato: +56 xxxxxxxxx " },
+    { name: "phoneNumber", label: "Teléfono", placeholder: "ej:52 2 23 24 25 ó 9 9876 1234", required: true, icon: Phone, small: "Formato: +56 xxxxxxxxx " },
   ]
   const roleOptions = [
     { value: "admin", label: "Administrador de sistema" },
@@ -116,89 +122,255 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
   ];
 
   const onSubmit = async (values: FormValues) => {
-
     if (!hasAttempted) {
-        setHasAttempted(true);
-        const isValid = await form.trigger();
-        if (!isValid) return;
+      setHasAttempted(true);
+      const isValid = await form.trigger();
+      if (!isValid) return;
     }
 
     if (hasErrors) return;
 
     setError(null);
     startTransition(async () => {
-        try {
-            let actionResponse;
-            const dataToSend = {
-              ...values,
-              adminContractorId: values.adminContractorId // Aseguramos que se incluye
+      try {
+        let actionResponse;
+
+        // Crear un objeto FormData para manejar la subida de archivos
+        const formData = new FormData();
+
+        // Crear una copia de los valores sin el campo image para validación
+        const valuesForValidation = { ...values };
+        delete valuesForValidation.image;
+
+        // Convertir explícitamente valores null a undefined para compatibilidad de tipos
+        if (valuesForValidation.adminContractorId === null) {
+          valuesForValidation.adminContractorId = undefined;
+        }
+
+        if (valuesForValidation.companyId === null) {
+          valuesForValidation.companyId = undefined;
+        }
+
+        // Agregar todos los campos del formulario al FormData (excepto image)
+        Object.keys(valuesForValidation).forEach(key => {
+          const value = valuesForValidation[key as keyof typeof valuesForValidation];
+          if (value !== undefined && value !== null) {
+            // Convertir arrays a string para FormData
+            if (Array.isArray(value)) {
+              formData.append(key, JSON.stringify(value)); // Enviar el arreglo completo como JSON
+            } else {
+              formData.append(key, String(value));
+            }
+          }
+        });
+
+        // Asegurar que la propiedad `image` sea serializable antes de enviarla
+        if (selectedFile) {
+          formData.append('image', selectedFile);
+        } else {
+          formData.append('image', ''); // Enviar una cadena vacía si no hay archivo
+        }
+
+        // Mostrar los valores que se están enviando en la consola (ayuda para depuración)
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Enviando datos al servidor:");
+          formData.forEach((value, key) => {
+            console.log(`${key}: ${value instanceof File ? `File: ${value.name}` : value}`);
+          });
+        }
+
+        if (isEditing && initialData?.id) {
+          // Para edición, aseguramos que solo enviamos la contraseña si está presente y no está vacía
+          if (!values.password || values.password.trim() === "") {
+            formData.delete('password'); // Eliminamos el campo si está vacío para mantener la contraseña actual
+          }
+          actionResponse = await editAction(initialData.id, formData);
+        } else {
+          // Solo para NUEVO registro verificamos si hay contraseña
+          if (!valuesForValidation.password) {
+            form.setError("password", {
+              type: "manual",
+              message: "La contraseña es obligatoria para registrar un nuevo usuario"
+            });
+            setError("La contraseña es obligatoria para registrar un nuevo usuario");
+            return;
+          }
+
+          // Ahora creamos el objeto con la seguridad de que password existe
+          const registerInputData: RegisterActionInput = {
+            email: valuesForValidation.email,
+            password: valuesForValidation.password, // Aquí ya sabemos que no es undefined
+            name: valuesForValidation.name,
+            middleName: valuesForValidation.middleName || "",
+            lastName: valuesForValidation.lastName,
+            secondLastName: valuesForValidation.secondLastName || "",
+            userName: valuesForValidation.userName,
+            run: valuesForValidation.run,
+            roles: valuesForValidation.roles,
+            adminContractorId: valuesForValidation.adminContractorId !== undefined ?
+              valuesForValidation.adminContractorId : "",
+            companyId: valuesForValidation.companyId !== undefined ?
+              valuesForValidation.companyId : "",
+            category: valuesForValidation.category || "No definido",
+            phoneNumber: valuesForValidation.phoneNumber
           };
 
-            if (isEditing && initialData?.id) {
-                // Para edición, aseguramos que solo enviamos la contraseña si está presente
-                const editData: EditActionInput = {
-                    ...dataToSend,
-                    ...(values.password ? { password: values.password } : {})
-                };
-                actionResponse = await editAction(initialData.id, editData);
-            } else {
-              actionResponse = await registerAction(dataToSend as RegisterActionInput);
-            }
+          // Combinar registerInputData y formData en un único objeto FormData
+          const combinedFormData = new FormData();
 
-            if (actionResponse.error) {
-                setError(actionResponse.error);
-                return;
-            }
+          Object.entries(registerInputData).forEach(([key, value]) => {
+            combinedFormData.append(key, value);
+          });
 
-            // form.reset();
-            // setHasAttempted(false);
-            addToast({
-                title: isEditing ? "Usuario actualizado" : "Usuario creado",
-                description: "Redirigiendo al dashboard...",
-                timeout: 2000,
-                icon: "✅",
-                color: "success",
-                variant: "flat",
-                radius: "md",
-                shouldShowTimeoutProgress: true,
-            });
-          router.push("/dashboard/users");
-          router.refresh();
+          formData.forEach((value, key) => {
+            combinedFormData.append(key, value);
+          });
 
-        } catch (error) {
-            setError("Ocurrió un error inesperado. Por favor, intente nuevamente.");
+          // Actualizar la llamada a registerAction
+          actionResponse = await registerAction(registerInputData, formData);
         }
+
+        // Manejar errores de validación específicos
+        if (actionResponse.error) {
+          setError(actionResponse.error);
+
+          // Si hay errores de validación detallados, mostrarlos en el formulario
+          if (actionResponse.validationErrors && actionResponse.validationErrors.length > 0) {
+            console.error("Errores de validación:", actionResponse.validationErrors);
+
+            // Mostrar mensaje más detallado
+            setError(`Datos inválidos: ${actionResponse.validationErrors.map(e => `${e.path}: ${e.message}`).join(', ')}`);
+
+            // Establecer errores en los campos específicos del formulario
+            actionResponse.validationErrors.forEach(error => {
+              const fieldName = error.path.split('.')[0] as keyof FormValues;
+              if (fieldName && form.setError) {
+                form.setError(fieldName, {
+                  type: 'manual',
+                  message: error.message
+                });
+              }
+            });
+          }
+          return;
+        }
+
+        addToast({
+          title: isEditing ? "Usuario actualizado" : "Usuario creado",
+          description: "Redirigiendo al dashboard...",
+          timeout: 2000,
+          icon: "✅",
+          color: "success",
+          variant: "flat",
+          radius: "md",
+          shouldShowTimeoutProgress: true,
+        });
+        router.push("/dashboard/users");
+        router.refresh();
+
+      } catch (error) {
+        setError("Ocurrió un error inesperado. Por favor, intente nuevamente.");
+      }
     });
-};
+  };
 
   const [admins, setAdmins] = useState<AdminOption[]>([]);
   const watchedRoles = form.watch("roles");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Función auxiliar para encontrar la imagen del usuario
+  const findUserImage = (userData?: UserEdit): string | null | undefined => {
+    if (!userData) return null;
+
+    // Intentar todas las posibles ubicaciones donde podría estar la URL de la imagen
+    // Eliminamos imageUrl que no existe en el tipo UserEdit
+    return userData.image ||
+      userData.images ||
+      (typeof userData === 'object' && 'image' in userData ? (userData as any).image : null);
+  };
+
+  // Cargar la imagen existente cuando estamos en modo edición
+  useEffect(() => {
+    console.log("Datos iniciales recibidos:", initialData);
+
+    if (isEditing && initialData?.id) {
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        if (!cloudName) {
+            console.error("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME no está configurado en el entorno.");
+            setSelectedImage("/placeholder-user.png");
+            return;
+        }
+
+        console.log("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
+
+        const cloudinaryUrl = getCldImageUrl({
+            src: `user-profiles/user-${initialData.id}.jpg`,
+            width: 300,
+            height: 300,
+        });
+        console.log("URL generada para Cloudinary:", cloudinaryUrl);
+        setSelectedImage(cloudinaryUrl);
+    } else {
+        setSelectedImage("/placeholder-user.png");
+    }
+
+    const userImage = initialData?.image || initialData?.images;
+    if (isEditing && userImage && typeof userImage === 'string') {
+        setSelectedImage(userImage);
+    }
+}, [isEditing, initialData]);
 
   useEffect(() => {
     const loadAdmins = async () => {
-
-
-        if (watchedRoles?.includes('user') ||
-            initialData?.roles?.some(r => r.role.name === 'user')) {
-            const response = await fetchAdmins();
-
-            if (response.ok && response.admins) {
-                // Los admins ya vienen formateados desde el servidor
-                setAdmins(response.admins);
-            }
-        }
+      // Cargar los administradores independientemente del rol seleccionado
+      const response = await fetchAdmins();
+      if (response.ok && response.admins) {
+        setAdmins(response.admins);
+      }
     };
     loadAdmins();
-}, [watchedRoles, initialData, initialAdminId]);
+  }, []);
+
+  // Manejador para la carga de imágenes
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB límite
+        addToast({
+          title: "Error",
+          description: "La imagen no debe superar los 5MB",
+          timeout: 3000,
+          icon: "❌",
+          color: "danger"
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setSelectedFile(file);
+
+      // Importante: No almacenamos el nombre del archivo en form.setValue
+      // En su lugar, solo marcamos que la imagen ha cambiado
+      setImageChanged(true);
+      console.log("Imagen cargada:", file);
+    }
+  };
+
+  // Función para simular el clic en el input file
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   // Creamos una función para contar los FormField visibles
   const countVisibleFormFields = () => {
     let count = FormInputs.length; // Campos base
-
-    // Si el rol 'user' está seleccionado, sumamos el SearchSelect
-    if (watchedRoles?.includes('user')) {
-      count++;
-    }
+    count += 2; // Para roles y companyId
     return count;
   };
 
@@ -206,37 +378,20 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
   const visibleFieldsCount = countVisibleFormFields();
   const needsFiller = visibleFieldsCount % 2 !== 0;
 
-  useEffect(() => {
-    const loadAdmins = async () => {
-
-        if (watchedRoles?.includes('user') ||
-            initialData?.roles?.some(r => r.role.name === 'user')) {
-            const response = await fetchAdmins();
-
-            if (response.ok && response.admins) {
-                // Los admins ya vienen formateados desde el servidor
-                setAdmins(response.admins);
-            }
-        }
-    };
-    loadAdmins();
-}, [watchedRoles, initialData, initialAdminId]);
-  // Mostrar campo de admin si el usuario es 'user' o si se selecciona el rol
-  const showAdminField = watchedRoles?.includes('user') ||
-                        initialData?.roles?.some(r => r.role.name === 'user');
-
   return (
     <>
       <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-12 col-span-12 gap-x-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-12 col-span-12 gap-x-6">
+          {/* Campos de formulario existentes */}
           {FormInputs.map((field, index) => (
-              <FormInput
-                  key={field.name}
-                  {...field}
-                  form={form}
-              />
+            <FormInput
+              key={field.name}
+              {...field}
+              form={form}
+            />
           ))}
 
+          {/* Campo de roles */}
           <FormField
             name="roles"
             control={form.control}
@@ -253,81 +408,10 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
                         options={roleOptions}
                         onValueChange={(values) => {
                           field.onChange(values);
-                          // Si se remueve el rol 'user', limpiar el adminId
-                          if (!values.includes('user')) {
-                            form.setValue('adminContractorId', undefined);
-                          }
                         }}
                         placeholder="Seleccione uno o más roles"
                         defaultValue={initialData?.roles?.map(r => r.role.name) || []}
-                        maxCount={3} // Limitar la cantidad de roles mostrados
-                        className={cn(
-                          "w-full",
-                          hasErrors && "border-destructive"
-                        )}
-                      />
-                    )
-                  }
-                  />
-                </FormControl>
-                <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
-                {watchedRoles?.includes('user') && (
-                  <p className="text-amber-500 text-xs fade-in">
-                    Un usuario debe tener un administrador asociado
-                  </p>
-                )}
-              </FormItem>
-            )}
-          />
-
-{watchedRoles?.includes('user') && (
-    <FormField
-        name="adminContractorId"
-        control={form.control}
-        render={({ field }) => {
-
-            return (
-                <FormItem className="col-span-12 md:col-span-6 md:col-start-7 fade-in">
-                    <FormLabel>Seleccionar Administrador</FormLabel>
-                    <FormControl className="fade-in border-amber-500 text-amber-500">
-                        <SearchSelect
-                            value={field.value || ''}
-                            onValueChange={(newValue) => {
-                                field.onChange(newValue);
-                            }}
-                            defaultValue={initialData?.adminContractorId || ""}
-                            options={admins}
-                            placeholder="Buscar administrador..."
-                            className={cn(
-                                "w-full",
-                                hasErrors && "border-destructive"
-                            )}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            );
-        }}
-    />
-)}
-
-          <FormField
-            name="companyId"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem className="col-span-12 md:col-span-6 md:col-start-1 md:row-start-6">
-                <FormLabel>Empresa del usuario </FormLabel>
-                <FormControl>
-                  <Controller
-                    name="companyId"
-                    control={form.control}
-                    render={({ field }) => (
-                      <SearchSelect
-                        {...field}
-                        onValueChange={field.onChange}
-                        options={companies}
-                        placeholder="Seleccione una empresa"
-                        defaultValue={initialData?.companyId || ""}
+                        maxCount={3}
                         className={cn(
                           "w-full",
                           hasErrors && "border-destructive"
@@ -341,42 +425,144 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
             )}
           />
 
+          {/* Campo de compañía */}
+          <FormField
+            name="companyId"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem className="col-span-12 md:col-span-6 md:col-start-1 md:row-start-6">
+                <FormLabel>Empresa del usuario</FormLabel>
+                <FormControl>
+                  <Controller
+                    name="companyId"
+                    control={form.control}
+                    render={({ field }) => (
+                      <SearchSelect
+                        {...field}
+                        onValueChange={field.onChange}
+                        options={companies}
+                        placeholder="Seleccione una empresa"
+                        defaultValue={initialData?.companyId || ""}
+                        value={field.value === null ? undefined : field.value}
+                        className={cn(
+                          "w-full",
+                          hasErrors && "border-destructive"
+                        )}
+                      />
+                    )}
+                  />
+                </FormControl>
+                <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
+              </FormItem>
+            )}
+          />
+
+          {/* Campo de imagen */}
+          <FormField
+            name="image"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem className="col-span-12 md:col-span-6">
+                <FormLabel>Imagen de perfil</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={triggerFileInput}
+                      className="flex items-center gap-2"
+                    >
+                      <ImageIcon size={16} />
+                      {isEditing ? "Cambiar imagen" : "Subir Imagen"}
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/avif"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    {selectedImage && (
+                      <div className="relative">
+                        {/* Usar un componente que evite ciclos de error */}
+                        <Image
+                          src={selectedImage}
+                          alt="Imagen de perfil"
+                          width={64}
+                          height={64}
+                          className="h-14 w-14 bg-cover rounded-full object-cover"
+                          onError={() => {
+                            // Registrar error una sola vez, luego usar una imagen predeterminada
+                            console.error("Error al cargar la imagen de Cloudinary:", selectedImage);
+                            setSelectedImage("/placeholder-user.png"); // Imagen local de fallback
+                          }}
+                          unoptimized={true} // Intentar saltarse la optimización de Next.js para imágenes externas
+                        />
+                        {isEditing && !selectedFile && (
+                          <div className="absolute -bottom-1 -right-1 bg-blue-100 text-blue-500 rounded-full px-1 text-[10px]">
+                            Actual
+                          </div>
+                        )}
+                        {selectedFile && (
+                          <div className="absolute -bottom-1 -right-1 bg-green-100 text-green-500 rounded-full px-1 text-[10px]">
+                            Nueva
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
+              </FormItem>
+            )}
+          />
+
+          {/* Elemento de relleno si es necesario */}
           {needsFiller && (
-                <div className="col-span-12 md:col-span-6 md:col-start-7 hidden md:block" />
+            <div className="col-span-12 md:col-span-6 md:col-start-7 hidden md:block" />
           )}
 
-
-          <div className="col-span-7 mt-8 ">
+          {/* Sección de mensajes de error */}
+          <div className="col-span-7 mt-8">
             {error && <p className="text-red-500">{error}</p>}
-            { hasErrors  &&(<p className="text-red-600 dark:text-red-400 text-sm fade-in flex gap-2">Revisa los <strong>campos marcados</strong> <span className="hidden md:block">antes de enviar el formulario.</span></p>)}
-          </div>
-        <div className="col-span-5 flex justify-end mt-8 ">
-        <Button
-        type="button"
-        variant="outline"
-        onClick={() => router.push("/dashboard/users")}
-        className="flex items-center gap-2 mr-6"
-    >
-        <ArrowLeft size={16} />
-        Volver
-    </Button>
-          <Button
-            type="submit"
-            variant="default"
-            disabled={
-                // Deshabilitar si:
-                (isEditing && !form.formState.isDirty) || // No hay cambios en modo edición
-                hasErrors || // Hay errores de validación
-                isPending // Está procesando la acción
-            }
-            className={cn(
-                hasErrors && 'opacity-50 bg-slate-500 fade-in',
-                (isEditing && !form.formState.isDirty) && 'opacity-50 cursor-not-allowed'
+            {hasErrors && (
+              <p className="text-red-600 dark:text-red-400 text-sm fade-in flex gap-2">
+                Revisa los <strong>campos marcados</strong> <span className="hidden md:block">antes de enviar el formulario.</span>
+              </p>
             )}
-          >
-            {isPending ? 'Enviando...' : isEditing ? 'Guardar Cambios' : 'Enviar Registro'}
-          </Button>
-        </div>
+          </div>
+
+          {/* Sección de botones */}
+          <div className="col-span-5 flex justify-end mt-8">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/dashboard/users")}
+              className="flex items-center gap-2 mr-6"
+            >
+              <ArrowLeft size={16} />
+              Volver
+            </Button>
+
+            <Button
+              type="submit"
+              variant="default"
+              disabled={
+                (isEditing && !isDirty) || // No hay cambios en modo edición
+                hasErrors ||               // Hay errores de validación
+                isPending                  // Está procesando la acción
+              }
+              className={cn(
+                hasErrors && 'opacity-50 bg-slate-500 fade-in',
+                (isEditing && !isDirty) && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {isPending ? 'Enviando...' : isEditing ? 'Guardar Cambios' : 'Enviar Registro'}
+            </Button>
+          </div>
+
+          {/* Componente de depuración */}
+          {process.env.NODE_ENV === 'development' && <DebugForm form={form} enabled={true} />}
         </form>
       </Form>
     </>

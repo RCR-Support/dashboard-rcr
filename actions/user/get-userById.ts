@@ -59,7 +59,8 @@ export const getUserById = async (userId: string): Promise<GetUserByIdResponse> 
                             }
                         }
                     }
-                }
+                },
+                image: true // Agregado para incluir el campo image
             }
         });
 
@@ -94,7 +95,8 @@ export const getUserById = async (userId: string): Promise<GetUserByIdResponse> 
             company: userData.company,
             roles: userData.roles,
             adminContractorId: userData.adminContractorId || null,
-            adminContractor: userData.adminContractor
+            adminContractor: userData.adminContractor,
+            image: userData.image // Agregado para incluir el campo image
         };
 
         return {

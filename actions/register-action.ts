@@ -6,75 +6,52 @@ import { registerSchema } from "@/lib/zod";
 import { z } from "zod";
 import { RoleEnum, Prisma } from "@prisma/client";
 import { EditActionInput, RegisterActionInput } from "@/interfaces/action.interface";
+import { v2 as cloudinary } from 'cloudinary';
 
-export const registerAction = async (values: RegisterActionInput | EditActionInput) => {
+// Configurar Cloudinary con las credenciales del .env
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET
+});
+
+export const registerAction = async (inputData: RegisterActionInput, formData: FormData) => {
   try {
-    // 1. Validación del schema
+    const values = inputData;
+
+    // Validación del schema
     const parsed = registerSchema.safeParse(values);
     if (!parsed.success) {
-      const errors = parsed.error.errors.map(error => ({
-        path: error.path.join('.'),
-        message: error.message
-      }));
-      // console.log('Errores de validación:', errors);
       return {
         error: "Datos inválidos",
         validationErrors: parsed.error.errors.map(error => ({
           path: error.path.join('.'),
-          message: error.message,
-          received: error.code === "invalid_type" ? error.received : undefined
+          message: error.message
         }))
       };
     }
 
     const data = parsed.data;
 
-    // 2. Verificación de duplicados
+    // Verificar si el email o run ya existe
     const userExists = await db.user.findFirst({
       where: {
         OR: [
           { email: data.email },
           { run: data.run }
         ]
-      },
-      include: { accounts: true },
+      }
     });
 
     if (userExists) {
-      if (userExists.email === data.email) {
-        const hasOAuth = userExists.accounts.some((account) => account.type === "oauth");
-        return {
-          error: hasOAuth ? "El correo ya está en uso con una cuenta OAuth" : "El correo ya está registrado",
-          field: "email"
-        };
-      }
       return {
-        error: "El RUN ya está registrado en el sistema",
-        field: "run"
+        error: "El correo o RUN ya está registrado",
+        field: userExists.email === data.email ? "email" : "run"
       };
     }
 
-    // 3. Hashear contraseña
-    const passwordHash = await bcrypt.hash(data.password, 10);
-
-    // 4. Obtener y validar roles
-    const roles = await db.role.findMany({
-      where: {
-        name: {
-          in: data.roles as RoleEnum[]
-        }
-      },
-    });
-
-    if (roles.length === 0) {
-      return {
-        error: "Los roles seleccionados no son válidos",
-        field: "roles"
-      };
-    }
-
-    // 5. Preparar datos del usuario
-    const userData: Prisma.UserCreateInput = {
+    // Preparar datos de creación
+    const createData: Prisma.UserCreateInput = {
       email: data.email,
       name: data.name,
       middleName: data.middleName,
@@ -82,78 +59,80 @@ export const registerAction = async (values: RegisterActionInput | EditActionInp
       secondLastName: data.secondLastName,
       userName: data.userName,
       displayName: `${data.name} ${data.lastName}`,
-      password: passwordHash,
       run: data.run,
       phoneNumber: data.phoneNumber,
       category: data.category,
-      isActive: true,
-      // Manejo de compañía
       company: data.companyId ? {
         connect: {
           id: Array.isArray(data.companyId) ? data.companyId[0] : data.companyId
         }
       } : undefined,
-      // Manejo de roles
       roles: {
-        create: roles.map((role) => ({
+        create: data.roles.map(role => ({
           role: {
-            connect: { id: role.id }
+            connect: { name: role as RoleEnum }
           }
         }))
-      },
-      // Manejo de adminContractor
-      ...(data.roles.includes('user') && data.adminContractorId ? {
-        adminContractor: {
-          connect: { id: data.adminContractorId }
-        }
-      } : {})
+      }
     };
 
-    // 6. Crear usuario con include actualizado
+    // Procesar la imagen si existe
+    const imageFile = formData.get('image') as File;
+    if (imageFile && imageFile.size > 0) {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(
+          base64Image,
+          {
+            folder: 'user-profiles',
+            public_id: `user-${Date.now()}`,
+            overwrite: true,
+            transformation: [
+              { width: 400, height: 400, gravity: "face", crop: "fill" }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+      });
+
+      createData.image = (uploadResult as any).secure_url;
+    }
+
+    // Crear usuario
     const newUser = await db.user.create({
-      data: userData,
+      data: createData,
       include: {
         company: true,
         roles: {
           include: {
             role: true
           }
-        },
-        adminContractor: true // Incluimos la relación con el admin
+        }
       }
     });
-    // Debug log
-    console.log('Usuario creado:', {
-      id: newUser.id,
-      roles: newUser.roles.map(r => r.role.name),
-      adminContractorId: newUser.adminContractorId
-    });
 
-    // 7. Retornar éxito
-    return { 
+    return {
       success: true,
       userId: newUser.id,
       user: {
         email: newUser.email,
         name: newUser.name,
-        roles: newUser.roles.map(r => r.role.name),
-        adminContractorId: newUser.adminContractorId // Agregamos esto para confirmar
+        image: newUser.image,
+        roles: newUser.roles.map(r => r.role.name)
       }
     };
 
   } catch (error) {
-    // console.error("Error en registro:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return { 
-          error: "Ya existe un usuario con ese correo o RUN",
-          field: error.meta?.target as string
-        };
-      }
-    }
-    return { 
+    console.error("Error en registerAction:", error);
+    return {
       error: "Error interno del servidor",
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
     };
   }
 };

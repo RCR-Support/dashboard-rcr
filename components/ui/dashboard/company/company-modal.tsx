@@ -3,10 +3,11 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Button } from "@heroui/react";
 import { useRouter } from 'next/navigation';
 import { useCompanyStore } from '@/store/ui/useCompanyStore';
-import { Phone, Globe, MapPin } from "lucide-react";
+import { Phone, Globe, MapPin, Pencil, Trash } from "lucide-react";
 import { formatPhoneNumber } from "@/lib/formatPhoneNumber";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { IoClose } from "react-icons/io5";
 
 interface CompanyModalProps {
     isOpen: boolean;
@@ -25,10 +26,6 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
             router.push(`/dashboard/companies/edit/${company.value}`);
         }
     };
-
-    console.log('company modal', company);
-    console.log('contracts modal', company?.contracts);
-    console.log('users modal', company?.users);
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="lg" backdrop='blur' scrollBehavior="inside">
             <ModalContent>
@@ -117,7 +114,7 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
                                 <div>
                                     <h4 className="font-medium mb-3 flex items-center gap-2">
                                         Contratos
-                                        <span className="text-xs bg-primary/10 px-2 py-1 rounded-full text-amber-300">
+                                        <span className="text-xs bg-primary/10 px-2 py-1 rounded-full text-amber-500 dark:text-amber-300">
                                             {company.contracts.length}
                                         </span>
                                     </h4>
@@ -133,13 +130,13 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
                                                             {contract.contractName}
                                                         </p>
                                                         <p className="text-sm text-muted-foreground">
-                                                            N° de contrato: <span className="font-semibold dark:text-amber-100">{contract.contractNumber}</span>
+                                                            N° de contrato: <span className="font-semibold text-amber-400 dark:text-amber-100">{contract.contractNumber}</span>
                                                         </p>
                                                         <p className="text-sm text-muted-foreground">
-                                                            Inicio contrato: <span className="font-semibold text-amber-100">{format(new Date(contract.initialDate), 'dd MMM yyyy', { locale: es })}</span> {' - '} Final contrato: <span className="font-semibold text-amber-100">{format(new Date(contract.finalDate), 'dd MMM yyyy', { locale: es })}</span>
+                                                            Inicio contrato: <span className="font-semibold text-amber-400 dark:text-amber-100">{format(new Date(contract.initialDate), 'dd MMM yyyy', { locale: es })}</span> {' - '} Final contrato: <span className="font-semibold text-amber-400 dark:text-amber-100">{format(new Date(contract.finalDate), 'dd MMM yyyy', { locale: es })}</span>
                                                         </p>
                                                         <p className="text-sm text-muted-foreground">
-                                                            Administrador: <span className="font-semibold text-amber-100">{contract.userAc?.displayName || 'Sin administrador'}</span>
+                                                            Administrador: <span className="font-semibold text-amber-400 dark:text-amber-100">{contract.userAc?.displayName || 'Sin administrador'}</span>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -151,29 +148,35 @@ export const CompanyModal = ({ isOpen, onClose, company }: CompanyModalProps) =>
                         )}
                     </div>
                 </ModalBody>
-                <ModalFooter>
+                <ModalFooter className="flex justify-between items-center">
                     <Button
                         color="default"
-                        className="text-default-500 hover:bg-default-100 dark:hover:bg-default-800"
+                        className="self-start text-left text-default-500 hover:bg-default-100 dark:hover:bg-default-800 dark:hover:text-neutral-800"
                         variant="flat"
                         onPress={onClose}
+                        startContent={<IoClose  className="h-4 w-4" />}
                     >
                         Cerrar
                     </Button>
+                    <div className="flex gap-4">
+
                     <Button
                         color="success"
                         variant="flat"
                         onPress={handleEdit}
-                    >
+                        startContent={<Pencil className="h-4 w-4" />}
+                        >
                         Editar
                     </Button>
                     <Button
                         color="danger"
                         variant="flat"
                         onPress={onClose}
-                    >
+                        startContent={<Trash className="h-4 w-4" />}
+                        >
                         Eliminar
                     </Button>
+                        </div>
                 </ModalFooter>
             </ModalContent>
         </Modal>

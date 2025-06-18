@@ -12,6 +12,9 @@ export default middleware((req) => {
     const isLoggedIn = !!auth?.user;
     const path = nextUrl.pathname;
 
+    // Verificar si auth.user.roles existe y es un array
+    const userRoles = auth?.user?.roles || [];
+
     // Manejo de rutas públicas
     if (publicRoutes.includes(path)) {
         if (isLoggedIn && path !== '/') {
@@ -25,11 +28,11 @@ export default middleware((req) => {
         const loginUrl = new URL('/login', nextUrl);
         loginUrl.searchParams.set('callbackUrl', path);
         return NextResponse.redirect(loginUrl);
-    }
-
-    // Verificar permisos de ruta
+    }    // Verificar permisos de ruta
     const routePermission = permissions[path];
-    if (routePermission && !routePermission.roles.some(role => auth.user.roles.includes(role))) {
+    // Utilizar userRoles para verificar los permisos
+    if (routePermission &&
+        !routePermission.roles.some(role => userRoles.includes(role))) {
         return NextResponse.redirect(new URL('/unauthorized', nextUrl));
     }
 

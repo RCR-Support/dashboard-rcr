@@ -32,7 +32,7 @@ export const baseUserSchema = z.object({
         .min(6, "El correo es requerido")
         .email("Correo electrónico inválido"),
 
-    image: z.string().optional(),
+    image: z.any().optional(), // Usamos z.any() para aceptar cualquier tipo
     run: z.string({ required_error: "El run es requerido" })
     .min(1, "El run es requerido")
     .transform(value => value.replace(/[.-]/g, '')) // Limpiamos puntos y guiones
@@ -55,8 +55,7 @@ export const baseUserSchema = z.object({
     .regex(/^\d{9}$/, "El número debe tener exactamente 9 dígitos"),
     // .transform(value => `+569${value}`),
 
-    companyId: z.string({ required_error: "La empresa en la que trabajas es requerida" })
-        .min(1, "La empresa en la que trabajas es requerida"),
+    companyId: z.string().min(1, "La empresa en la que trabajas es requerida").optional(),
         // .transform(val => val.split(",")),
     category: z.string({ required_error: "La categoria es requerida" })
         .min(2, "La categoria debe tener al menos 2 caracteres")
@@ -69,7 +68,7 @@ export const baseUserSchema = z.object({
 });
 
 
-// Schema para registro (password requerido)
+// Esquema para registro (password obligatorio)
 export const registerSchema = baseUserSchema.extend({
     password: z.string()
         .min(6, "La contraseña debe tener más de 6 caracteres")

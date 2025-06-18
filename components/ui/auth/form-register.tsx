@@ -43,7 +43,8 @@ const FormRegister = () => {
     setError(null);
     startTransition(async () => {
       try {
-        const response = await registerAction(values);
+        const formData = new FormData();
+        const response = await registerAction(values, formData);
         if (response.error) {
           setError(response.error);
         } else {

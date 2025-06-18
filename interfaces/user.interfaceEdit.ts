@@ -38,4 +38,7 @@ export interface UserEdit {
             displayName: string;
         };
     } | null;
+    // todo: Images
+    images?: FileList;
+    image?: string | null | undefined; // Ajustado para aceptar null además de undefined
 }
