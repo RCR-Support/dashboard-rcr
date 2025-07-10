@@ -20,6 +20,10 @@
 .DS_Store
 *.pem
 
+# Archivos internos de gestión de usuarios (no subir a git)
+README-CHECKLIST-USUARIOS.md
+README-RESUMEN-FRONT-USUARIOS.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*

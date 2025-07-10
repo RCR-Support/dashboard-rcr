@@ -13,7 +13,8 @@ export interface User {
     run: string;
     phoneNumber?: string | null;
     category?: string;
-    deletedLogic: boolean | null;
+    deletedLogic?: boolean | null;
+    isActive: boolean;
     password?: string | null;
     image?: string | null;
     companyId: string | null;
@@ -36,4 +37,5 @@ export interface User {
             name: string | null;
         } | null;
     }[];
+    createdAt?: string | Date;
 }

@@ -19,9 +19,7 @@ export const fetchUserData = async () => {
 
     try {
     const users = await db.user.findMany({
-        where: {
-            deletedLogic: false,
-        },
+        // No filtramos por deletedLogic para traer todos los usuarios
         orderBy: { createdAt: 'desc' },
         include: {
             company: true,  // Relación con la empresa
@@ -32,9 +30,7 @@ export const fetchUserData = async () => {
             },
             adminContractor: true,
             assignedUsers: {
-                where: {
-                    deletedLogic: false
-                },
+                // Si quieres ver todos los asignados, elimina el filtro aquí también
                 include: {
                     company: true
                 }

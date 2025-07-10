@@ -1,4 +1,15 @@
 import React, { useCallback, useMemo, useState, ReactNode } from "react";
+import Swal from "sweetalert2";
+// Utilidad para actualizar usuario
+async function updateUserField(id: string, field: "isActive" | "deletedLogic", value: boolean) {
+  const res = await fetch("/api/users", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, [field]: value }),
+  });
+  if (!res.ok) throw new Error("Error al actualizar usuario");
+  return res.json();
+}
 import {
   Table,
   TableHeader,
@@ -44,13 +55,20 @@ export const columns = [
   { name: "EMPRESA", uid: "companyName", sortable: true },
   { name: "Fono", uid: "phoneNumber" },
   { name: "CORREO", uid: "email" },
+  { name: "FECHA CREACIÓN", uid: "createdAt", sortable: true },
   { name: "ESTADO", uid: "status"},
+  { name: "ACTIVO", uid: "isActiveStatus"},
   { name: "ACCIONES", uid: "actions" },
 ];
 
 export const deletedLogicOptions = [
   { name: "Activo", uid: false },
-  { name: "Eleminado", uid: true },
+  { name: "Eliminado", uid: true },
+];
+
+export const isActiveOptions = [
+  { name: "Habilitado", uid: true },
+  { name: "Pendiente", uid: false },
 ];
 
 export function capitalize(s: string) {
@@ -90,7 +108,16 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
   vacation: "warning",
 };
 
-const INITIAL_VISIBLE_COLUMNS = ["name","run","role", "status", "actions"];
+const INITIAL_VISIBLE_COLUMNS = ["name","run","role", "status", "isActiveStatus", "actions"];
+function formatShortDate(dateString: string | Date | undefined) {
+  if (!dateString) return "-";
+  const date = typeof dateString === "string" ? new Date(dateString) : dateString;
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}-${month}-${year}`;
+}
 
 interface RoleMapping {
   [key: string]: string;
@@ -112,7 +139,9 @@ export default function App({ users }: Props) {
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [statusFilter, setStatusFilter] = useState<Selection>("all");
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const [isActiveFilter, setIsActiveFilter] = useState<Selection>("all");
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "run",
     direction: "ascending",
@@ -146,9 +175,14 @@ export default function App({ users }: Props) {
         Array.from(statusFilter).includes(String(user.deletedLogic)),
       );
     }
+    if (isActiveFilter !== "all" && Array.from(isActiveFilter).length !== isActiveOptions.length) {
+      filteredUsers = filteredUsers.filter((user) =>
+        Array.from(isActiveFilter).includes(String(user.isActive)),
+      );
+    }
 
     return filteredUsers;
-  }, [users, filterValue, statusFilter, hasSearchFilter]);
+  }, [users, filterValue, statusFilter, isActiveFilter, hasSearchFilter]);
 
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -159,22 +193,70 @@ export default function App({ users }: Props) {
 
   const sortedItems = useMemo(() => {
     return [...items].sort((a: User, b: User) => {
-      const first = a[sortDescriptor.column as keyof User];
-      const second = b[sortDescriptor.column as keyof User];
+      let first = a[sortDescriptor.column as keyof User];
+      let second = b[sortDescriptor.column as keyof User];
+
+      // Ordenar por fecha real si la columna es createdAt
+      if (sortDescriptor.column === "createdAt") {
+        const dateA = first ? new Date(first as string) : new Date(0);
+        const dateB = second ? new Date(second as string) : new Date(0);
+        const cmp = dateA.getTime() - dateB.getTime();
+        return sortDescriptor.direction === "descending" ? -cmp : cmp;
+      }
+
       // Convertimos los valores a cadenas para evitar errores de comparación
       const firstValue = first === undefined || first === null ? "" : String(first);
       const secondValue = second === undefined || second === null ? "" : String(second);
       const cmp = firstValue < secondValue ? -1 : firstValue > secondValue ? 1 : 0;
-
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell: (user: User, columnKey: React.Key) => React.ReactNode = useCallback((user, columnKey) => {
-  if (!user) return null;
-  const cellValue = user[columnKey as keyof User];
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [localUsers, setLocalUsers] = useState<User[]>(users);
+  const [loadingField, setLoadingField] = useState<{id: string, field: string} | null>(null);
 
-  switch (columnKey) {
+  // Sincroniza localUsers si cambia la prop users
+  React.useEffect(() => { setLocalUsers(users); }, [users]);
+
+  const handleChangeField = async (user: User, field: "isActive" | "deletedLogic") => {
+    const currentValue = user[field];
+    const label = field === "isActive" ? (currentValue ? "deshabilitar" : "habilitar") : (currentValue ? "activar" : "eliminar lógicamente");
+    const confirmText = `¿Desea ${label} el usuario?`;
+    const result = await Swal.fire({
+      title: confirmText,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí",
+      cancelButtonText: "No",
+      showClass: {
+        popup: 'swal2-show swal2-animate-fade-in'
+      },
+      hideClass: {
+        popup: 'swal2-hide swal2-animate-fade-out'
+      }
+    });
+    if (result.isConfirmed) {
+      setUpdatingId(user.id);
+      setLoadingField({id: user.id, field});
+      try {
+        await updateUserField(user.id, field, !currentValue);
+        setLocalUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, [field]: !currentValue } : u));
+        Swal.fire("Actualizado", "El usuario fue actualizado", "success");
+      } catch {
+        Swal.fire("Error", "No se pudo actualizar el usuario", "error");
+      } finally {
+        setUpdatingId(null);
+        setLoadingField(null);
+      }
+    }
+  };
+
+  const renderCell: (user: User, columnKey: React.Key) => React.ReactNode = useCallback((user, columnKey) => {
+    if (!user) return null;
+    const cellValue = user[columnKey as keyof User];
+
+    switch (columnKey) {
     case "name":
       return (
         <div className="flex items-center py-2 gap-2">
@@ -221,14 +303,44 @@ export default function App({ users }: Props) {
           </p>
         </div>
       );
-    case "status":
-      const statusText = user.deletedLogic ? "Eliminado" : "Activo"; // Ajusta los textos según necesidad
-      const chipColor = user.deletedLogic ? "danger" : "success";
+    case "createdAt":
       return (
-        <Chip className="capitalize" color={chipColor} size="sm" variant="flat">
-          {statusText}
-        </Chip>
+        <span>{formatShortDate(user.createdAt)}</span>
       );
+    case "status": {
+      const statusText = user.deletedLogic ? "Eliminado" : "Activo";
+      const chipColor = user.deletedLogic ? "danger" : "success";
+      const isLoading = loadingField && loadingField.id === user.id && loadingField.field === "deletedLogic";
+      return (
+        <button
+          className="focus:outline-none"
+          disabled={updatingId === user.id}
+          onClick={() => handleChangeField(user, "deletedLogic")}
+        >
+          <Chip className={`capitalize cursor-pointer flex items-center gap-1`} color={chipColor} size="sm" variant="flat">
+            {statusText}
+            {isLoading && <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />}
+          </Chip>
+        </button>
+      );
+    }
+    case "isActiveStatus": {
+      const isActiveText = user.isActive ? "Habilitado" : "Pendiente";
+      const isActiveColor = user.isActive ? "success" : "warning";
+      const isLoading = loadingField && loadingField.id === user.id && loadingField.field === "isActive";
+      return (
+        <button
+          className="focus:outline-none"
+          disabled={updatingId === user.id}
+          onClick={() => handleChangeField(user, "isActive")}
+        >
+          <Chip className={`capitalize cursor-pointer flex items-center gap-1`} color={isActiveColor} size="sm" variant="flat">
+            {isActiveText}
+            {isLoading && <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />}
+          </Chip>
+        </button>
+      );
+    }
     case "actions":
       return (
         <div className="relative flex justify-end items-center gap-2">
@@ -310,13 +422,38 @@ export default function App({ users }: Props) {
                 </DropdownTrigger>
                 <DropdownMenu
                   disallowEmptySelection
-                  aria-label="Table Columns"
+                  aria-label="Status"
                   closeOnSelect={false}
                   selectedKeys={statusFilter}
                   selectionMode="multiple"
                   onSelectionChange={setStatusFilter}
                 >
                   {deletedLogicOptions.map((status) => (
+                    <DropdownItem key={String(status.uid)} className="capitalize">
+                      {capitalize(status.name)}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+              <Dropdown>
+                <DropdownTrigger className="hidden sm:flex">
+                  <Button
+                    endContent={<HiMiniChevronDown className="text-small" />}
+                    size="sm"
+                    variant="flat"
+                  >
+                    Activo
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  disallowEmptySelection
+                  aria-label="Activo"
+                  closeOnSelect={false}
+                  selectedKeys={isActiveFilter}
+                  selectionMode="multiple"
+                  onSelectionChange={setIsActiveFilter}
+                >
+                  {isActiveOptions.map((status) => (
                     <DropdownItem key={String(status.uid)} className="capitalize">
                       {capitalize(status.name)}
                     </DropdownItem>
@@ -375,7 +512,7 @@ export default function App({ users }: Props) {
         </div>
       </div>
     );
-  }, [filterValue, statusFilter, visibleColumns, onSearchChange, onRowsPerPageChange, rowsPerPage, users.length]);
+  }, [filterValue, statusFilter, isActiveFilter, visibleColumns, onSearchChange, onRowsPerPageChange, rowsPerPage, users.length]);
 
 
   const bottomContent = useMemo(() => {
@@ -441,7 +578,7 @@ export default function App({ users }: Props) {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"NO SE ENCONTRARON RESULTADOS"} items={sortedItems}>
+        <TableBody emptyContent={"NO SE ENCONTRARON RESULTADOS"} items={sortedItems.map(u => localUsers.find(lu => lu.id === u.id) || u)}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
