@@ -84,7 +84,7 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
       companyId: initialData?.companyId || undefined,
       category: "No definido",
       phoneNumber: initialData?.phoneNumber || "",
-      image: initialData?.image || initialData?.images || undefined, // Aseguramos que se incluya el campo images
+      image: undefined, // Aseguramos que images sea undefined inicialmente
     },
   });
 
@@ -155,20 +155,18 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
         Object.keys(valuesForValidation).forEach(key => {
           const value = valuesForValidation[key as keyof typeof valuesForValidation];
           if (value !== undefined && value !== null) {
-            // Convertir arrays a string para FormData
+            // Convertir arrays a string JSON para FormData
             if (Array.isArray(value)) {
-              formData.append(key, JSON.stringify(value)); // Enviar el arreglo completo como JSON
+              formData.append(key, JSON.stringify(value));
             } else {
               formData.append(key, String(value));
             }
           }
         });
 
-        // Asegurar que la propiedad `image` sea serializable antes de enviarla
+        // Agregar el archivo si existe
         if (selectedFile) {
           formData.append('image', selectedFile);
-        } else {
-          formData.append('image', ''); // Enviar una cadena vacía si no hay archivo
         }
 
         // Mostrar los valores que se están enviando en la consola (ayuda para depuración)
@@ -181,7 +179,7 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
 
         if (isEditing && initialData?.id) {
           // Para edición, aseguramos que solo enviamos la contraseña si está presente y no está vacía
-          if (!values.password || values.password.trim() === "") {
+          if (!values.password || (typeof values.password === "string" && values.password.trim() === "")) {
             formData.delete('password'); // Eliminamos el campo si está vacío para mantener la contraseña actual
           }
           actionResponse = await editAction(initialData.id, formData);
@@ -215,18 +213,6 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
             phoneNumber: valuesForValidation.phoneNumber
           };
 
-          // Combinar registerInputData y formData en un único objeto FormData
-          const combinedFormData = new FormData();
-
-          Object.entries(registerInputData).forEach(([key, value]) => {
-            combinedFormData.append(key, value);
-          });
-
-          formData.forEach((value, key) => {
-            combinedFormData.append(key, value);
-          });
-
-          // Actualizar la llamada a registerAction
           actionResponse = await registerAction(registerInputData, formData);
         }
 
@@ -293,24 +279,15 @@ const FormRegister = ({ initialData, isEditing = false }: FormRegisterProps) => 
 
   // Cargar la imagen existente cuando estamos en modo edición
   useEffect(() => {
-    console.log("Datos iniciales recibidos:", initialData);
+    console.log("Datos iniciales:", initialData);
 
     if (isEditing && initialData?.id) {
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        if (!cloudName) {
-            console.error("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME no está configurado en el entorno.");
-            setSelectedImage("/placeholder-user.png");
-            return;
-        }
-
-        console.log("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
-
         const cloudinaryUrl = getCldImageUrl({
             src: `user-profiles/user-${initialData.id}.jpg`,
             width: 300,
             height: 300,
         });
-        console.log("URL generada para Cloudinary:", cloudinaryUrl);
+        console.log("Intentando cargar imagen desde:", cloudinaryUrl);
         setSelectedImage(cloudinaryUrl);
     } else {
         setSelectedImage("/placeholder-user.png");

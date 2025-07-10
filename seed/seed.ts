@@ -48,7 +48,7 @@ export const initialData: SeedData = {
             category: 'Category1',
             deletedLogic: false,
             password: bcryptjs.hashSync('uno1dos2', 10),
-            image: 'path/to/image1.jpg',
+            image: '',
             roles: ['admin', 'sheq', 'adminContractor', 'user', 'credential'],
             companyId: 'cm91fqt6e0005vdos3xd0cj8w', // Se establecerá más adelante
         },
@@ -65,7 +65,7 @@ export const initialData: SeedData = {
             category: 'Category1',
             deletedLogic: false,
             password: bcryptjs.hashSync('123456', 10),
-            image: 'path/to/image1.jpg',
+            image: '',
             roles: ['admin', 'sheq'],
             companyId: 'cm91fqt6e0005vdos3xd0cj8w', // Se establecerá más adelante
         },
@@ -82,7 +82,7 @@ export const initialData: SeedData = {
             category: 'Category2',
             deletedLogic: false,
             password: bcryptjs.hashSync('123456', 10),
-            image: 'path/to/image2.jpg',
+            image: '',
             roles: ['sheq'],
             companyId: 'cm91fqt6e0005vdos3xd0cj8w', // Se establecerá más adelante
         },
@@ -99,7 +99,7 @@ export const initialData: SeedData = {
             category: 'Category3',
             deletedLogic: false,
             password: bcryptjs.hashSync('123456', 10),
-            image: 'path/to/image3.jpg',
+            image: '',
             roles: ['adminContractor'],
             companyId: 'cm91fqt6e0005vdos3xd0cj8w', // Se establecerá más adelante
         },
@@ -116,7 +116,7 @@ export const initialData: SeedData = {
             category: 'Category4',
             deletedLogic: false,
             password: bcryptjs.hashSync('123456', 10),
-            image: 'path/to/image4.jpg',
+            image: '',
             roles: ['user'],
             companyId: 'cm91fqt6e0005vdos3xd0cj8w', // Se establecerá más adelante
         },
@@ -133,7 +133,7 @@ export const initialData: SeedData = {
             category: 'Category5',
             deletedLogic: false,
             password: bcryptjs.hashSync('123456', 10),
-            image: 'path/to/image5.jpg',
+            image: '',
             roles: ['credential'],
             companyId: 'cm91fqt6e0005vdos3xd0cj8w', // Se establecerá más adelante
         }
@@ -155,75 +155,3 @@ export const initialData: SeedData = {
         { name: 'FAM América Latina Maquinarias Ltda.', rut: '776837903', phone: '988777663' },
     ]
 };
-
-// async function main() {
-//     console.log('Seeding database...');
-
-//     // Eliminar datos existentes
-//     await db.userRole.deleteMany({});
-//     await db.user.deleteMany({});
-//     await db.company.deleteMany({});
-
-//     // Crear empresas y obtener sus IDs
-//     const companies = await Promise.all(
-//         initialData.companies.map(company =>
-//             db.company.create({
-//                 data: company,
-//             })
-//         )
-//     );
-
-//     // Crear usuarios y asignar roles
-//     for (const user of initialData.users) {
-//         const company = companies.find(c => c.name === 'RCR-Support'); // Ajusta esto según tus necesidades
-//         if (company) {
-//             user.companyId = company.id;
-//         }
-
-//         const createdUser = await db.user.create({
-//             data: {
-//                 name: user.name,
-//                 middleName: user.middleName,
-//                 lastName: user.lastName,
-//                 secondLastName: user.secondLastName,
-//                 userName: user.userName,
-//                 displayName: user.displayName,
-//                 email: user.email,
-//                 run: user.run,
-//                 phoneNumber: user.phoneNumber,
-//                 category: user.category,
-//                 deletedLogic: user.deletedLogic,
-//                 password: user.password,
-//                 image: user.image,
-//                 companyId: user.companyId,
-//             },
-//         });
-
-//         // Asignar roles al usuario
-//         for (const role of user.roles) {
-//             const roleRecord = await db.role.findUnique({
-//                 where: { name: role },
-//             });
-
-//             if (roleRecord) {
-//                 await db.userRole.create({
-//                     data: {
-//                         userId: createdUser.id,
-//                         roleId: roleRecord.id,
-//                     },
-//                 });
-//             }
-//         }
-//     }
-
-//     console.log('Database seeded successfully.');
-// }
-
-// main()
-//     .catch((e) => {
-//         console.error('Error al ejecutar el seed:', e);
-//         process.exit(1);
-//     })
-//     .finally(async () => {
-//         await db.$disconnect();
-//     });

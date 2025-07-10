@@ -12,18 +12,21 @@ export const loginSchema = z.object({
 
 export const baseUserSchema = z.object({
     name: z.string({ required_error: "El nombre es requerido" })
-        .regex(/^([a-zA-Z]+)$/, "El nombre debe ser un solo nombre")
+        .regex(/^([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)$/, "El nombre debe ser un solo nombre")
         .min(2, "El nombre debe tener al menos 2 caracteres")
         .max(32, "El nombre debe tener menos de 32 caracteres"),
     lastName: z.string({ required_error: "El apellido es requerido" })
+        .regex(/^([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)$/, "El apellido debe ser un solo apellido")
         .min(2, "El apellido debe tener al menos 2 caracteres")
         .max(32, "El apellido debe tener menos de 32 caracteres"),
     middleName: z.string()
         .max(32, "El segundo nombre debe tener menos de 32 caracteres")
+        .regex(/^([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]*)$/, "El segundo nombre solo puede contener letras" )
         .refine((value) => value === "" || value.length >= 2, "El segundo nombre debe tener al menos 2 caracteres")
         .optional(),
     secondLastName: z.string()
         .max(32, "El segundo apellido debe tener menos de 32 caracteres")
+        .regex(/^([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]*)$/, "El segundo apellido solo puede contener letras" )
         .refine((value) => value === "" || value.length >= 2, "El segundo apellido debe tener al menos 2 caracteres")
         .optional(),
     userName: z.string({ required_error: "El nombre de usuario es requerido" })

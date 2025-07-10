@@ -25,8 +25,12 @@ export const editAction = async (userId: string, formData: FormData) => {
     // Convertir FormData a un objeto para validación
     formData.forEach((value, key) => {
       if (key === 'roles') {
-        // Los roles vienen como un string de un array en FormData, necesitamos convertirlos
-        values[key] = typeof value === 'string' ? [value] : value;
+        // Los roles deben venir como string JSON, intentar parsear
+        try {
+          values[key] = typeof value === 'string' ? JSON.parse(value) : value;
+        } catch (e) {
+          values[key] = Array.isArray(value) ? value : [value];
+        }
       } else if (key === 'adminContractorId' || key === 'companyId') {
         // Manejar IDs que son opcionales
         values[key] = value === 'undefined' ? undefined : value;

@@ -32,7 +32,7 @@ export function DatePicker({ date, setDate, placeholder, className }: DatePicker
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <CalendarIcon className="mr-2 h-4 w-4 bg-red-300" />
           {date ? format(date, "PPP", { locale: es }) : placeholder || "Seleccionar fecha"}
         </Button>
       </PopoverTrigger>
@@ -46,6 +46,7 @@ export function DatePicker({ date, setDate, placeholder, className }: DatePicker
           }}
           initialFocus
           locale={es}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-lg"
         />
       </PopoverContent>
     </Popover>

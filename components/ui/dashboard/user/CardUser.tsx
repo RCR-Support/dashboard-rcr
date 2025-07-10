@@ -126,7 +126,7 @@ export const CardUser = ({ users }: Props) => {
                 {sortedUsers.map((user) => (
                     <button key={user.id} onClick={() => openModal(user)} className="col-span-6 md:col-span-6 xl:col-span-3 card-box">
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                            <Avatar {...stringAvatar(user.displayName.toUpperCase())} src={user.image || "/path/to/image1.jpg"} sx={{ width: 56, height: 56 }} className={user.image ? 'bg-white' : 'bg-[#03c9d7] dark:bg-[#327f84]'} />
+                            <Avatar {...stringAvatar(user.displayName.toUpperCase())} src={user.image || ""} sx={{ width: 56, height: 56 }} className={user.image ? 'bg-white' : 'bg-[#03c9d7] dark:bg-[#327f84]'} />
                             <div className='flex flex-col'>
                                 <div className="font-semibold truncate text-ellipsis max-w-36 xl:max-w-44">
                                     {user.userName}

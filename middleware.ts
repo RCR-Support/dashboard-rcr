@@ -5,7 +5,7 @@ import { permissions } from "@/config/permissions";
 
 const { auth: middleware } = NextAuth(authConfig);
 
-const publicRoutes = ['/', '/login', '/register'];
+const publicRoutes = ['/', '/login', '/register', '/pre-register'];
 
 export default middleware((req) => {
     const { nextUrl, auth } = req;
