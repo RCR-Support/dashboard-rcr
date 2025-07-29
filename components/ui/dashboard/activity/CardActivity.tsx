@@ -67,16 +67,16 @@ export const CardActivity = ({ activities }: Props) => {
     return (
         <>
             {/* Barra de búsqueda y controles */}
-            <div className="col-span-12 flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
+            <div className="card-box col-span-12 flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
                 <div className="relative w-full sm:w-96">
                     <Input
                         type="text"
-                        placeholder="Buscar actividades..."
+                        placeholder="Buscar actividades... "
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 py-2 w-full"
+                        className="w-full"
                     />
-                    <CiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <CiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 </div>
                 <Button
                     onClick={() => setIsAscending(!isAscending)}
@@ -100,7 +100,7 @@ export const CardActivity = ({ activities }: Props) => {
             <div className="col-span-12">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {sortedActivities.map((activity) => (
-                        <div key={activity.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden flex flex-col relative h-[260px]">
+                        <div key={activity.id} className="bg-white dark:bg-[#282c34] rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden flex flex-col relative h-[260px]">
                             <div className="w-full h-48 relative overflow-hidden">
                                 {activity.imageUrl ? (
                                     <>
@@ -131,7 +131,7 @@ export const CardActivity = ({ activities }: Props) => {
                                             </span>
                                         )}
                                         {activity.requiredDocumentations && activity.requiredDocumentations.length > 0 && (
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100/90 dark:bg-amber-900/70 text-xs font-medium text-amber-800 dark:text-amber-200 backdrop-blur-sm">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100/90 dark:bg-amber-900 text-xs font-medium text-amber-800 dark:text-amber-400 backdrop-blur-sm">
                                                 <span className="h-2 w-2 rounded-full bg-amber-500 mr-1.5"></span>
                                                 Documentos
                                             </span>

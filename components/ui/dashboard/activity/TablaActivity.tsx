@@ -159,52 +159,52 @@ export const TablaActivity = ({ activities }: Props) => {
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-700 divide-y divide-gray-200 dark:divide-gray-800">
+                    <tbody className="bg-white dark:bg-[#282c34] divide-y divide-gray-200 dark:divide-gray-700">
                         {sortedActivities.length > 0 ? (
                             sortedActivities.map((activity) => (
                                 <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-2  whitespace-nowrap">
                                         {activity.imageUrl ? (
                                             <Image
                                                 src={activity.imageUrl}
                                                 alt={activity.name}
-                                                width={40}
+                                                width={80}
                                                 height={40}
                                                 className="rounded bg-slate-300"
                                             />
                                         ) : (
-                                            <div className="w-10 h-10 rounded bg-slate-200 flex items-center justify-center">
+                                            <div className="w-20 h-10 rounded bg-slate-200 flex items-center justify-center">
                                                 <span className="text-xs text-slate-500">N/A</span>
                                             </div>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 whitespace-nowrap">
                                         {activity.name}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-2 whitespace-nowrap">
                                         {activity.requiredDriverLicense ? (
                                             <div className="flex flex-wrap gap-1">
                                                 {activity.requiredDriverLicense.split(',').map((license, index) => (
                                                     <span 
                                                         key={index} 
-                                                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                                                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
                                                     >
                                                         {license.trim().toUpperCase()}
                                                     </span>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                                                 NO REQUIERE LICENCIA
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-2">
                                         {activity.requiredDocumentations && activity.requiredDocumentations.length > 0 ? (
                                             <div className="flex flex-col space-y-2 max-h-20 overflow-y-auto">
                                                 {activity.requiredDocumentations.map((doc) => (
                                                     <div key={doc.id} className="text-sm group relative">
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                                                             {doc.documentation.name}
                                                         </span>
                                                         {doc.notes && (
@@ -229,7 +229,7 @@ export const TablaActivity = ({ activities }: Props) => {
                                             <span className="text-sm text-gray-500 dark:text-gray-400">No hay documentación requerida</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-2 whitespace-nowrap">
                                         <ActivityActions activityId={activity.id} activityName={activity.name} />
                                     </td>
                                 </tr>
