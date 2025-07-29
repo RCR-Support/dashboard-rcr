@@ -34,5 +34,22 @@ export const permissions: PermissionsMapping = {
         ],
         description: 'Gestión de empresas'
     },
+    '/dashboard/activities': {
+        roles: [
+            RoleEnum.admin,
+            RoleEnum.user,
+            RoleEnum.sheq,
+            RoleEnum.adminContractor
+        ],
+        description: 'Gestión de actividades'
+    },
+    '/dashboard/activities/createActivity': {
+        roles: [RoleEnum.admin],
+        description: 'Crear actividad'
+    },
+    '/dashboard/activities/edit': {
+        roles: [RoleEnum.admin],
+        description: 'Editar actividad'
+    },
 
 };

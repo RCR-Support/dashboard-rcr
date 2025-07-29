@@ -1,11 +1,49 @@
+// --- NUEVAS TABLAS DE ACREDITACIÓN ---
+datasource db {
+  provider = "postgresql" // Cambia a tu motor si usas otro (mysql, sqlite, etc)
+  url      = env("DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+model Activity {
+  id                     String                  @id @default(cuid())
+  name                   String                  @unique
+  imageUrl               String?
+  requiredDriverLicense  String?
+  applications           application[]           @relation("ActivityApplications")
+  requiredDocumentations ActivityDocumentation[]
+  documentationFiles     DocumentationFile[]
+}
+
+model Documentation {
+  id                 String                  @id @default(cuid())
+  name               String                  @unique
+  isGlobal           Boolean                 @default(false)
+  activities         ActivityDocumentation[]
+  documentationFiles DocumentationFile[]
+}
+
+model ActivityDocumentation {
+  id              String        @id @default(cuid())
+  activityId      String
+  documentationId String
+  quantity        Int // cantidad requerida para la actividad
+  isSpecific      Boolean       @default(false) // Si la documentación es específica para la actividad
+  notes           String? // Observaciones, requisitos adicionales, vigencia, etc.
+  activity        Activity      @relation(fields: [activityId], references: [id])
+  documentation   Documentation @relation(fields: [documentationId], references: [id])
+
+  @@unique([activityId, documentationId])
+  @@index([activityId, documentationId])
+}
+
+model Zone {
+  id           String        @id @default(cuid())
+  name         String
+  applications application[] @relation("ZoneApplications")
 }
 
 model Company {
@@ -80,39 +118,44 @@ model User {
   previousReassignments ReassignmentLog[] @relation("PreviousAC")
   newReassignments      ReassignmentLog[] @relation("NewAC")
 
-  reassignmentsOwned ReassignmentLog[] @relation("ReassignmentOwner")
+  reassignmentsOwned ReassignmentLog[]  @relation("ReassignmentOwner")
   // Relaciones con adminContractor
   adminContractorId  String?
-  adminContractor    User?             @relation("UserToAdminContractor", fields: [adminContractorId], references: [id])
-  assignedUsers      User[]            @relation("UserToAdminContractor")
+  adminContractor    User?              @relation("UserToAdminContractor", fields: [adminContractorId], references: [id])
+  assignedUsers      User[]             @relation("UserToAdminContractor")
+  applicationAudits  ApplicationAudit[] @relation("UserApplicationAudits")
 }
 
 model application {
-  id                String    @id @default(cuid())
-  status            Status    @default(primeraVez)
-  workerName        String
-  workerPaternal    String
-  workerMaternal    String
-  workerRun         String
-  displayWorkerName String
-  license           License?
-  licenseExpiration DateTime?
-  stateAc           StateAc
-  stateSheq         StateSheq
-  companyId         String?
-  userId            String?
-  contractId        String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  userAcId          String?
-  userSheqId        String?
-  lastReviewedAt    DateTime?
-  reviewDeadline    DateTime?
-  company           Company?  @relation(fields: [companyId], references: [id])
-  contract          Contract? @relation(fields: [contractId], references: [id])
-  userAc            User?     @relation("AdminContractorApplications", fields: [userAcId], references: [id])
-  user              User?     @relation("UserApplications", fields: [userId], references: [id])
-  userSheq          User?     @relation("SheqApplications", fields: [userSheqId], references: [id])
+  id                 String              @id @default(cuid())
+  status             Status              @default(primeraVez)
+  workerName         String
+  workerPaternal     String
+  workerMaternal     String
+  workerRun          String
+  displayWorkerName  String
+  license            License?
+  licenseExpiration  DateTime?
+  stateAc            StateAc
+  stateSheq          StateSheq
+  companyId          String?
+  userId             String?
+  contractId         String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  userAcId           String?
+  userSheqId         String?
+  lastReviewedAt     DateTime?
+  reviewDeadline     DateTime?
+  company            Company?            @relation(fields: [companyId], references: [id])
+  contract           Contract?           @relation(fields: [contractId], references: [id])
+  userAc             User?               @relation("AdminContractorApplications", fields: [userAcId], references: [id])
+  user               User?               @relation("UserApplications", fields: [userId], references: [id])
+  userSheq           User?               @relation("SheqApplications", fields: [userSheqId], references: [id])
+  activities         Activity[]          @relation("ActivityApplications")
+  zones              Zone[]              @relation("ZoneApplications")
+  documentationFiles DocumentationFile[]
+  audits             ApplicationAudit[]
 }
 
 model Role {
@@ -222,4 +265,48 @@ enum StateSheq {
   aprobado
   pendiente
   rechazado
+}
+
+// Archivos/documentos subidos para la solicitud y sus actividades/documentaciones
+model DocumentationFile {
+  id              String         @id @default(cuid())
+  applicationId   String
+  activityId      String?
+  documentationId String?
+  url             String // URL del archivo subido
+  type            FileType // Tipo de archivo (PDF, IMG, etc)
+  uploadedAt      DateTime       @default(now())
+  application     application    @relation(fields: [applicationId], references: [id])
+  activity        Activity?      @relation(fields: [activityId], references: [id])
+  documentation   Documentation? @relation(fields: [documentationId], references: [id])
+
+  @@index([applicationId, activityId, documentationId])
+}
+
+// Auditoría de acciones sobre la solicitud
+model ApplicationAudit {
+  id            String      @id @default(cuid())
+  applicationId String
+  action        AuditAction
+  changedById   String
+  changedAt     DateTime    @default(now())
+  details       String?
+  application   application @relation(fields: [applicationId], references: [id])
+  changedBy     User        @relation("UserApplicationAudits", fields: [changedById], references: [id])
+}
+
+enum FileType {
+  PDF
+  IMG
+  DOC
+  OTHER
+}
+
+enum AuditAction {
+  CREACION
+  EDICION
+  APROBACION
+  RECHAZO
+  OBSERVACION
+  ELIMINACION
 }

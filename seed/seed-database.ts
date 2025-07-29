@@ -1,14 +1,56 @@
 import { initialData } from "./seed";
 import { db } from "../lib/db";
 import { RoleEnum } from "@prisma/client"; // Importa RoleEnum de Prisma
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+async function runOtherSeeds() {
+    try {
+        // Ejecutar otros scripts de semilla
+        console.log('Ejecutando seed para actividades y documentaciones...');
+        await execAsync('npx ts-node seed/seed-activities-documentations.ts');
+        
+        console.log('Ejecutando seed para relaciones actividad-documentación...');
+        await execAsync('npx ts-node seed/seed-activity-documentation-relations.ts');
+        
+        console.log('Ejecutando seed para licencias de conducir...');
+        await execAsync('npx ts-node seed/seed-driver-licenses.ts');
+    } catch (error) {
+        console.error('Error al ejecutar scripts de semilla adicionales:', error);
+    }
+}
+
 async function main() {
     console.log('Seeding database...');
 
-    // Eliminar datos existentes
-    await db.userRole.deleteMany({});
-    await db.user.deleteMany({});
-    await db.company.deleteMany({});
-    await db.role.deleteMany({}); // Asegúrate de eliminar los roles existentes
+    // Eliminar datos existentes en orden para evitar violaciones de clave foránea
+    try {
+        // Primero eliminar las tablas que tienen referencias a user, company, etc.
+        await db.contract.deleteMany({});
+        await db.userRole.deleteMany({});
+        await db.notification.deleteMany({});
+        await db.applicationAudit.deleteMany({});
+        await db.documentationFile.deleteMany({});
+        await db.application.deleteMany({});
+        await db.reassignmentLog.deleteMany({});
+        await db.activityDocumentation.deleteMany({});
+        await db.documentation.deleteMany({});
+        await db.activity.deleteMany({});
+        
+        // Ahora podemos eliminar usuarios y compañías
+        await db.user.deleteMany({});
+        await db.company.deleteMany({});
+        await db.role.deleteMany({});
+        await db.account.deleteMany({});
+        await db.verificationToken.deleteMany({});
+        
+        console.log('Datos anteriores eliminados correctamente.');
+    } catch (error) {
+        console.error('Error al eliminar datos existentes:', error);
+        throw error;
+    }
 
     // Crear roles
     const roles: RoleEnum[] = [RoleEnum.admin, RoleEnum.sheq, RoleEnum.adminContractor, RoleEnum.user, RoleEnum.credential];
@@ -88,6 +130,11 @@ async function main() {
         }
     }
 
+    console.log('Database seeded with users, roles and companies.');
+    
+    // Ejecutar otros scripts de semilla
+    await runOtherSeeds();
+    
     console.log('Database seeded successfully.');
 }
 

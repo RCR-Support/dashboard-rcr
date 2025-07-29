@@ -29,7 +29,17 @@ export default middleware((req) => {
         loginUrl.searchParams.set('callbackUrl', path);
         return NextResponse.redirect(loginUrl);
     }    // Verificar permisos de ruta
-    const routePermission = permissions[path];
+    let routePermission = permissions[path];
+    
+    // Manejar rutas dinámicas como /dashboard/activities/edit/[id]
+    if (!routePermission) {
+        // Comprobar rutas dinámicas de actividades
+        if (path.startsWith('/dashboard/activities/edit/')) {
+            routePermission = permissions['/dashboard/activities/edit'];
+        }
+        // Agregar otras rutas dinámicas aquí si es necesario
+    }
+    
     // Utilizar userRoles para verificar los permisos
     if (routePermission &&
         !routePermission.roles.some(role => userRoles.includes(role))) {

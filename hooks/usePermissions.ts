@@ -4,7 +4,7 @@ import { permissions } from "@/config/permissions";
 import { useRoleStore } from "@/store/ui/roleStore";
 
 export const usePermissions = () => {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const selectedRole = useRoleStore((state) => state.selectedRole);
 
     const hasPermission = (path: string) => {

@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     webpack: (config, { dev, isServer }) => {
-        config.optimization.minimize = false;
+        // Solo desactivar la minificación en desarrollo
+        if (dev) {
+            config.optimization.minimize = false;
+        }
         return config;
     },
 

@@ -4,16 +4,32 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FaAddressCard } from "react-icons/fa6";
 import { PiUserListFill } from "react-icons/pi";
 import { Tooltip } from "@heroui/tooltip";
-import { CardUser } from "@/components/ui/dashboard/user/CardUser";
-import { TablaUser } from "@/components/ui/dashboard/user/TablaUser";
+import { CardActivity } from "@/components/ui/dashboard/activity/CardActivity";
+import { TablaActivity } from "@/components/ui/dashboard/activity/TablaActivity";
 
-import type { User } from "@/interfaces";
-interface Props {
-    users: User[];
+// Definimos la interfaz Activity basada en el uso actual
+interface Activity {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    requiredDriverLicense: string | null;
+    requiredDocumentations?: {
+        id: string;
+        documentation: {
+            id: string;
+            name: string;
+        };
+        notes?: string | null;
+    }[];
 }
-export default function UsersView({ users }: Props) {
+
+interface Props {
+    activities: Activity[];
+}
+
+export default function ActivitiesView({ activities }: Props) {
     const searchParams = useSearchParams();
-    const view = searchParams?.get("view") || "cards"; // cards por defecto - usamos ?. para manejar el caso null
+    const view = searchParams?.get("view") || "cards"; // cards por defecto
     const router = useRouter();
 
     const toggleView = (newView: "cards" | "table") => {
@@ -29,15 +45,15 @@ export default function UsersView({ users }: Props) {
         `}>
         <div className="col-span-12 text-xl font-normal card-box flex justify-between">
 
-            <h1>{view === "cards" ? "Cards de usuario" : "Lista de usuarios"}</h1>
+            <h1>{view === "cards" ? "Tarjetas de actividades" : "Lista de actividades"}</h1>
             <div className="flex gap-4 items-center text-3xl dark:text-gray-400">
-                <Tooltip content="Cards de usuario">
+                <Tooltip content="Tarjetas de actividades">
                     <button onClick={() => toggleView("cards")}
                     className={`hover:text-blue-400 ${view === "cards" ? "text-[#03c9d7]" : ""}`}>
                         <FaAddressCard size={32} />
                     </button>
                 </Tooltip>
-                <Tooltip content="Lista de usuarios">
+                <Tooltip content="Lista de actividades">
                     <button onClick={() => toggleView("table")}
                     className={`hover:text-blue-400 ${view === "table" ? "text-[#03c9d7]" : ""}`}>
                         <PiUserListFill size={32} />
@@ -46,7 +62,7 @@ export default function UsersView({ users }: Props) {
             </div>
         </div>
 
-        {view === "cards" ? <CardUser users={users} /> : <TablaUser users={users} />}
+        {view === "cards" ? <CardActivity activities={activities} /> : <TablaActivity activities={activities} />}
         </div>
     );
 }

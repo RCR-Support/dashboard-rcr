@@ -3,12 +3,17 @@
   "version": "0.1.2",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/reminder.mjs && next dev",
     "build": "npm run prisma:deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:deploy": "npx prisma migrate deploy && prisma generate",
-    "seed": "ts-node seed/seed-database.ts"
+    "seed": "ts-node seed/seed-database.ts",
+    "seed:licenses": "ts-node seed/seed-driver-licenses.ts",
+    "update:limpiadora": "ts-node seed/update-limpiadora.ts",
+    "verify:activities": "ts-node seed/verify-activities.ts",
+    "create:component": "node scripts/generate-component.js",
+    "check:permissions": "node .husky/permission-check.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.4",
@@ -38,6 +43,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "formidable": "^3.5.4",
     "framer-motion": "^11.9.0",
     "lucide-react": "^0.474.0",
     "next": "^14.2.23",
@@ -58,9 +64,12 @@
   "devDependencies": {
     "@prisma/client": "^6.4.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/formidable": "^3.4.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "boxen": "^8.0.1",
+    "chalk": "^5.4.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
     "postcss": "^8",

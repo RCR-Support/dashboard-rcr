@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AiFillDashboard, AiFillHome } from "react-icons/ai";
 import { FaRegChartBar, FaUsers, FaUserPlus, FaUserTie } from "react-icons/fa";
-import { MdAnalytics } from "react-icons/md";
+import { MdAnalytics, MdWork } from "react-icons/md";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { useSession } from "next-auth/react";
 import { useUIStore } from "@/store/ui/ui-store";
@@ -13,11 +13,12 @@ import { useRoleStore } from "@/store/ui/roleStore";
 import { IoIosList } from "react-icons/io";
 import { IoBusinessSharp } from "react-icons/io5";
 import { MdOutlineAddBusiness } from "react-icons/md";
+import { GiMineTruck } from "react-icons/gi";
 export const SidebarDashboardMenu = () => {
     const closeMenu = useUIStore((state) => state.closeSideMenu);
     const { data: session } = useSession();
     const { width } = useWindowSize();
-    const router = usePathname();
+    const router = usePathname() ?? "";
 
     // Obtenemos el rol seleccionado desde el store
     const selectedRole = useRoleStore((state) => state.selectedRole);
@@ -51,7 +52,7 @@ export const SidebarDashboardMenu = () => {
                 }`}
             >
                 <Link href="/dashboard" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                <AiFillDashboard />
+                <AiFillDashboard className="text-[18px]" />
                 <span className="ml-3">Dashboard</span>
                 </Link>
             </li>
@@ -64,7 +65,7 @@ export const SidebarDashboardMenu = () => {
             >
                 <Link href="/" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group justify-between">
                 <div className="flex items-center">
-                    <AiFillHome />
+                    <AiFillHome className="text-[18px]" />
                     <span className="ml-3">Inicio</span>
                 </div>
                 <span className="bg-[#fb9678] dark:bg-[#fb9678] text-white rounded-full w-5 h-5 flex justify-center items-center text-xs">
@@ -81,7 +82,7 @@ export const SidebarDashboardMenu = () => {
             >
                 <div className="font-normal rounded-lg flex items-center p-2 group justify-between">
                 <div className="flex items-center">
-                    <FaRegChartBar />
+                    <FaRegChartBar className="text-[18px]" />
                     <span className="ml-3">Reportes</span>
                 </div>
                 <span className="bg-[#fb9678] dark:bg-[#fb9678] text-white rounded-full w-5 h-5 flex justify-center items-center text-xs">
@@ -92,31 +93,12 @@ export const SidebarDashboardMenu = () => {
 
             {isAdmin && (
                 <>
-
-                <li
-                    className={`px-2 py-1 ${
-                    router === "/dashboard/admin"
-                        ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg"
-                        : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
-                    }`}
-                >
-                    <Link
-                    href="/dashboard/admin"
-                    onClick={handleClick}
-                    className="font-normal rounded-lg flex items-center p-2 group justify-between"
-                    >
-                    <div className="flex items-center">
-                        <FaUserPlus />
-                        <span className="ml-3">Página Administrador</span>
-                    </div>
-                    </Link>
-                </li>
-
+                {/* Menú exclusivo para admin */}
                 <Accordion defaultExpandedKeys={isUsersRoute ? ["users"] : []}>
                     <AccordionItem
                     className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white"
                     key="users"
-                    startContent={<FaUsers />}
+                    startContent={<FaUsers className="text-[18px]" />}
                     aria-label="Usuarios del Sistema"
                     title="Usuarios Sistema"
                     >
@@ -129,7 +111,7 @@ export const SidebarDashboardMenu = () => {
                         }`}
                         >
                         <Link href="/dashboard/users" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                            <IoIosList className="text-[16px]" />
+                            <IoIosList className="text-[20px]" />
                             <span className="ml-3">Listado</span>
                         </Link>
                         </li>
@@ -141,7 +123,7 @@ export const SidebarDashboardMenu = () => {
                         }`}
                         >
                         <Link href="/dashboard/users/createUser" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                            <FaUserPlus className="text-[16px]" />
+                            <FaUserPlus className="text-[18px]" />
                             <span className="ml-3">Crear Usuario</span>
                         </Link>
                         </li>
@@ -153,7 +135,7 @@ export const SidebarDashboardMenu = () => {
                     <AccordionItem
                     className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white"
                     key="companies"
-                    startContent={<IoBusinessSharp />}
+                    startContent={<IoBusinessSharp className="text-[18px]" />}
                     aria-label="Empresas del Sistema"
                     title="Empresas Sistema"
                     >
@@ -166,7 +148,7 @@ export const SidebarDashboardMenu = () => {
                         }`}
                         >
                         <Link href="/dashboard/companies" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                            <IoIosList className="text-[16px]" />
+                            <IoIosList className="text-[20px]" />
                             <span className="ml-3">Listado </span>
                         </Link>
                         </li>
@@ -178,8 +160,35 @@ export const SidebarDashboardMenu = () => {
                         }`}
                         >
                         <Link href="/dashboard/companies/createCompany" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                            <MdOutlineAddBusiness className="text-[16px]" />
+                            <MdOutlineAddBusiness className="text-[18px]" />
                             <span className="ml-3">Crear Empresa</span>
+                        </Link>
+                        </li>
+                    </ul>
+                    </AccordionItem>
+                </Accordion>
+
+{/* Este bloque de código se mueve fuera del isAdmin para estar disponible para todos los roles */}
+
+                <Accordion defaultExpandedKeys={router.includes("dashboard/documentations") ? ["documentations"] : []}>
+                    <AccordionItem
+                    className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white"
+                    key="documentations"
+                    startContent={<MdWork className="text-[18px]" />}
+                    aria-label="Documentaciones"
+                    title="Documentaciones"
+                    >
+                    <ul className="pl-2">
+                        <li
+                        className={`px-2 py-1 ${
+                            router === "/dashboard/documentations"
+                            ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white"
+                            : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
+                        }`}
+                        >
+                        <Link href="/dashboard/documentations" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
+                            <IoIosList className="text-[20px]" />
+                            <span className="ml-3">Listado</span>
                         </Link>
                         </li>
                     </ul>
@@ -199,7 +208,7 @@ export const SidebarDashboardMenu = () => {
                     }`}
                 >
                     <Link href="/dashboard/sheq" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                    <MdAnalytics />
+                    <MdAnalytics className="text-[18px]" />
                     <span className="ml-3">Sitio Sheq</span>
                     </Link>
                 </li>
@@ -221,7 +230,7 @@ export const SidebarDashboardMenu = () => {
                     onClick={handleClick}
                     className="font-normal rounded-lg flex items-center p-2 group"
                     >
-                    <IoIosList />
+                    <IoIosList className="text-[20px]" />
                     <span className="ml-3">Listado</span>
                     </Link>
                 </li>
@@ -239,7 +248,7 @@ export const SidebarDashboardMenu = () => {
                     }`}
                 >
                     <Link href="/dashboard" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                    <FaUserTie />
+                    <FaUserTie className="text-[18px]" />
                     <span className="ml-3">Perfil</span>
                     </Link>
                 </li>
@@ -257,11 +266,54 @@ export const SidebarDashboardMenu = () => {
                     }`}
                 >
                     <Link href="/dashboard/credential" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
-                    <FaUserTie />
+                    <FaUserTie className="text-[18px]" />
                     <span className="ml-3">Perfil del que imprime</span>
                     </Link>
                 </li>
                 </>
+            )}
+            
+            {/* Menú de Actividades visible para todos los roles excepto credential */}
+            {(isAdmin || isSheq || isAdminContractor || isUser) && !isCredential && (
+                <Accordion defaultExpandedKeys={router.includes("dashboard/activities") ? ["activities"] : []}>
+                    <AccordionItem
+                    className="px-2 hover:text-[#03c9d7] dark:hover:bg-[#082e45] hover:bg-[#ebf9fa] dark:bg-[#282c34] text-slate-800 dark:text-white"
+                    key="activities"
+                    startContent={<GiMineTruck className="text-[24px]" />}
+                    aria-label="Actividades"
+                    title="Actividades"
+                    >
+                    <ul className="pl-2">
+                        <li
+                        className={`px-2 py-1 ${
+                            router === "/dashboard/activities"
+                            ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white"
+                            : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
+                        }`}
+                        >
+                        <Link href="/dashboard/activities" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
+                            <IoIosList className="text-[20px]" />
+                            <span className="ml-3">Listado</span>
+                        </Link>
+                        </li>
+                        {/* Solo los administradores pueden crear actividades */}
+                        {isAdmin && (
+                            <li
+                            className={`px-2 py-1 ${
+                                router === "/dashboard/activities/createActivity"
+                                ? "bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white"
+                                : "hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]"
+                            }`}
+                            >
+                            <Link href="/dashboard/activities/createActivity" onClick={handleClick} className="font-normal rounded-lg flex items-center p-2 group">
+                                <FaUserPlus className="text-[18px]" />
+                                <span className="ml-3">Nueva Actividad</span>
+                            </Link>
+                            </li>
+                        )}
+                    </ul>
+                    </AccordionItem>
+                </Accordion>
             )}
             </ul>
         </div>
