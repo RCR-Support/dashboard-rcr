@@ -80,7 +80,7 @@ export const CardActivity = ({ activities }: Props) => {
                 </div>
                 <Button
                     onClick={() => setIsAscending(!isAscending)}
-                    className="flex items-center gap-2"
+                    className="items-center gap-2 hidden md:flex"
                 >
                     {isAscending ? (
                         <>
@@ -98,7 +98,7 @@ export const CardActivity = ({ activities }: Props) => {
 
             {/* Grid de tarjetas de actividades */}
             <div className="col-span-12">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {sortedActivities.map((activity) => (
                         <div key={activity.id} className="bg-white dark:bg-[#282c34] rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden flex flex-col relative h-[260px]">
                             <div className="w-full h-48 relative overflow-hidden">
