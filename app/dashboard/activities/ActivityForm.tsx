@@ -1,46 +1,82 @@
 'use client';
 import { useState } from 'react';
+
+interface ActivityFormData {
+  name: string;
+  requiredDriverLicense: string;
+  imageFile: File | null;
+}
+
+interface ActivityFormProps {
+  onSuccess?: () => void;
+}
+
 // Recibe onSuccess como prop para redirigir tras crear
 export default function ActivityForm({
   onSuccess,
-}: {
-  onSuccess?: () => void;
-}) {
-  const [name, setName] = useState('');
-  const [requiredDriverLicense, setRequiredDriverLicense] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+}: ActivityFormProps) {
+  const [formData, setFormData] = useState<ActivityFormData>({
+    name: '',
+    requiredDriverLicense: '',
+    imageFile: null
+  });
+  const [formState, setFormState] = useState({
+    loading: false,
+    error: '',
+    success: ''
+  });
+
+  const updateFormData = (field: keyof ActivityFormData) => (
+    value: string | File | null
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    if (!name) {
-      setError('El nombre es obligatorio');
-      setLoading(false);
+    setFormState(prev => ({ ...prev, loading: true, error: '', success: '' }));
+
+    if (!formData.name) {
+      setFormState(prev => ({
+        ...prev,
+        loading: false,
+        error: 'El nombre es obligatorio'
+      }));
       return;
     }
+
     try {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('requiredDriverLicense', requiredDriverLicense);
-      if (imageFile) formData.append('image', imageFile);
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('requiredDriverLicense', formData.requiredDriverLicense);
+      if (formData.imageFile) submitData.append('image', formData.imageFile);
+      
       // Llamada directa a server action
-      // @ts-expect-error - Dynamic import
       const { createActivityServer } = await import('./actions');
-      await createActivityServer(formData);
-      setSuccess('Actividad creada correctamente');
-      setName('');
-      setRequiredDriverLicense('');
-      setImageFile(null);
+      await createActivityServer(submitData);
+      
+      setFormState(prev => ({
+        ...prev,
+        success: 'Actividad creada correctamente'
+      }));
+      setFormData({
+        name: '',
+        requiredDriverLicense: '',
+        imageFile: null
+      });
+      
       if (onSuccess) onSuccess();
-    } catch (err: any) {
-      setError('Error al crear actividad');
+    } catch (err: unknown) {
+      console.error('Error creating activity:', err);
+      setFormState(prev => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Error al crear actividad'
+      }));
     } finally {
-      setLoading(false);
+      setFormState(prev => ({ ...prev, loading: false }));
     }
   }
 
@@ -56,8 +92,8 @@ export default function ActivityForm({
         </label>
         <input
           type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
+          value={formData.name}
+          onChange={e => updateFormData('name')(e.target.value)}
           className="w-full p-2 border rounded"
           required
         />
@@ -66,8 +102,8 @@ export default function ActivityForm({
         <label className="block mb-1 font-medium">Licencia requerida</label>
         <input
           type="text"
-          value={requiredDriverLicense}
-          onChange={e => setRequiredDriverLicense(e.target.value)}
+          value={formData.requiredDriverLicense}
+          onChange={e => updateFormData('requiredDriverLicense')(e.target.value)}
           className="w-full p-2 border rounded"
           placeholder="Ej: Clase B"
         />
@@ -77,19 +113,19 @@ export default function ActivityForm({
         <input
           type="file"
           accept="image/*"
-          onChange={e => setImageFile(e.target.files?.[0] || null)}
+          onChange={e => updateFormData('imageFile')(e.target.files?.[0] || null)}
           className="w-full"
         />
       </div>
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded"
-        disabled={loading}
+        disabled={formState.loading}
       >
-        {loading ? 'Creando...' : 'Crear actividad'}
+        {formState.loading ? 'Creando...' : 'Crear actividad'}
       </button>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">{success}</p>}
+      {formState.error && <p className="text-red-500 mt-2">{formState.error}</p>}
+      {formState.success && <p className="text-green-500 mt-2">{formState.success}</p>}
     </form>
   );
 }
