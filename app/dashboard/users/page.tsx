@@ -1,23 +1,23 @@
-import { fetchUserData } from "@/actions";
-import { User } from "@/interfaces";
-import UsersClientPage from "./UsersClientPage";
-import { Suspense } from "react";
+import { fetchUserData } from '@/actions';
+import { User } from '@/interfaces';
+import UsersClientPage from './UsersClientPage';
+import { Suspense } from 'react';
 
 export default async function UsersPage() {
-    const { ok, users = [] } = await fetchUserData();
+  const { ok, users = [] } = await fetchUserData();
 
-    if (!ok) {
-        throw new Error("Error al cargar usuarios");
-    }
+  if (!ok) {
+    throw new Error('Error al cargar usuarios');
+  }
 
-    const mappedUsers: User[] = users.map((user) => ({
-        ...user,
-        roles: user.roles
-    }));
+  const mappedUsers: User[] = users.map(user => ({
+    ...user,
+    roles: user.roles,
+  }));
 
-    return (
-        <Suspense fallback={<div>Cargando...</div>}>
-            <UsersClientPage key={`users-${Date.now()}`}  initialUsers={mappedUsers} />
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <UsersClientPage key={`users-${Date.now()}`} initialUsers={mappedUsers} />
+    </Suspense>
+  );
 }

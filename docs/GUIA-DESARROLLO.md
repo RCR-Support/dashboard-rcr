@@ -30,7 +30,7 @@ Todos los componentes y páginas deben incluir un encabezado de documentación c
 Todos los componentes que representan páginas deben estar protegidos con el HOC `withPermission`:
 
 ```tsx
-const ProtectedComponent = withPermission(Component, "/ruta/a/proteger");
+const ProtectedComponent = withPermission(Component, '/ruta/a/proteger');
 export default ProtectedComponent;
 ```
 

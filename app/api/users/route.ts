@@ -27,7 +27,10 @@ export async function PATCH(req: NextRequest) {
     if (typeof isActive === 'boolean') data.isActive = isActive;
     if (typeof deletedLogic === 'boolean') data.deletedLogic = deletedLogic;
     if (Object.keys(data).length === 0) {
-      return NextResponse.json({ error: 'Sin cambios válidos' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Sin cambios válidos' },
+        { status: 400 }
+      );
     }
     const user = await db.user.update({
       where: { id },
@@ -36,6 +39,12 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ user });
   } catch (error) {
     logError(error);
-    return NextResponse.json({ error: 'Error al actualizar usuario', details: error instanceof Error ? error.message : error }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Error al actualizar usuario',
+        details: error instanceof Error ? error.message : error,
+      },
+      { status: 500 }
+    );
   }
 }

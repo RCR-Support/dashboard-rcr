@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { registerSchema } from "@/lib/zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { registerSchema } from '@/lib/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -15,10 +15,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { registerAction } from "@/actions/register-action";
-import {addToast, ToastProvider} from "@heroui/toast";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { registerAction } from '@/actions/register-action';
+import { addToast, ToastProvider } from '@heroui/toast';
 
 const FormRegister = () => {
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +28,13 @@ const FormRegister = () => {
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      email: "",
-      password: "",
-      name: "",
-      middleName: "",
-      lastName: "",
-      secondLastName: "",
-      userName: "",
+      email: '',
+      password: '',
+      name: '',
+      middleName: '',
+      lastName: '',
+      secondLastName: '',
+      userName: '',
       // role: "user",
     },
   });
@@ -50,21 +50,21 @@ const FormRegister = () => {
         } else {
           form.reset();
           addToast({
-            title: "Usuario creado correctamente",
-            description: "Redirigiendo al dashboard...",
+            title: 'Usuario creado correctamente',
+            description: 'Redirigiendo al dashboard...',
             timeout: 2000, // 2 segundos
-            icon: "✅",
-            color: "success",
-            variant: "flat",
-            radius: "md",
+            icon: '✅',
+            color: 'success',
+            variant: 'flat',
+            radius: 'md',
             shouldShowTimeoutProgress: true,
           });
           setTimeout(() => {
-            router.push("/dashboard");
+            router.push('/dashboard');
           }, 2000);
         }
       } catch (error) {
-        setError("An unexpected error occurred. Please try again.");
+        setError('An unexpected error occurred. Please try again.');
       }
     });
   };

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useEffect, useRef } from "react";
-import { useRoleStore } from "@/store/ui/roleStore";
+import { useSession } from 'next-auth/react';
+import { useEffect, useRef } from 'react';
+import { useRoleStore } from '@/store/ui/roleStore';
 
 export default function RoleCapturer() {
   const { data: session, status } = useSession();
@@ -11,7 +11,7 @@ export default function RoleCapturer() {
 
   useEffect(() => {
     if (
-      status === "authenticated" &&
+      status === 'authenticated' &&
       !hasInitialized.current &&
       session?.user?.roles?.length === 1 &&
       !selectedRole

@@ -1,8 +1,14 @@
-"use client";
-import React from "react";
-import { useRoleStore } from "@/store/ui/roleStore";
-import { Button } from "@heroui/react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
+'use client';
+import React from 'react';
+import { useRoleStore } from '@/store/ui/roleStore';
+import { Button } from '@heroui/react';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from '@heroui/modal';
 import { roleMapping, RoleMapping } from '@/lib/roleMapping';
 
 interface RoleSelectionModalProps {
@@ -22,11 +28,10 @@ const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
     try {
       setRole(role);
       const storedRole = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("role-storage="));
+        .split('; ')
+        .find(row => row.startsWith('role-storage='));
       onRoleSelected();
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (
@@ -44,7 +49,7 @@ const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
         </ModalHeader>
         <ModalBody>
           <div className="space-y-2">
-            {availableRoles.map((role) => (
+            {availableRoles.map(role => (
               <Button
                 key={role}
                 onPress={() => handleSelect(role)}

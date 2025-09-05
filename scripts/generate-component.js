@@ -5,7 +5,7 @@ const readline = require('readline');
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 // Preguntas para generar la documentación
@@ -28,7 +28,7 @@ function askQuestions(index = 0) {
     return;
   }
 
-  rl.question(questions[index].question, (answer) => {
+  rl.question(questions[index].question, answer => {
     answers[questions[index].name] = answer;
     askQuestions(index + 1);
   });
@@ -38,7 +38,7 @@ function askQuestions(index = 0) {
 function generateComponent(data) {
   const today = new Date().toLocaleDateString('es-ES');
   const username = require('os').userInfo().username;
-  
+
   const componentContent = `/**
  * @name ${data.componentName}
  * @description ${data.description}
@@ -77,11 +77,16 @@ export default Protected${data.componentName};
 `;
 
   // Crear la estructura de carpetas si no existe
-  const componentDir = path.join(process.cwd(), 'src', 'components', data.componentName.toLowerCase());
+  const componentDir = path.join(
+    process.cwd(),
+    'src',
+    'components',
+    data.componentName.toLowerCase()
+  );
   if (!fs.existsSync(componentDir)) {
     fs.mkdirSync(componentDir, { recursive: true });
   }
-  
+
   // Escribir el archivo del componente
   fs.writeFileSync(
     path.join(componentDir, `${data.componentName}.tsx`),

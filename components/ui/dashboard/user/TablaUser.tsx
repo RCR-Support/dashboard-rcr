@@ -1,12 +1,11 @@
-'use client'
-import type { User } from "@/interfaces";
-import App from "./TablaHUI";
-
+'use client';
+import type { User } from '@/interfaces';
+import App from './TablaHUI';
 
 interface Props {
-    users: User[];
+  users: User[];
 }
 
-export const TablaUser = ({ users }: Props)  => {
-    return ( <App users={users} /> );
-}
+export const TablaUser = ({ users }: Props) => {
+  return <App users={users} />;
+};

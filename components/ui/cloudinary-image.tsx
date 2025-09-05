@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
@@ -20,7 +20,7 @@ export default function CloudinaryImage({
   height,
   className,
   fallbackSrc = '/placeholder-user.png',
-  priority = false
+  priority = false,
 }: CloudinaryImageProps) {
   const [error, setError] = useState(false);
 

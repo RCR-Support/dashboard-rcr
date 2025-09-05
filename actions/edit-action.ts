@@ -1,10 +1,10 @@
-"use server";
+'use server';
 
-import { db } from "@/lib/db";
-import bcrypt from "bcryptjs";
-import { editSchema } from "@/lib/zod";
-import { Prisma, RoleEnum } from "@prisma/client";
-import { revalidatePath } from "next/cache";
+import { db } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import { editSchema } from '@/lib/zod';
+import { Prisma, RoleEnum } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 // Reemplazar las importaciones de sistema de archivos
 // import { writeFile } from 'fs/promises';
 // import path from 'path';
@@ -15,7 +15,7 @@ import { v2 as cloudinary } from 'cloudinary';
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export const editAction = async (userId: string, formData: FormData) => {
@@ -43,22 +43,22 @@ export const editAction = async (userId: string, formData: FormData) => {
     const parsed = editSchema.safeParse(values);
     if (!parsed.success) {
       return {
-        error: "Datos inválidos",
+        error: 'Datos inválidos',
         validationErrors: parsed.error.errors.map(error => ({
           path: error.path.join('.'),
-          message: error.message
-        }))
+          message: error.message,
+        })),
       };
     }
 
     const data = parsed.data;
 
     // Depuración: Verificar datos enviados
-    console.log("Datos enviados:", data);
+    console.log('Datos enviados:', data);
 
     // Depuración: Verificar userId y datos enviados
-    console.log("userId recibido:", userId);
-    console.log("Datos enviados para validación:", data);
+    console.log('userId recibido:', userId);
+    console.log('Datos enviados para validación:', data);
 
     // 2. Verificar si el email o run ya existe (excluyendo el usuario actual)
     const userExists = await db.user.findFirst({
@@ -66,28 +66,25 @@ export const editAction = async (userId: string, formData: FormData) => {
         AND: [
           { NOT: { id: userId } }, // Excluir al usuario actual
           {
-            OR: [
-              { email: data.email },
-              { run: data.run }
-            ]
-          }
-        ]
-      }
+            OR: [{ email: data.email }, { run: data.run }],
+          },
+        ],
+      },
     });
 
     // Depuración: Verificar resultado de la consulta
-    console.log("Resultado de la consulta de duplicados:", userExists);
+    console.log('Resultado de la consulta de duplicados:', userExists);
 
     if (userExists) {
       if (userExists.email === data.email) {
         return {
-          error: "El correo ya está registrado por otro usuario",
-          field: "email"
+          error: 'El correo ya está registrado por otro usuario',
+          field: 'email',
         };
       }
       return {
-        error: "El RUN ya está registrado por otro usuario",
-        field: "run"
+        error: 'El RUN ya está registrado por otro usuario',
+        field: 'run',
       };
     }
 
@@ -103,23 +100,31 @@ export const editAction = async (userId: string, formData: FormData) => {
       run: data.run,
       phoneNumber: data.phoneNumber,
       category: data.category,
-      company: data.companyId ? {
-        connect: {
-          id: Array.isArray(data.companyId) ? data.companyId[0] : data.companyId
-        }
-      } : undefined,
+      company: data.companyId
+        ? {
+            connect: {
+              id: Array.isArray(data.companyId)
+                ? data.companyId[0]
+                : data.companyId,
+            },
+          }
+        : undefined,
       // Manejo de adminContractor
-      ...(data.roles.includes('user') ? {
-        adminContractor: data.adminContractorId ? {
-          connect: { id: data.adminContractorId }
-        } : {
-          disconnect: true
-        }
-      } : {
-        adminContractor: {
-          disconnect: true
-        }
-      })
+      ...(data.roles.includes('user')
+        ? {
+            adminContractor: data.adminContractorId
+              ? {
+                  connect: { id: data.adminContractorId },
+                }
+              : {
+                  disconnect: true,
+                },
+          }
+        : {
+            adminContractor: {
+              disconnect: true,
+            },
+          }),
     };
 
     // 4. Si hay contraseña nueva, hashearla
@@ -134,11 +139,14 @@ export const editAction = async (userId: string, formData: FormData) => {
         // Eliminar la imagen activa en Cloudinary si existe
         const currentImageUrl = await db.user.findUnique({
           where: { id: userId },
-          select: { image: true }
+          select: { image: true },
         });
 
         if (currentImageUrl?.image) {
-          const publicId = currentImageUrl.image.split('/').pop()?.split('.')[0];
+          const publicId = currentImageUrl.image
+            .split('/')
+            .pop()
+            ?.split('.')[0];
           if (publicId) {
             await cloudinary.uploader.destroy(`user-profiles/${publicId}`);
           }
@@ -158,8 +166,8 @@ export const editAction = async (userId: string, formData: FormData) => {
               public_id: `user-${userId}-${Date.now()}`,
               overwrite: true,
               transformation: [
-                { width: 400, height: 400, gravity: "face", crop: "fill" }
-              ]
+                { width: 400, height: 400, gravity: 'face', crop: 'fill' },
+              ],
             },
             (error, result) => {
               if (error) reject(error);
@@ -171,10 +179,12 @@ export const editAction = async (userId: string, formData: FormData) => {
         // Guardar la URL en el objeto de actualización
         updateData.image = (uploadResult as any).secure_url;
       } catch (uploadError) {
-        console.error("Error al subir imagen a Cloudinary:", uploadError);
+        console.error('Error al subir imagen a Cloudinary:', uploadError);
         return {
-          error: "No se pudo subir la imagen. Intente con una imagen más pequeña o en otro formato.",
-          details: process.env.NODE_ENV === 'development' ? uploadError : undefined
+          error:
+            'No se pudo subir la imagen. Intente con una imagen más pequeña o en otro formato.',
+          details:
+            process.env.NODE_ENV === 'development' ? uploadError : undefined,
         };
       }
     }
@@ -185,31 +195,31 @@ export const editAction = async (userId: string, formData: FormData) => {
       const roles = await db.role.findMany({
         where: {
           name: {
-            in: rolesArray as RoleEnum[]
-          }
-        }
+            in: rolesArray as RoleEnum[],
+          },
+        },
       });
 
       if (roles.length === 0) {
         return {
-          error: "Los roles seleccionados no son válidos",
-          field: "roles"
+          error: 'Los roles seleccionados no son válidos',
+          field: 'roles',
         };
       }
 
       // Eliminar roles actuales
       await db.userRole.deleteMany({
-        where: { userId }
+        where: { userId },
       });
 
       // Crear nuevos roles
-      const userRoles = roles.map((role) => ({
+      const userRoles = roles.map(role => ({
         userId,
-        roleId: role.id
+        roleId: role.id,
       }));
 
       await db.userRole.createMany({
-        data: userRoles
+        data: userRoles,
       });
     }
 
@@ -221,11 +231,11 @@ export const editAction = async (userId: string, formData: FormData) => {
         company: true,
         roles: {
           include: {
-            role: true
-          }
+            role: true,
+          },
         },
-        adminContractor: true
-      }
+        adminContractor: true,
+      },
     });
 
     // 8. Retornar éxito con datos actualizados
@@ -238,23 +248,22 @@ export const editAction = async (userId: string, formData: FormData) => {
         name: updatedUser.name,
         image: updatedUser.image,
         roles: updatedUser.roles.map(r => r.role.name),
-        adminContractorId: updatedUser.adminContractorId
-      }
+        adminContractorId: updatedUser.adminContractorId,
+      },
     };
-
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         return {
-          error: "Ya existe un usuario con ese correo o RUN",
-          field: error.meta?.target as string
+          error: 'Ya existe un usuario con ese correo o RUN',
+          field: error.meta?.target as string,
         };
       }
     }
-    console.error("Error en editAction:", error);
+    console.error('Error en editAction:', error);
     return {
-      error: "Error interno del servidor",
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error : undefined,
     };
   }
 };

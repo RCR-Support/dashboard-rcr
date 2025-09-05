@@ -1,10 +1,10 @@
-import { RoleEnum } from "@prisma/client"
+import { RoleEnum } from '@prisma/client';
 
 export interface RoutePermission {
-    roles: RoleEnum[];
-    description: string;
+  roles: RoleEnum[];
+  description: string;
 }
 
 export interface PermissionsMapping {
-    [path: string]: RoutePermission;
+  [path: string]: RoutePermission;
 }

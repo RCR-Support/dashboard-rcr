@@ -25,7 +25,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       const imageFile = files.image;
 
       // Usar la función de creación importada
-      const activity = await createActivity(name, imageFile, requiredDriverLicense);
+      const activity = await createActivity(
+        name,
+        imageFile,
+        requiredDriverLicense
+      );
       return res.status(200).json({ activity });
     } catch (error) {
       return res.status(500).json({ error: 'Error al crear actividad' });

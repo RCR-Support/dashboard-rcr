@@ -2,28 +2,33 @@ import Image from 'next/image';
 import { User } from '../../../../interfaces/user.interface';
 
 interface Props {
-    src?: string;
-    alt: string;
-    className?: React.StyleHTMLAttributes<HTMLImageElement>['className'];
-    width?: number;
-    height?: number;
+  src?: string;
+  alt: string;
+  className?: React.StyleHTMLAttributes<HTMLImageElement>['className'];
+  width?: number;
+  height?: number;
 }
 
-export const UserImage = ({ src, alt, className, width = 100, height = 50 }: Props) => {
+export const UserImage = ({
+  src,
+  alt,
+  className,
+  width = 100,
+  height = 50,
+}: Props) => {
+  const localSrc = src
+    ? src.includes('http') || src.includes('https')
+      ? src
+      : `${process.env.NEXT_PUBLIC_API_URL}${src}`
+    : null;
 
-    const localSrc = ( src )
-        ? src.includes('http') || src.includes('https')
-            ? src
-            : `${process.env.NEXT_PUBLIC_API_URL}${src}`
-        : null;
-
-    return (
-        <Image
-            src={localSrc || ''}
-            alt={alt}
-            width={width}
-            height={height}
-            className={`rounded-full ${className}`}
-        />
-    );
-}
+  return (
+    <Image
+      src={localSrc || ''}
+      alt={alt}
+      width={width}
+      height={height}
+      className={`rounded-full ${className}`}
+    />
+  );
+};

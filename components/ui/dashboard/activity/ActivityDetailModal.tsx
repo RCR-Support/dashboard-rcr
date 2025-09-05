@@ -1,11 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
-import { Button } from "@heroui/react";
-import { Pencil, FileText } from "lucide-react";
-import { IoClose } from "react-icons/io5";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from '@heroui/modal';
+import { Button } from '@heroui/react';
+import { Pencil, FileText } from 'lucide-react';
+import { IoClose } from 'react-icons/io5';
 import Image from 'next/image';
-import { getActivityById } from "@/app/dashboard/activities/actions";
+import { getActivityById } from '@/app/dashboard/activities/actions';
 import { useRouter } from 'next/navigation';
 
 interface ActivityDetailModalProps {
@@ -29,7 +35,11 @@ interface Activity {
   }[];
 }
 
-export function ActivityDetailModal({ isOpen, onClose, activityId }: ActivityDetailModalProps) {
+export function ActivityDetailModal({
+  isOpen,
+  onClose,
+  activityId,
+}: ActivityDetailModalProps) {
   const router = useRouter();
   const [activity, setActivity] = useState<Activity | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,8 +54,10 @@ export function ActivityDetailModal({ isOpen, onClose, activityId }: ActivityDet
           const data = await getActivityById(activityId);
           setActivity(data);
         } catch (err) {
-          console.error("Error al cargar los detalles de la actividad:", err);
-          setError("No se pudieron cargar los detalles de la actividad. Por favor, inténtalo de nuevo.");
+          console.error('Error al cargar los detalles de la actividad:', err);
+          setError(
+            'No se pudieron cargar los detalles de la actividad. Por favor, inténtalo de nuevo.'
+          );
         } finally {
           setLoading(false);
         }
@@ -67,9 +79,15 @@ export function ActivityDetailModal({ isOpen, onClose, activityId }: ActivityDet
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl" backdrop='blur' scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="2xl"
+      backdrop="blur"
+      scrollBehavior="inside"
+    >
       <ModalContent>
-        <ModalHeader className='flex flex-col'>
+        <ModalHeader className="flex flex-col">
           Información de la actividad
           {activity && (
             <span className="text-[#03c9d7] text-sm font-semibold">
@@ -77,7 +95,7 @@ export function ActivityDetailModal({ isOpen, onClose, activityId }: ActivityDet
             </span>
           )}
         </ModalHeader>
-        
+
         <ModalBody>
           {loading ? (
             <div className="py-8 text-center">
@@ -114,14 +132,16 @@ export function ActivityDetailModal({ isOpen, onClose, activityId }: ActivityDet
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {activity.requiredDriverLicense ? (
-                    activity.requiredDriverLicense.split(',').map((license, index) => (
-                      <span 
-                        key={index} 
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/50 dark:text-blue-100"
-                      >
-                        {license.trim().toUpperCase()}
-                      </span>
-                    ))
+                    activity.requiredDriverLicense
+                      .split(',')
+                      .map((license, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/50 dark:text-blue-100"
+                        >
+                          {license.trim().toUpperCase()}
+                        </span>
+                      ))
                   ) : (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-800/50 dark:text-green-100">
                       NO REQUIERE LICENCIA
@@ -131,47 +151,50 @@ export function ActivityDetailModal({ isOpen, onClose, activityId }: ActivityDet
               </div>
 
               {/* Documentación requerida */}
-              {activity.requiredDocumentations && activity.requiredDocumentations.length > 0 && (
-                <>
-                  <div className="my-4"></div>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
-                    <h3 className="font-medium text-base mb-3 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                      Documentación requerida
-                      <span className="text-xs bg-amber-100 dark:bg-amber-900/30 px-2.5 py-1 rounded-full text-amber-700 dark:text-amber-300 font-semibold">
-                        {activity.requiredDocumentations.length}
-                      </span>
-                    </h3>
-                    <div className="space-y-3">
-                      {activity.requiredDocumentations.map(doc => (
-                        <div
-                          key={doc.id}
-                          className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700"
-                        >
-                          <div className="flex items-start gap-3">
-                            <FileText className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <p className="font-medium text-base">
-                                {doc.documentation.name}
-                              </p>
-                              {doc.notes && (
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
-                                  {doc.notes}
+              {activity.requiredDocumentations &&
+                activity.requiredDocumentations.length > 0 && (
+                  <>
+                    <div className="my-4"></div>
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
+                      <h3 className="font-medium text-base mb-3 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        Documentación requerida
+                        <span className="text-xs bg-amber-100 dark:bg-amber-900/30 px-2.5 py-1 rounded-full text-amber-700 dark:text-amber-300 font-semibold">
+                          {activity.requiredDocumentations.length}
+                        </span>
+                      </h3>
+                      <div className="space-y-3">
+                        {activity.requiredDocumentations.map(doc => (
+                          <div
+                            key={doc.id}
+                            className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700"
+                          >
+                            <div className="flex items-start gap-3">
+                              <FileText className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <p className="font-medium text-base">
+                                  {doc.documentation.name}
                                 </p>
-                              )}
+                                {doc.notes && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                                    {doc.notes}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
             </div>
           ) : (
-            <div className="py-8 text-center text-gray-500">No se encontró la actividad seleccionada.</div>
+            <div className="py-8 text-center text-gray-500">
+              No se encontró la actividad seleccionada.
+            </div>
           )}
         </ModalBody>
-        
+
         <ModalFooter className="flex justify-between items-center">
           <Button
             color="default"

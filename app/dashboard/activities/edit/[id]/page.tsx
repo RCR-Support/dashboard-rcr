@@ -3,7 +3,11 @@ import EditActivityForm from '../../editActivityForm';
 import { notFound } from 'next/navigation';
 import EditActivityClient from '../EditActivityClient';
 
-export default async function EditActivityPage({ params }: { params: { id: string } }) {
+export default async function EditActivityPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const activities = await listActivities();
   const activity = activities.find((a: any) => a.id === params.id);
   if (!activity) return notFound();

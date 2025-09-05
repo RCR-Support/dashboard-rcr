@@ -1,7 +1,14 @@
-"use client";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Trash2, AlertTriangle } from "lucide-react";
+'use client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Trash2, AlertTriangle } from 'lucide-react';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -16,7 +23,7 @@ export function DeleteConfirmModal({
   onClose,
   onConfirm,
   isLoading,
-  activityName
+  activityName,
 }: DeleteConfirmModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -27,15 +34,13 @@ export function DeleteConfirmModal({
             Confirmar eliminación
           </DialogTitle>
           <DialogDescription>
-            ¿Estás seguro de que deseas eliminar {activityName ? `la actividad "${activityName}"` : "esta actividad"}? Esta acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar{' '}
+            {activityName ? `la actividad "${activityName}"` : 'esta actividad'}
+            ? Esta acción no se puede deshacer.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:justify-center">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
           <Button
@@ -44,7 +49,9 @@ export function DeleteConfirmModal({
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            {isLoading ? "Eliminando..." : (
+            {isLoading ? (
+              'Eliminando...'
+            ) : (
               <>
                 <Trash2 className="h-4 w-4" />
                 Eliminar

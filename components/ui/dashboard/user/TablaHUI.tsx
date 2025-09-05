@@ -1,13 +1,17 @@
-import React, { useCallback, useMemo, useState, ReactNode } from "react";
-import Swal from "sweetalert2";
+import React, { useCallback, useMemo, useState, ReactNode } from 'react';
+import Swal from 'sweetalert2';
 // Utilidad para actualizar usuario
-async function updateUserField(id: string, field: "isActive" | "deletedLogic", value: boolean) {
-  const res = await fetch("/api/users", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+async function updateUserField(
+  id: string,
+  field: 'isActive' | 'deletedLogic',
+  value: boolean
+) {
+  const res = await fetch('/api/users', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id, [field]: value }),
   });
-  if (!res.ok) throw new Error("Error al actualizar usuario");
+  if (!res.ok) throw new Error('Error al actualizar usuario');
   return res.json();
 }
 import {
@@ -28,18 +32,18 @@ import {
   Selection,
   ChipProps,
   SortDescriptor,
-} from "@heroui/react";
-import { Avatar } from "@mui/material";
-import { HiOutlinePlus, HiDotsVertical, HiEye } from "react-icons/hi";
-import { CiSearch } from "react-icons/ci";
-import { HiMiniChevronDown } from "react-icons/hi2";
-import { RiDeleteBin2Fill } from "react-icons/ri";
-import { TbUserEdit } from "react-icons/tb";
-import { User } from "@/interfaces";
-import { formatRun } from "@/lib/validations";
-import { formatPhoneNumber } from "@/lib/formatPhoneNumber";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+} from '@heroui/react';
+import { Avatar } from '@mui/material';
+import { HiOutlinePlus, HiDotsVertical, HiEye } from 'react-icons/hi';
+import { CiSearch } from 'react-icons/ci';
+import { HiMiniChevronDown } from 'react-icons/hi2';
+import { RiDeleteBin2Fill } from 'react-icons/ri';
+import { TbUserEdit } from 'react-icons/tb';
+import { User } from '@/interfaces';
+import { formatRun } from '@/lib/validations';
+import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 interface Props {
   users: User[];
 }
@@ -48,31 +52,31 @@ interface Company {
   rut: string;
 }
 export const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "NOMBRE", uid: "name", sortable: true },
-  { name: "RUN", uid: "run", sortable: true },
-  { name: "ROL", uid: "role", sortable: true },
-  { name: "EMPRESA", uid: "companyName", sortable: true },
-  { name: "Fono", uid: "phoneNumber" },
-  { name: "CORREO", uid: "email" },
-  { name: "FECHA CREACIÓN", uid: "createdAt", sortable: true },
-  { name: "ESTADO", uid: "status"},
-  { name: "ACTIVO", uid: "isActiveStatus"},
-  { name: "ACCIONES", uid: "actions" },
+  { name: 'ID', uid: 'id', sortable: true },
+  { name: 'NOMBRE', uid: 'name', sortable: true },
+  { name: 'RUN', uid: 'run', sortable: true },
+  { name: 'ROL', uid: 'role', sortable: true },
+  { name: 'EMPRESA', uid: 'companyName', sortable: true },
+  { name: 'Fono', uid: 'phoneNumber' },
+  { name: 'CORREO', uid: 'email' },
+  { name: 'FECHA CREACIÓN', uid: 'createdAt', sortable: true },
+  { name: 'ESTADO', uid: 'status' },
+  { name: 'ACTIVO', uid: 'isActiveStatus' },
+  { name: 'ACCIONES', uid: 'actions' },
 ];
 
 export const deletedLogicOptions = [
-  { name: "Activo", uid: false },
-  { name: "Eliminado", uid: true },
+  { name: 'Activo', uid: false },
+  { name: 'Eliminado', uid: true },
 ];
 
 export const isActiveOptions = [
-  { name: "Habilitado", uid: true },
-  { name: "Pendiente", uid: false },
+  { name: 'Habilitado', uid: true },
+  { name: 'Pendiente', uid: false },
 ];
 
 export function capitalize(s: string) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
 }
 
 const stringToColor = (string: string) => {
@@ -102,17 +106,25 @@ const stringAvatar = (name: string) => {
   };
 };
 
-const statusColorMap: Record<string, ChipProps["color"]> = {
-  active: "success",
-  paused: "danger",
-  vacation: "warning",
+const statusColorMap: Record<string, ChipProps['color']> = {
+  active: 'success',
+  paused: 'danger',
+  vacation: 'warning',
 };
 
-const INITIAL_VISIBLE_COLUMNS = ["name","run","role", "status", "isActiveStatus", "actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  'name',
+  'run',
+  'role',
+  'status',
+  'isActiveStatus',
+  'actions',
+];
 function formatShortDate(dateString: string | Date | undefined) {
-  if (!dateString) return "-";
-  const date = typeof dateString === "string" ? new Date(dateString) : dateString;
-  if (isNaN(date.getTime())) return "-";
+  if (!dateString) return '-';
+  const date =
+    typeof dateString === 'string' ? new Date(dateString) : dateString;
+  if (isNaN(date.getTime())) return '-';
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
@@ -134,17 +146,17 @@ const roleMapping: RoleMapping = {
 export default function App({ users }: Props) {
   const router = useRouter();
 
-  const [filterValue, setFilterValue] = useState("");
+  const [filterValue, setFilterValue] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<Selection>(
-    new Set(INITIAL_VISIBLE_COLUMNS),
+    new Set(INITIAL_VISIBLE_COLUMNS)
   );
-  const [statusFilter, setStatusFilter] = useState<Selection>("all");
+  const [statusFilter, setStatusFilter] = useState<Selection>('all');
 
-  const [isActiveFilter, setIsActiveFilter] = useState<Selection>("all");
+  const [isActiveFilter, setIsActiveFilter] = useState<Selection>('all');
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "run",
-    direction: "ascending",
+    column: 'run',
+    direction: 'ascending',
   });
   const [page, setPage] = useState(1);
 
@@ -153,31 +165,42 @@ export default function App({ users }: Props) {
   const hasSearchFilter = Boolean(filterValue);
 
   const headerColumns = useMemo(() => {
-    if (visibleColumns === "all") return columns;
+    if (visibleColumns === 'all') return columns;
 
-    return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
+    return columns.filter(column =>
+      Array.from(visibleColumns).includes(column.uid)
+    );
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...users ];
+    let filteredUsers = [...users];
     const normalizeText = (text: string) =>
-      text.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Elimina tildes
+      text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Elimina tildes
 
     if (hasSearchFilter) {
       const normalizedFilter = normalizeText(filterValue.toLowerCase());
-      filteredUsers = filteredUsers.filter((user) =>
-        normalizeText(`${user.name} ${user.lastName} ${user.secondLastName}`).toLowerCase().includes(normalizedFilter) ||
-        user.run?.toLowerCase().includes(filterValue.toLowerCase())
+      filteredUsers = filteredUsers.filter(
+        user =>
+          normalizeText(`${user.name} ${user.lastName} ${user.secondLastName}`)
+            .toLowerCase()
+            .includes(normalizedFilter) ||
+          user.run?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
-    if (statusFilter !== "all" && Array.from(statusFilter).length !== deletedLogicOptions.length) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(String(user.deletedLogic)),
+    if (
+      statusFilter !== 'all' &&
+      Array.from(statusFilter).length !== deletedLogicOptions.length
+    ) {
+      filteredUsers = filteredUsers.filter(user =>
+        Array.from(statusFilter).includes(String(user.deletedLogic))
       );
     }
-    if (isActiveFilter !== "all" && Array.from(isActiveFilter).length !== isActiveOptions.length) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(isActiveFilter).includes(String(user.isActive)),
+    if (
+      isActiveFilter !== 'all' &&
+      Array.from(isActiveFilter).length !== isActiveOptions.length
+    ) {
+      filteredUsers = filteredUsers.filter(user =>
+        Array.from(isActiveFilter).includes(String(user.isActive))
       );
     }
 
@@ -193,58 +216,80 @@ export default function App({ users }: Props) {
 
   const sortedItems = useMemo(() => {
     return [...items].sort((a: User, b: User) => {
-      let first = a[sortDescriptor.column as keyof User];
-      let second = b[sortDescriptor.column as keyof User];
+      const first = a[sortDescriptor.column as keyof User];
+      const second = b[sortDescriptor.column as keyof User];
 
       // Ordenar por fecha real si la columna es createdAt
-      if (sortDescriptor.column === "createdAt") {
+      if (sortDescriptor.column === 'createdAt') {
         const dateA = first ? new Date(first as string) : new Date(0);
         const dateB = second ? new Date(second as string) : new Date(0);
         const cmp = dateA.getTime() - dateB.getTime();
-        return sortDescriptor.direction === "descending" ? -cmp : cmp;
+        return sortDescriptor.direction === 'descending' ? -cmp : cmp;
       }
 
       // Convertimos los valores a cadenas para evitar errores de comparación
-      const firstValue = first === undefined || first === null ? "" : String(first);
-      const secondValue = second === undefined || second === null ? "" : String(second);
-      const cmp = firstValue < secondValue ? -1 : firstValue > secondValue ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+      const firstValue =
+        first === undefined || first === null ? '' : String(first);
+      const secondValue =
+        second === undefined || second === null ? '' : String(second);
+      const cmp =
+        firstValue < secondValue ? -1 : firstValue > secondValue ? 1 : 0;
+      return sortDescriptor.direction === 'descending' ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [localUsers, setLocalUsers] = useState<User[]>(users);
-  const [loadingField, setLoadingField] = useState<{id: string, field: string} | null>(null);
+  const [loadingField, setLoadingField] = useState<{
+    id: string;
+    field: string;
+  } | null>(null);
 
   // Sincroniza localUsers si cambia la prop users
-  React.useEffect(() => { setLocalUsers(users); }, [users]);
+  React.useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
 
-  const handleChangeField = async (user: User, field: "isActive" | "deletedLogic") => {
+  const handleChangeField = async (
+    user: User,
+    field: 'isActive' | 'deletedLogic'
+  ) => {
     const currentValue = user[field];
-    const label = field === "isActive" ? (currentValue ? "deshabilitar" : "habilitar") : (currentValue ? "activar" : "eliminar lógicamente");
+    const label =
+      field === 'isActive'
+        ? currentValue
+          ? 'deshabilitar'
+          : 'habilitar'
+        : currentValue
+          ? 'activar'
+          : 'eliminar lógicamente';
     const confirmText = `¿Desea ${label} el usuario?`;
     const result = await Swal.fire({
       title: confirmText,
-      icon: "question",
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonText: "Sí",
-      cancelButtonText: "No",
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'No',
       showClass: {
-        popup: 'swal2-show swal2-animate-fade-in'
+        popup: 'swal2-show swal2-animate-fade-in',
       },
       hideClass: {
-        popup: 'swal2-hide swal2-animate-fade-out'
-      }
+        popup: 'swal2-hide swal2-animate-fade-out',
+      },
     });
     if (result.isConfirmed) {
       setUpdatingId(user.id);
-      setLoadingField({id: user.id, field});
+      setLoadingField({ id: user.id, field });
       try {
         await updateUserField(user.id, field, !currentValue);
-        setLocalUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, [field]: !currentValue } : u));
-        Swal.fire("Actualizado", "El usuario fue actualizado", "success");
+        setLocalUsers(prev =>
+          prev.map(u =>
+            u.id === user.id ? { ...u, [field]: !currentValue } : u
+          )
+        );
+        Swal.fire('Actualizado', 'El usuario fue actualizado', 'success');
       } catch {
-        Swal.fire("Error", "No se pudo actualizar el usuario", "error");
+        Swal.fire('Error', 'No se pudo actualizar el usuario', 'error');
       } finally {
         setUpdatingId(null);
         setLoadingField(null);
@@ -252,142 +297,197 @@ export default function App({ users }: Props) {
     }
   };
 
-  const renderCell: (user: User, columnKey: React.Key) => React.ReactNode = useCallback((user, columnKey) => {
-    if (!user) return null;
-    const cellValue = user[columnKey as keyof User];
+  const renderCell: (user: User, columnKey: React.Key) => React.ReactNode =
+    useCallback(
+      (user, columnKey) => {
+        if (!user) return null;
+        const cellValue = user[columnKey as keyof User];
 
-    switch (columnKey) {
-    case "name":
-      return (
-        <div className="flex items-center py-2 gap-2">
-          <Avatar
-            {...stringAvatar(user.displayName.toUpperCase())}
-            className="bg-[#03c9d7] dark:bg-[#327f84]"
-            sx={{ width: 36, height: 36 }} // Ajusta el tamaño según sea necesario
-          />
-          <div className="ml-2">
-            <div className="font-bold">{user.name} {user.lastName}</div>
-            <div className="text-xs text-teal-600 dark:text-teal-200">{user.email}</div>
-          </div>
-        </div>
-      );
-    case "run":
-      return (
-        <div className="flex flex-col min-w-24">
-          <p className="text-bold text-small capitalize">
-            {user.run ? formatRun(user.run) : "N/A"}
-          </p>
-        </div>
-      );
-    case "role":
-      return (
-        <div className="flex flex-col  min-w-48 ">
-          <p className="text-bold text-small capitalize">{user.roles.map((role) => roleMapping[role]).join(', ')}</p>
-          <p className="text-bold text-tiny capitalize text-default-500 truncate text-ellipsis max-w-48">{user.userName ?? "N/A"}</p>
-        </div>
-      );
-    case "companyName":
-        return (
-          <div className="flex flex-col min-w-32 max-w-56 ">
-            <p className="text-bold text-small capitalize truncate text-ellipsis max-w-56">{user?.company?.name}</p>
-            <p className="text-bold text-tiny capitalize text-default-500">
-              {user?.company?.rut ? formatRun(user.company.rut) : "N/A"}
-            </p>
-          </div>
-        );
-    case "phoneNumber":
-      return (
-        <div className="flex flex-col min-w-32">
-          <p className="text-bold text-small capitalize">
-            {user.phoneNumber ?  formatPhoneNumber(user.phoneNumber) : "N/A"}
-          </p>
-        </div>
-      );
-    case "createdAt":
-      return (
-        <span>{formatShortDate(user.createdAt)}</span>
-      );
-    case "status": {
-      const statusText = user.deletedLogic ? "Eliminado" : "Activo";
-      const chipColor = user.deletedLogic ? "danger" : "success";
-      const isLoading = loadingField && loadingField.id === user.id && loadingField.field === "deletedLogic";
-      return (
-        <button
-          className="focus:outline-none"
-          disabled={updatingId === user.id}
-          onClick={() => handleChangeField(user, "deletedLogic")}
-        >
-          <Chip className={`capitalize cursor-pointer flex items-center gap-1`} color={chipColor} size="sm" variant="flat">
-            {statusText}
-            {isLoading && <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />}
-          </Chip>
-        </button>
-      );
-    }
-    case "isActiveStatus": {
-      const isActiveText = user.isActive ? "Habilitado" : "Pendiente";
-      const isActiveColor = user.isActive ? "success" : "warning";
-      const isLoading = loadingField && loadingField.id === user.id && loadingField.field === "isActive";
-      return (
-        <button
-          className="focus:outline-none"
-          disabled={updatingId === user.id}
-          onClick={() => handleChangeField(user, "isActive")}
-        >
-          <Chip className={`capitalize cursor-pointer flex items-center gap-1`} color={isActiveColor} size="sm" variant="flat">
-            {isActiveText}
-            {isLoading && <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />}
-          </Chip>
-        </button>
-      );
-    }
-    case "actions":
-      return (
-        <div className="relative flex justify-end items-center gap-2">
-          <Dropdown className="bg-default-100 border-1 border-default-200 w-[90px]">
-            <DropdownTrigger>
-              <Button isIconOnly radius="full" size="sm" variant="light">
-                <HiDotsVertical size={16} className="text-default-400" />
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu className="flex gap-6 text-slate-500 dark:text-slate-300">
-              <DropdownItem
-              key="view"
-              startContent={<HiEye size={16} className="text-primary" />}
-              >Ver más</DropdownItem>
-              <DropdownItem
-              key="edit"
-              startContent={<TbUserEdit size={16} className="text-primary" />}
-              onPress={() => router.push(`/dashboard/users/edit/${user.id}`)}
-              >Editar</DropdownItem>
-              <DropdownItem
-              key="delete"
-              startContent={<RiDeleteBin2Fill size={16} className="text-danger" />}
-              >Eliminar</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        </div>
-      );
-    default:
-      if (typeof cellValue === 'string' || typeof cellValue === 'number' || typeof cellValue === 'boolean') {
-        return <div>{cellValue.toString()}</div>;
-      } else {
-        return null;
-      }
-  }
-}, [router]);
+        switch (columnKey) {
+          case 'name':
+            return (
+              <div className="flex items-center py-2 gap-2">
+                <Avatar
+                  {...stringAvatar(user.displayName.toUpperCase())}
+                  className="bg-[#03c9d7] dark:bg-[#327f84]"
+                  sx={{ width: 36, height: 36 }} // Ajusta el tamaño según sea necesario
+                />
+                <div className="ml-2">
+                  <div className="font-bold">
+                    {user.name} {user.lastName}
+                  </div>
+                  <div className="text-xs text-teal-600 dark:text-teal-200">
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+            );
+          case 'run':
+            return (
+              <div className="flex flex-col min-w-24">
+                <p className="text-bold text-small capitalize">
+                  {user.run ? formatRun(user.run) : 'N/A'}
+                </p>
+              </div>
+            );
+          case 'role':
+            return (
+              <div className="flex flex-col  min-w-48 ">
+                <p className="text-bold text-small capitalize">
+                  {user.roles.map(role => roleMapping[role]).join(', ')}
+                </p>
+                <p className="text-bold text-tiny capitalize text-default-500 truncate text-ellipsis max-w-48">
+                  {user.userName ?? 'N/A'}
+                </p>
+              </div>
+            );
+          case 'companyName':
+            return (
+              <div className="flex flex-col min-w-32 max-w-56 ">
+                <p className="text-bold text-small capitalize truncate text-ellipsis max-w-56">
+                  {user?.company?.name}
+                </p>
+                <p className="text-bold text-tiny capitalize text-default-500">
+                  {user?.company?.rut ? formatRun(user.company.rut) : 'N/A'}
+                </p>
+              </div>
+            );
+          case 'phoneNumber':
+            return (
+              <div className="flex flex-col min-w-32">
+                <p className="text-bold text-small capitalize">
+                  {user.phoneNumber
+                    ? formatPhoneNumber(user.phoneNumber)
+                    : 'N/A'}
+                </p>
+              </div>
+            );
+          case 'createdAt':
+            return <span>{formatShortDate(user.createdAt)}</span>;
+          case 'status': {
+            const statusText = user.deletedLogic ? 'Eliminado' : 'Activo';
+            const chipColor = user.deletedLogic ? 'danger' : 'success';
+            const isLoading =
+              loadingField &&
+              loadingField.id === user.id &&
+              loadingField.field === 'deletedLogic';
+            return (
+              <button
+                className="focus:outline-none"
+                disabled={updatingId === user.id}
+                onClick={() => handleChangeField(user, 'deletedLogic')}
+              >
+                <Chip
+                  className={`capitalize cursor-pointer flex items-center gap-1`}
+                  color={chipColor}
+                  size="sm"
+                  variant="flat"
+                >
+                  {statusText}
+                  {isLoading && (
+                    <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />
+                  )}
+                </Chip>
+              </button>
+            );
+          }
+          case 'isActiveStatus': {
+            const isActiveText = user.isActive ? 'Habilitado' : 'Pendiente';
+            const isActiveColor = user.isActive ? 'success' : 'warning';
+            const isLoading =
+              loadingField &&
+              loadingField.id === user.id &&
+              loadingField.field === 'isActive';
+            return (
+              <button
+                className="focus:outline-none"
+                disabled={updatingId === user.id}
+                onClick={() => handleChangeField(user, 'isActive')}
+              >
+                <Chip
+                  className={`capitalize cursor-pointer flex items-center gap-1`}
+                  color={isActiveColor}
+                  size="sm"
+                  variant="flat"
+                >
+                  {isActiveText}
+                  {isLoading && (
+                    <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />
+                  )}
+                </Chip>
+              </button>
+            );
+          }
+          case 'actions':
+            return (
+              <div className="relative flex justify-end items-center gap-2">
+                <Dropdown className="bg-default-100 border-1 border-default-200 w-[90px]">
+                  <DropdownTrigger>
+                    <Button isIconOnly radius="full" size="sm" variant="light">
+                      <HiDotsVertical size={16} className="text-default-400" />
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu className="flex gap-6 text-slate-500 dark:text-slate-300">
+                    <DropdownItem
+                      key="view"
+                      startContent={
+                        <HiEye size={16} className="text-primary" />
+                      }
+                    >
+                      Ver más
+                    </DropdownItem>
+                    <DropdownItem
+                      key="edit"
+                      startContent={
+                        <TbUserEdit size={16} className="text-primary" />
+                      }
+                      onPress={() =>
+                        router.push(`/dashboard/users/edit/${user.id}`)
+                      }
+                    >
+                      Editar
+                    </DropdownItem>
+                    <DropdownItem
+                      key="delete"
+                      startContent={
+                        <RiDeleteBin2Fill size={16} className="text-danger" />
+                      }
+                    >
+                      Eliminar
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </div>
+            );
+          default:
+            if (
+              typeof cellValue === 'string' ||
+              typeof cellValue === 'number' ||
+              typeof cellValue === 'boolean'
+            ) {
+              return <div>{cellValue.toString()}</div>;
+            } else {
+              return null;
+            }
+        }
+      },
+      [router]
+    );
 
-  const onRowsPerPageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRowsPerPage(Number(e.target.value));
-    setPage(1);
-  }, []);
+  const onRowsPerPageChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setRowsPerPage(Number(e.target.value));
+      setPage(1);
+    },
+    []
+  );
 
   const onSearchChange = useCallback((value?: string) => {
     if (value) {
       setFilterValue(value);
       setPage(1);
     } else {
-      setFilterValue("");
+      setFilterValue('');
     }
   }, []);
 
@@ -399,14 +499,14 @@ export default function App({ users }: Props) {
             <Input
               isClearable
               classNames={{
-                inputWrapper: "border-1",
+                inputWrapper: 'border-1',
               }}
               placeholder="Buscar por nombre o RUN..."
               size="sm"
               startContent={<CiSearch className="text-default-300" />}
               value={filterValue}
               variant="bordered"
-              onClear={() => setFilterValue("")}
+              onClear={() => setFilterValue('')}
               onValueChange={onSearchChange}
             />
             <div className="flex gap-3">
@@ -428,8 +528,11 @@ export default function App({ users }: Props) {
                   selectionMode="multiple"
                   onSelectionChange={setStatusFilter}
                 >
-                  {deletedLogicOptions.map((status) => (
-                    <DropdownItem key={String(status.uid)} className="capitalize">
+                  {deletedLogicOptions.map(status => (
+                    <DropdownItem
+                      key={String(status.uid)}
+                      className="capitalize"
+                    >
                       {capitalize(status.name)}
                     </DropdownItem>
                   ))}
@@ -453,8 +556,11 @@ export default function App({ users }: Props) {
                   selectionMode="multiple"
                   onSelectionChange={setIsActiveFilter}
                 >
-                  {isActiveOptions.map((status) => (
-                    <DropdownItem key={String(status.uid)} className="capitalize">
+                  {isActiveOptions.map(status => (
+                    <DropdownItem
+                      key={String(status.uid)}
+                      className="capitalize"
+                    >
                       {capitalize(status.name)}
                     </DropdownItem>
                   ))}
@@ -478,21 +584,25 @@ export default function App({ users }: Props) {
                   selectionMode="multiple"
                   onSelectionChange={setVisibleColumns}
                 >
-                  {columns.map((column) => (
+                  {columns.map(column => (
                     <DropdownItem key={column.uid} className="capitalize">
                       {capitalize(column.name)}
                     </DropdownItem>
                   ))}
                 </DropdownMenu>
               </Dropdown>
-              <Button className="bg-foreground text-background hidden sm:flex" endContent={<HiOutlinePlus />} size="sm">
+              <Button
+                className="bg-foreground text-background hidden sm:flex"
+                endContent={<HiOutlinePlus />}
+                size="sm"
+              >
                 Crear nuevo usuario
               </Button>
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-default-400 text-small">
-              Total {users.length} {users.length === 1 ? "usuario" : "usuarios"}
+              Total {users.length} {users.length === 1 ? 'usuario' : 'usuarios'}
             </span>
             <label className="flex items-center text-default-400 text-small">
               Filas por página:
@@ -501,8 +611,12 @@ export default function App({ users }: Props) {
                 onChange={onRowsPerPageChange}
                 className="bg-transparent outline-none"
               >
-                {[5, 15,30, 40, 50].map((rows) => (
-                  <option key={rows} value={rows} className="text-default-400 p-2 ">
+                {[5, 15, 30, 40, 50].map(rows => (
+                  <option
+                    key={rows}
+                    value={rows}
+                    className="text-default-400 p-2 "
+                  >
                     {rows}
                   </option>
                 ))}
@@ -512,8 +626,16 @@ export default function App({ users }: Props) {
         </div>
       </div>
     );
-  }, [filterValue, statusFilter, isActiveFilter, visibleColumns, onSearchChange, onRowsPerPageChange, rowsPerPage, users.length]);
-
+  }, [
+    filterValue,
+    statusFilter,
+    isActiveFilter,
+    visibleColumns,
+    onSearchChange,
+    onRowsPerPageChange,
+    rowsPerPage,
+    users.length,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -521,7 +643,7 @@ export default function App({ users }: Props) {
         <Pagination
           showControls
           classNames={{
-            cursor: "bg-foreground text-background",
+            cursor: 'bg-foreground text-background',
           }}
           color="default"
           isDisabled={hasSearchFilter}
@@ -536,22 +658,29 @@ export default function App({ users }: Props) {
 
   const classNames = useMemo(
     () => ({
-      wrapper: ["bg-transparent", "max-w-[100%]"],
-      th: ["", "text-default-500", "border-b", "border-divider"],
-      tr: ["", "text-default-600", "border-b", "border-divider", "border-gray-200","dark:border-gray-700"],
+      wrapper: ['bg-transparent', 'max-w-[100%]'],
+      th: ['', 'text-default-500', 'border-b', 'border-divider'],
+      tr: [
+        '',
+        'text-default-600',
+        'border-b',
+        'border-divider',
+        'border-gray-200',
+        'dark:border-gray-700',
+      ],
       td: [
         // changing the rows border radius
         // first
-        "group-data-[first=true]/tr:first:before:rounded-none",
-        "group-data-[first=true]/tr:last:before:rounded-none",
+        'group-data-[first=true]/tr:first:before:rounded-none',
+        'group-data-[first=true]/tr:last:before:rounded-none',
         // middle
-        "group-data-[middle=true]/tr:before:rounded-none",
+        'group-data-[middle=true]/tr:before:rounded-none',
         // last
-        "group-data-[last=true]/tr:first:before:rounded-none",
-        "group-data-[last=true]/tr:last:before:rounded-none",
+        'group-data-[last=true]/tr:first:before:rounded-none',
+        'group-data-[last=true]/tr:last:before:rounded-none',
       ],
     }),
-    [],
+    []
   );
 
   return (
@@ -568,20 +697,27 @@ export default function App({ users }: Props) {
         selectionMode="single"
       >
         <TableHeader columns={headerColumns}>
-          {(column) => (
+          {column => (
             <TableColumn
               key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
+              align={column.uid === 'actions' ? 'center' : 'start'}
               allowsSorting={column.sortable}
             >
               {column.name}
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"NO SE ENCONTRARON RESULTADOS"} items={sortedItems.map(u => localUsers.find(lu => lu.id === u.id) || u)}>
-          {(item) => (
+        <TableBody
+          emptyContent={'NO SE ENCONTRARON RESULTADOS'}
+          items={sortedItems.map(
+            u => localUsers.find(lu => lu.id === u.id) || u
+          )}
+        >
+          {item => (
             <TableRow key={item.id}>
-              {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+              {columnKey => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
             </TableRow>
           )}
         </TableBody>

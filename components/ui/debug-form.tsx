@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { useEffect, useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
 
 interface DebugFormProps {
   form: UseFormReturn<any>;
@@ -10,7 +10,7 @@ interface DebugFormProps {
 
 export function DebugForm({ form, enabled = false }: DebugFormProps) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -23,7 +23,13 @@ export function DebugForm({ form, enabled = false }: DebugFormProps) {
     <div className="fixed bottom-2 right-2 p-4 bg-slate-800 text-white rounded shadow-lg max-w-md max-h-96 overflow-auto z-50 opacity-80">
       <div className="flex justify-between mb-2">
         <h3 className="font-bold">Debug Formulario</h3>
-        <button onClick={() => document.body.removeChild(document.body.lastChild as Node)}>X</button>
+        <button
+          onClick={() =>
+            document.body.removeChild(document.body.lastChild as Node)
+          }
+        >
+          X
+        </button>
       </div>
       <pre className="text-xs whitespace-pre-wrap">
         {JSON.stringify(

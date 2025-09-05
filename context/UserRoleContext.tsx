@@ -1,7 +1,7 @@
 // context/UserRoleContext.tsx
-"use client";
-import React, { createContext, useContext, useState } from "react";
-import { useRoleStore } from "@/store/ui/roleStore";
+'use client';
+import React, { createContext, useContext, useState } from 'react';
+import { useRoleStore } from '@/store/ui/roleStore';
 
 interface IUserRoleContext {
   role: string | null;
@@ -15,8 +15,12 @@ const UserRoleContext = createContext<IUserRoleContext>({
   setShowRoleModal: () => {},
 });
 
-export const UserRoleProvider = ({ children }: { children: React.ReactNode }) => {
-  const role = useRoleStore((state) => state.selectedRole);
+export const UserRoleProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const role = useRoleStore(state => state.selectedRole);
   const [showRoleModal, setShowRoleModal] = useState(false);
 
   return (

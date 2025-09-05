@@ -7,9 +7,9 @@ export async function listActivities() {
     include: {
       requiredDocumentations: {
         include: {
-          documentation: true
-        }
-      }
-    }
+          documentation: true,
+        },
+      },
+    },
   });
 }

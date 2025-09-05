@@ -3,7 +3,7 @@ import './globals.css';
 import { roboto } from '@/config/fonts';
 
 import { Providers } from '@/app/providers';
-import { SwitcherMini } from "@/components/ui/themeswitch/Switchermini";
+import { SwitcherMini } from '@/components/ui/themeswitch/Switchermini';
 
 export const metadata: Metadata = {
   title: 'New Dashboard RCRSupport',

@@ -1,8 +1,8 @@
-import { CompanySelect } from "@/interfaces/company.interface"
-import { CompaniesGrid } from "./CardCompany"
+import { CompanySelect } from '@/interfaces/company.interface';
+import { CompaniesGrid } from './CardCompany';
 
 interface CompaniesTableProps {
-  companies: CompanySelect[]
+  companies: CompanySelect[];
 }
 
 export function CompaniesTable({ companies }: CompaniesTableProps) {
@@ -10,6 +10,6 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
     <>
       <CompaniesGrid companies={companies} />
     </>
-  )
+  );
 }
-export default CompaniesTable
+export default CompaniesTable;

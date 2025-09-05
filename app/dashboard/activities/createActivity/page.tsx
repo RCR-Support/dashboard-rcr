@@ -1,6 +1,6 @@
-"use client";
-import ActivityForm from "../ActivityForm";
-import { useRouter } from "next/navigation";
+'use client';
+import ActivityForm from '../ActivityForm';
+import { useRouter } from 'next/navigation';
 import { withPermission } from '@/components/ui/auth/withPermission';
 
 function CreateActivityPage() {
@@ -8,7 +8,7 @@ function CreateActivityPage() {
 
   // Opcional: función para manejar el éxito y redirigir
   const handleSuccess = () => {
-    router.push("/dashboard/activities");
+    router.push('/dashboard/activities');
   };
 
   return (
@@ -19,5 +19,8 @@ function CreateActivityPage() {
   );
 }
 
-const ProtectedCreateActivity = withPermission(CreateActivityPage, '/dashboard/activities/createActivity');
+const ProtectedCreateActivity = withPermission(
+  CreateActivityPage,
+  '/dashboard/activities/createActivity'
+);
 export default ProtectedCreateActivity;

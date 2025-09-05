@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   const role = user?.role;
 
   if (!hasPermission(pathname, role)) {
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+    return NextResponse.redirect(new URL('/unauthorized', request.url));
   }
 }
 ```
@@ -38,7 +38,7 @@ export function withPermission<P extends object>(
     const { selectedRole } = useRoleStore();
 
     if (!hasPermission(requiredPath)) {
-      window.location.href = "/unauthorized";
+      window.location.href = '/unauthorized';
       return null;
     }
 
@@ -54,18 +54,18 @@ Los permisos se definen en un archivo central:
 ```typescript
 // config/permissions.ts
 export const permissions: PermissionsMapping = {
-  "/dashboard/activities": {
+  '/dashboard/activities': {
     roles: [
       RoleEnum.admin,
       RoleEnum.user,
       RoleEnum.sheq,
       RoleEnum.adminContractor,
     ],
-    description: "Gestión de actividades",
+    description: 'Gestión de actividades',
   },
-  "/dashboard/activities/createActivity": {
+  '/dashboard/activities/createActivity': {
     roles: [RoleEnum.admin],
-    description: "Crear actividad",
+    description: 'Crear actividad',
   },
   // ...más permisos
 };
@@ -150,9 +150,9 @@ Al crear o modificar componentes:
 
 ```tsx
 // app/dashboard/nueva-ruta/page.tsx
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 
-const NuevaRutaClientPage = dynamic(() => import("./NuevaRutaClientPage"), {
+const NuevaRutaClientPage = dynamic(() => import('./NuevaRutaClientPage'), {
   ssr: false,
 });
 
@@ -171,9 +171,9 @@ export default async function NuevaRutaPage() {
  * @permissions admin,sheq
  * @dependencies withPermission
  */
-"use client";
+'use client';
 
-import { withPermission } from "@/components/ui/auth/withPermission";
+import { withPermission } from '@/components/ui/auth/withPermission';
 
 function NuevaRutaClientPage({ data }) {
   return <div>{/* Contenido */}</div>;
@@ -181,7 +181,7 @@ function NuevaRutaClientPage({ data }) {
 
 const ProtectedPage = withPermission(
   NuevaRutaClientPage,
-  "/dashboard/nueva-ruta"
+  '/dashboard/nueva-ruta'
 );
 export default ProtectedPage;
 ```

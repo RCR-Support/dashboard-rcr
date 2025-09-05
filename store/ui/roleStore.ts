@@ -9,9 +9,9 @@ interface RoleState {
 
 export const useRoleStore = create<RoleState>()(
   persist(
-    (set) => ({
+    set => ({
       selectedRole: null,
-      setRole: (role) => {
+      setRole: role => {
         // console.log('Guardando rol en store:', role);
         set({ selectedRole: role });
       },
@@ -24,14 +24,14 @@ export const useRoleStore = create<RoleState>()(
           setItem: (name, value) => {
             document.cookie = `${name}=${value}; path=/; max-age=2592000; SameSite=Strict`;
           },
-          getItem: (name) => {
+          getItem: name => {
             const value = document.cookie
               .split('; ')
-              .find((row) => row.startsWith(`${name}=`))
+              .find(row => row.startsWith(`${name}=`))
               ?.split('=')[1];
             return value || null;
           },
-          removeItem: (name) => {
+          removeItem: name => {
             document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
           },
         };

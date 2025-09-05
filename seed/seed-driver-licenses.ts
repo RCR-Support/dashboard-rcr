@@ -107,31 +107,34 @@ const activityLicenses = [
   { activity: 'Vehículo Liviano', license: 'a1,a2,a3,a4,a5,b' },
   { activity: 'Welldozer WD900', license: 'd' },
   { activity: 'Wheeldozer CAT 834G', license: 'd' },
-  { activity: 'Wheeldozer CAT 854K', license: 'd' }
+  { activity: 'Wheeldozer CAT 854K', license: 'd' },
 ];
 
 async function main() {
   console.log('Actualizando licencias de conducir para actividades...');
-  
+
   for (const item of activityLicenses) {
-    const activity = await prisma.activity.findUnique({ 
-      where: { name: item.activity } 
+    const activity = await prisma.activity.findUnique({
+      where: { name: item.activity },
     });
-    
+
     if (activity) {
       await prisma.activity.update({
         where: { id: activity.id },
-        data: { requiredDriverLicense: item.license }
+        data: { requiredDriverLicense: item.license },
       });
       console.log(`Actualizada licencia para: ${item.activity}`);
     } else {
       console.log(`No se encontró la actividad: ${item.activity}`);
     }
   }
-  
+
   console.log('Proceso finalizado.');
 }
 
 main()
-  .catch(e => { console.error(e); process.exit(1); })
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

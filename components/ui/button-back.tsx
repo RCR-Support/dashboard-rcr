@@ -1,17 +1,13 @@
 'use client';
 
-import { Button } from "./button";
+import { Button } from './button';
 
 const BackButton = () => {
-    const handleBack = () => {
-        window.history.back();
-    };
+  const handleBack = () => {
+    window.history.back();
+  };
 
-    return (
-        <Button onClick={handleBack}>
-        Volver
-        </Button>
-    );
+  return <Button onClick={handleBack}>Volver</Button>;
 };
 
 export default BackButton;

@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useState, useEffect, useRef, createContext, useContext } from "react";
-import { UserRoleProvider } from "@/context/UserRoleContext";
-import { useRoleStore } from "@/store/ui/roleStore";
-import RoleSelectionModal from "@/components/ui/dashboard/RoleSelectionModal";
-import RoleCapturer from "@/components/ui/dashboard/RoleCapturer";
-import { SidebarDashboard } from "@/components/ui/dashboard/sidebar/SidebarDashboard";
-import { NavDashboard } from "@/components/ui/dashboard/nav/NavDashboard";
+import { useSession } from 'next-auth/react';
+import { useState, useEffect, useRef, createContext, useContext } from 'react';
+import { UserRoleProvider } from '@/context/UserRoleContext';
+import { useRoleStore } from '@/store/ui/roleStore';
+import RoleSelectionModal from '@/components/ui/dashboard/RoleSelectionModal';
+import RoleCapturer from '@/components/ui/dashboard/RoleCapturer';
+import { SidebarDashboard } from '@/components/ui/dashboard/sidebar/SidebarDashboard';
+import { NavDashboard } from '@/components/ui/dashboard/nav/NavDashboard';
 
 // Contexto para el modal de roles
 interface RoleModalContextType {
@@ -22,11 +22,15 @@ export const RoleModalContext = createContext<RoleModalContextType>({
 
 export const useRoleModal = () => useContext(RoleModalContext);
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { data: session, status } = useSession({
     required: true,
     onUnauthenticated() {
-      window.location.href = "/login";
+      window.location.href = '/login';
     },
   });
 
@@ -37,11 +41,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const previousRole = useRef(selectedRole);
 
   useEffect(() => {
-    if (status === "authenticated" && !initialized.current) {
+    if (status === 'authenticated' && !initialized.current) {
       initialized.current = true;
-      console.log("Layout: Sesión autenticada", {
+      console.log('Layout: Sesión autenticada', {
         roles: session?.user?.roles,
-        selectedRole
+        selectedRole,
       });
 
       if (session?.user?.roles?.length > 1 && !selectedRole) {
@@ -50,7 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [status, session, selectedRole]);
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="flex h-screen items-center justify-center bg-[#f0f0f0] dark:bg-[#1a202c] text-gray-500 dark:text-white">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500 dark:border-white"></div>
@@ -77,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               isOpen={showRoleModal}
               availableRoles={session.user.roles}
               onRoleSelected={() => {
-                console.log("Rol seleccionado, cerrando modal");
+                console.log('Rol seleccionado, cerrando modal');
                 setShowRoleModal(false);
               }}
             />

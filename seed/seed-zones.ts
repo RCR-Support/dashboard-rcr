@@ -1,12 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-const zones = [
-  "Verde",
-  "Amarilla",
-  "Despacho",
-  "Roja"
-];
+const zones = ['Verde', 'Amarilla', 'Despacho', 'Roja'];
 
 async function main() {
   for (const name of zones) {
@@ -16,5 +11,8 @@ async function main() {
 }
 
 main()
-  .catch(e => { console.error(e); process.exit(1); })
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

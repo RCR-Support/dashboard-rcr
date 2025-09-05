@@ -1,16 +1,16 @@
-"use client";
-import { signOut, useSession } from "next-auth/react";
+'use client';
+import { signOut, useSession } from 'next-auth/react';
 import Avatar from '@mui/material/Avatar';
-import { RiArrowDropDownLine } from "react-icons/ri";
+import { RiArrowDropDownLine } from 'react-icons/ri';
 import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
-  DropdownItem
-} from "@heroui/dropdown";
-import { useRoleStore } from "@/store/ui/roleStore";
-import { useUserRoleContext } from "@/context/UserRoleContext";
-import { useRouter } from "next/navigation";
+  DropdownItem,
+} from '@heroui/dropdown';
+import { useRoleStore } from '@/store/ui/roleStore';
+import { useUserRoleContext } from '@/context/UserRoleContext';
+import { useRouter } from 'next/navigation';
 
 interface UserInfoProfileProps {
   name: string;
@@ -21,15 +21,21 @@ interface UserInfoProfileProps {
 }
 
 function stringAvatar(name: string) {
-  const words = name.split(" ");
+  const words = name.split(' ');
   if (words.length < 2) return { children: words[0][0] };
   return {
     children: `${words[0][0]}${words[1][0]}`,
   };
 }
 
-const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email, role, image }) => {
-  const resetRole = useRoleStore((state) => state.resetRole);
+const UserInfoProfile: React.FC<UserInfoProfileProps> = ({
+  name,
+  userName,
+  email,
+  role,
+  image,
+}) => {
+  const resetRole = useRoleStore(state => state.resetRole);
   const { setShowRoleModal } = useUserRoleContext();
 
   const { data: session } = useSession(); // Añadimos esto para verificar los roles disponibles
@@ -37,11 +43,11 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email
 
   const handleLogout = async () => {
     resetRole();
-    const result = await signOut({ redirect: false, callbackUrl: "/login" });
+    const result = await signOut({ redirect: false, callbackUrl: '/login' });
     if (result.url) {
       window.location.href = result.url;
     } else {
-      window.location.href = "/login";
+      window.location.href = '/login';
     }
   };
 
@@ -70,26 +76,48 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, userName, email
     <Dropdown placement="bottom-end">
       <DropdownTrigger>
         <div className="flex items-center gap-2 cursor-pointer">
-          <Avatar {...stringAvatar(name)} src={image} className="bg-[#03c9d7] dark:bg-[#327f84] uppercase" />
+          <Avatar
+            {...stringAvatar(name)}
+            src={image}
+            className="bg-[#03c9d7] dark:bg-[#327f84] uppercase"
+          />
           <div className="flex flex-col">
-            <p className="font-semibold truncate text-ellipsis max-w-44">{name}</p>
-            <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">{role}</span>
+            <p className="font-semibold truncate text-ellipsis max-w-44">
+              {name}
+            </p>
+            <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">
+              {role}
+            </span>
           </div>
           <RiArrowDropDownLine className="text-xl text-gray-500" />
         </div>
       </DropdownTrigger>
       <DropdownMenu aria-label="Profile Actions" variant="flat">
         <DropdownItem key="profile" className="h-14 gap-2" textValue="Profile">
-          <p className="font-semibold truncate text-ellipsis max-w-44">{userName}</p>
+          <p className="font-semibold truncate text-ellipsis max-w-44">
+            {userName}
+          </p>
           <div className="flex items-center gap-1">
-            <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">{email}</span>
+            <span className="text-sm text-gray-500 truncate text-ellipsis max-w-44">
+              {email}
+            </span>
           </div>
         </DropdownItem>
-        <DropdownItem key="settings" textValue="My Settings">My Settings</DropdownItem>
-        <DropdownItem key="team_settings" textValue="Team Settings">Team Settings</DropdownItem>
-        <DropdownItem key="analytics" textValue="Analytics">Analytics</DropdownItem>
-        <DropdownItem key="system" textValue="System">System</DropdownItem>
-        <DropdownItem key="configurations" textValue="Configurations">Configurations</DropdownItem>
+        <DropdownItem key="settings" textValue="My Settings">
+          My Settings
+        </DropdownItem>
+        <DropdownItem key="team_settings" textValue="Team Settings">
+          Team Settings
+        </DropdownItem>
+        <DropdownItem key="analytics" textValue="Analytics">
+          Analytics
+        </DropdownItem>
+        <DropdownItem key="system" textValue="System">
+          System
+        </DropdownItem>
+        <DropdownItem key="configurations" textValue="Configurations">
+          Configurations
+        </DropdownItem>
         {renderChangeRoleItem()}
         <DropdownItem
           key="logout"

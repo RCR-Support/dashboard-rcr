@@ -1,8 +1,8 @@
-import { DefaultSession } from "next-auth"
-import { RoleEnum } from "@prisma/client"
+import { DefaultSession } from 'next-auth';
+import { RoleEnum } from '@prisma/client';
 
 // Extender el módulo next-auth
-declare module "next-auth" {
+declare module 'next-auth' {
   /**
    * Extiende la interfaz Session para incluir id y roles del usuario
    */
@@ -10,7 +10,7 @@ declare module "next-auth" {
     user: {
       id: string;
       roles: RoleEnum[];
-    } & DefaultSession["user"]
+    } & DefaultSession['user'];
   }
 
   /**
@@ -23,7 +23,7 @@ declare module "next-auth" {
 }
 
 // Extiende el módulo next-auth/jwt
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   /**
    * Extiende la interfaz JWT para incluir roles
    */
@@ -34,7 +34,7 @@ declare module "next-auth/jwt" {
 }
 
 // Extiende el módulo @auth/core/adapters
-declare module "@auth/core/adapters" {
+declare module '@auth/core/adapters' {
   /**
    * Extiende la interfaz AdapterUser para incluir roles
    */
@@ -50,4 +50,4 @@ export type AuthUser = {
   roles: RoleEnum[];
   email: string;
   name?: string;
-}
+};
