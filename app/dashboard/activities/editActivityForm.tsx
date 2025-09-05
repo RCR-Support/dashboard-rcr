@@ -2,40 +2,75 @@
 import { useState } from 'react';
 import { editActivityServer } from './actions';
 
+interface Activity {
+  id: string;
+  name: string;
+  requiredDriverLicense?: string;
+}
+
+interface EditActivityFormData {
+  name: string;
+  requiredDriverLicense: string;
+  imageFile: File | null;
+}
+
+interface EditActivityFormProps {
+  activity: Activity;
+  onSuccess?: () => void;
+}
+
 export default function EditActivityForm({
   activity,
   onSuccess,
-}: {
-  activity: any;
-  onSuccess?: () => void;
-}) {
-  const [name, setName] = useState(activity.name || '');
-  const [requiredDriverLicense, setRequiredDriverLicense] = useState(
-    activity.requiredDriverLicense || ''
-  );
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+}: EditActivityFormProps) {
+  const [formData, setFormData] = useState<EditActivityFormData>({
+    name: activity.name || '',
+    requiredDriverLicense: activity.requiredDriverLicense || '',
+    imageFile: null
+  });
+
+  const [formState, setFormState] = useState({
+    loading: false,
+    error: '',
+    success: ''
+  });
+
+  const updateFormData = (field: keyof EditActivityFormData) => (
+    value: string | File | null
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+    setFormState(prev => ({ ...prev, loading: true, error: '', success: '' }));
+
     try {
-      const formData = new FormData();
-      formData.append('id', activity.id);
-      formData.append('name', name);
-      formData.append('requiredDriverLicense', requiredDriverLicense);
-      if (imageFile) formData.append('image', imageFile);
-      await editActivityServer(formData);
-      setSuccess('Actividad actualizada correctamente');
+      const submitData = new FormData();
+      submitData.append('id', activity.id);
+      submitData.append('name', formData.name);
+      submitData.append('requiredDriverLicense', formData.requiredDriverLicense);
+      if (formData.imageFile) submitData.append('image', formData.imageFile);
+      
+      await editActivityServer(submitData);
+      
+      setFormState(prev => ({
+        ...prev,
+        success: 'Actividad actualizada correctamente'
+      }));
+      
       if (onSuccess) onSuccess();
-    } catch (err: any) {
-      setError('Error al editar actividad');
+    } catch (err: unknown) {
+      console.error('Error editing activity:', err);
+      setFormState(prev => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Error al editar actividad'
+      }));
     } finally {
-      setLoading(false);
+      setFormState(prev => ({ ...prev, loading: false }));
     }
   }
 
@@ -51,8 +86,8 @@ export default function EditActivityForm({
         </label>
         <input
           type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
+          value={formData.name}
+          onChange={e => updateFormData('name')(e.target.value)}
           className="w-full p-2 border rounded"
           required
         />
@@ -61,8 +96,8 @@ export default function EditActivityForm({
         <label className="block mb-1 font-medium">Licencia requerida</label>
         <input
           type="text"
-          value={requiredDriverLicense}
-          onChange={e => setRequiredDriverLicense(e.target.value)}
+          value={formData.requiredDriverLicense}
+          onChange={e => updateFormData('requiredDriverLicense')(e.target.value)}
           className="w-full p-2 border rounded"
           placeholder="Ej: Clase B"
         />
@@ -74,19 +109,21 @@ export default function EditActivityForm({
         <input
           type="file"
           accept="image/*"
-          onChange={e => setImageFile(e.target.files?.[0] || null)}
+          onChange={e => updateFormData('imageFile')(e.target.files?.[0] || null)}
           className="w-full"
         />
       </div>
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded"
-        disabled={loading}
+        disabled={formState.loading}
       >
-        {loading ? 'Guardando...' : 'Guardar cambios'}
+        {formState.loading ? 'Guardando...' : 'Guardar cambios'}
       </button>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">{success}</p>}
+      {formState.error && <p className="text-red-500 mt-2">{formState.error}</p>}
+      {formState.success && (
+        <p className="text-green-500 mt-2">{formState.success}</p>
+      )}
     </form>
   );
 }
