@@ -4,7 +4,6 @@ import { ContractStep } from './steps/ContractStep';
 import { WorkerStep } from './steps/WorkerStep';
 import { ActivitiesStep } from './steps/ActivitiesStep';
 import { DocumentsStep } from './steps/DocumentsStep';
-import { ZonesStep } from './steps/ZonesStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { useState } from 'react';
 
@@ -34,23 +33,17 @@ const steps = [
     component: ActivitiesStep,
   },
   {
-    id: 'zones',
-    title: 'Zonas',
-    description: 'Selecciona las zonas',
-    component: ZonesStep,
-  },
-  {
     id: 'documents',
     title: 'Documentos',
     description: 'Sube los documentos requeridos',
     component: DocumentsStep,
   },
-  {
-    id: 'review',
-    title: 'Revisión',
-    description: 'Revisa la información',
-    component: ReviewStep,
-  },
+//   {
+//     id: 'review',
+//     title: 'Revisión',
+//     description: 'Revisa la información',
+//     component: ReviewStep,
+//   },
 ];
 
 export function ApplicationStepper({
@@ -83,42 +76,51 @@ export function ApplicationStepper({
   return (
     <div className="space-y-8 py-8">
       {/* Progress Bar */}
-      <div className="relative">
-        <div className="absolute left-0 top-2 h-0.5 w-full bg-gray-200">
-          <div
-            className="absolute h-full bg-primary transition-all duration-500"
-            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-          />
+      <div className="relative max-w-4xl mx-auto">
+        {/* Línea de progreso */}
+        <div className="absolute left-0 right-0 mx-16">
+          <div className="absolute left-0 top-[18px] h-0.5 w-full bg-gray-200">
+            <div
+              className="absolute h-full bg-primary transition-all duration-500"
+              style={{ width: `${(((currentStep) + 0.5) / (steps.length - 1)) * 100}%` }}
+            />
+          </div>
         </div>
-        <ul className="relative flex justify-between">
+
+        {/* Pasos con espacio para el texto */}
+        <ul className="relative flex justify-between items-start">
           {steps.map((step, index) => (
             <li
               key={step.id}
-              className={`flex h-5 w-5 items-center justify-center rounded-full ${
-                index <= currentStep ? 'bg-primary' : 'bg-gray-200'
-              }`}
+              className="flex flex-col items-center gap-4"
             >
-              <span className="text-xs text-white">{index + 1}</span>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full  ${
+                index <= currentStep ? 'bg-primary' : 'bg-[#1a202c] border border-gray-200'
+              }`}>
+                <span className={`text-base ${index <= currentStep ? 'text-white' : 'text-blue-100 font-bold'}`}>{index + 1}</span>
+              </div>
+              <div className="text-center w-36">
+                
+                <p className="text-xs text-gray-400">
+                  {step.description}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Step Title */}
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold">{steps[currentStep].title}</h2>
-        <p className="text-muted-foreground">
-          {steps[currentStep].description}
-        </p>
-      </div>
-
       {/* Step Content */}
-      <div className="mt-4">
-        <CurrentStepComponent
-          data={formData}
-          onNext={handleNext}
-          onBack={handleBack}
-        />
+      <div className='grid grid-cols-[1fr_2fr] gap-8'>
+        <div className='bg-gray-600'> seccion info de lo ingresado</div>
+        <div className="bg-gray-600">
+            {/* <p className="text-sm font-semibold">{step.title}</p> */}
+            <CurrentStepComponent
+            data={formData}
+            onNext={handleNext}
+            onBack={handleBack}
+            />
+        </div>
       </div>
     </div>
   );
