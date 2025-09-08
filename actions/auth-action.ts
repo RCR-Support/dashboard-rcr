@@ -9,11 +9,30 @@ import { z } from 'zod';
 
 export const loginAction = async (values: z.infer<typeof loginSchema>) => {
   try {
-    await signIn('credentials', {
+    const user = await db.user.findUnique({
+      where: {
+        email: values.email.toLowerCase(),
+      },
+      include: {
+        company: true,
+      },
+    });
+
+    if (!user) {
+      return { error: 'Invalid credentials' };
+    }
+
+    const result = await signIn('credentials', {
       email: values.email.toLowerCase(),
       password: values.password,
       redirect: false,
+      company: JSON.stringify(user.company)
     });
+
+    if (!result?.ok) {
+      return { error: 'Invalid credentials' };
+    }
+
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {

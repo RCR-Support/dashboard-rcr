@@ -4,8 +4,8 @@ import { ApplicationStepper } from './stepper';
 
 export default function CreateApplicationPage() {
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">
+    <div className="container mx-auto lg:w-[1280px] px-4 flex flex-col gap-4">
+      <h1 className="col-span-12 text-xl font-normal card-box flex justify-between">
         Nueva Solicitud de Acreditación
       </h1>
 

@@ -2,7 +2,67 @@
 
 ## Estructura y Documentación de Componentes
 
-### 1. Encabezado de Documentación
+### 1. Componentes de Interfaz Reutilizables
+
+#### ViewButtons
+
+Un componente para alternar entre vistas de tarjetas y tabla.
+
+```tsx
+// Uso
+import { CardViewButton, TableViewButton } from './ViewButtons';
+
+// En tu componente
+<div className="flex gap-4 items-center">
+  <CardViewButton currentView={view} onToggle={toggleView} />
+  <TableViewButton currentView={view} onToggle={toggleView} />
+</div>;
+```
+
+**Características:**
+
+- Tooltips integrados para mejor UX
+- Estado activo con color personalizado
+- Integración con parámetros de URL
+- Consistente con el diseño del sistema
+
+**Configuración requerida:**
+
+- Importar tipos desde interfaces.ts
+- Definir constantes de colores en interfaces.ts
+- Configurar el enrutamiento con searchParams
+
+#### Implementación de Vistas Duales
+
+Para implementar vistas duales (tarjetas/tabla):
+
+1. Definir tipos en interfaces.ts:
+
+```typescript
+export type ViewType = 'cards' | 'table';
+export const VIEW_TYPES = {
+  CARDS: 'cards' as ViewType,
+  TABLE: 'table' as ViewType,
+};
+```
+
+2. Usar searchParams para persistencia:
+
+```typescript
+const view = searchParams?.get('view') || VIEW_TYPES.CARDS;
+```
+
+3. Implementar el toggle:
+
+```typescript
+const toggleView = (newView: ViewType) => {
+  const params = new URLSearchParams(searchParams?.toString());
+  params.set('view', newView);
+  router.push(`?${params.toString()}`, { scroll: false });
+};
+```
+
+### 2. Encabezado de Documentación
 
 Todos los componentes y páginas deben incluir un encabezado de documentación con el siguiente formato:
 

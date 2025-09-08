@@ -10,15 +10,35 @@ declare module 'next-auth' {
     user: {
       id: string;
       roles: RoleEnum[];
+      company?: {
+        id: string;
+        name: string;
+        email?: string;
+        phone?: string;
+        rut?: string;
+        status?: boolean;
+        url?: string;
+        city?: string;
+      };
     } & DefaultSession['user'];
   }
 
   /**
-   * Extiende la interfaz User para incluir roles
+   * Extiende la interfaz User para incluir roles y company
    */
   interface User {
     id: string;
     roles: RoleEnum[];
+    company?: {
+      id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      rut?: string;
+      status?: boolean;
+      url?: string;
+      city?: string;
+    };
   }
 }
 
@@ -30,6 +50,16 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
     roles: RoleEnum[];
+    company?: {
+      id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      rut?: string;
+      status?: boolean;
+      url?: string;
+      city?: string;
+    };
   }
 }
 

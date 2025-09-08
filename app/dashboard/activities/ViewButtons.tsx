@@ -1,4 +1,4 @@
-import { Tooltip } from '@heroui/tooltip';
+import { Tooltip } from '@/components/ui/tooltip';
 import { FaAddressCard } from 'react-icons/fa6';
 import { PiUserListFill } from 'react-icons/pi';
 import { COLORS, ViewType } from './interfaces';

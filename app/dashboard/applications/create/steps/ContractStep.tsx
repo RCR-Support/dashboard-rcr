@@ -1,17 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Contract } from '@prisma/client';
+import { Contract } from '@/interfaces/contract.interface';
 import { useEffect, useState } from 'react';
 
 interface ContractStepProps {
   data: {
-    contract?: Contract;
+    contract?: Contract | null;
+    availableContracts?: Contract[];
   };
-  onNext: (data: { contract: Contract }) => void;
-  onBack: () => void;
+  onStepDataChange: (data: { contract: Contract }) => void;
 }
 
-export function ContractStep({ data, onNext, onBack }: ContractStepProps) {
+export function ContractStep({ data, onStepDataChange }: ContractStepProps) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(
     data.contract || null
@@ -20,33 +20,21 @@ export function ContractStep({ data, onNext, onBack }: ContractStepProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadContracts() {
-      try {
-        const response = await fetch('/api/contracts');
-        if (!response.ok) {
-          throw new Error('Error al cargar contratos');
-        }
-        const data = await response.json();
-        setContracts(data);
-
-        // Auto-selección si hay un solo contrato
-        if (data.length === 1) {
-          setSelectedContract(data[0]);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-      } finally {
-        setLoading(false);
+    if (data.availableContracts) {
+      setContracts(data.availableContracts);
+      
+      // Auto-selección si hay un solo contrato
+      if (data.availableContracts.length === 1) {
+        setSelectedContract(data.availableContracts[0]);
       }
+      
+      setLoading(false);
     }
+  }, [data.availableContracts]);
 
-    loadContracts();
-  }, []);
-
-  const handleNext = () => {
-    if (selectedContract) {
-      onNext({ contract: selectedContract });
-    }
+  const handleSelect = (contract: Contract) => {
+    setSelectedContract(contract);
+    onStepDataChange({ contract });
   };
 
   if (loading) {
@@ -70,43 +58,69 @@ export function ContractStep({ data, onNext, onBack }: ContractStepProps) {
         {contracts.map(contract => (
           <Card
             key={contract.id}
-            className={`cursor-pointer p-4 transition-all hover:shadow-md ${
+            className={`relative p-4 transition-all hover:shadow-md ${
               selectedContract?.id === contract.id
                 ? 'border-2 border-primary'
                 : ''
             }`}
-            onClick={() => setSelectedContract(contract)}
           >
+            {/* Radio button para selección */}
+            <div 
+              className={`absolute top-4 right-4 h-4 w-4 rounded-full border-2 cursor-pointer ${
+                selectedContract?.id === contract.id ? 'bg-primary' : 'border-muted'
+              }`}
+              onClick={() => setSelectedContract(contract)}
+            />
+
             <div className="space-y-2">
-              <h3 className="text-lg font-medium">
+              <h3 className="text-lg font-medium pr-6">
                 Contrato #{contract.contractNumber}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {contract.contractName}
               </p>
-              <div className="text-sm">
-                <p>
-                  <strong>Inicio:</strong>{' '}
-                  {new Date(contract.initialDate).toLocaleDateString()}
-                </p>
-                <p>
-                  <strong>Término:</strong>{' '}
-                  {new Date(contract.finalDate).toLocaleDateString()}
-                </p>
+              <div className="text-sm space-y-2">
+                <div>
+                  <p>
+                    <strong>Inicio:</strong>{' '}
+                    {new Date(contract.initialDate).toLocaleDateString()}
+                  </p>
+                  <p>
+                    <strong>Término:</strong>{' '}
+                    {new Date(contract.finalDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground mb-1">Administrador de contrato:</p>
+                  <p className="font-medium">{contract.userAc?.displayName || 'No asignado'}</p>
+                </div>
+
+                {/* Botón de seleccionar contrato */}
+                <div className="pt-4">
+                  {selectedContract?.id === contract.id ? (
+                    <Button 
+                      className="w-full"
+                      onClick={() => handleSelect(contract)}
+                    >
+                      Continuar con este contrato
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setSelectedContract(contract)}
+                    >
+                      Seleccionar contrato
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </Card>
         ))}
       </div>
 
-      <div className="flex justify-between">
-        <Button onClick={onBack} variant="outline">
-          Atrás
-        </Button>
-        <Button onClick={handleNext} disabled={!selectedContract}>
-          Continuar
-        </Button>
-      </div>
+
     </div>
   );
 }

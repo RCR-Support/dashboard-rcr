@@ -13,18 +13,60 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.roles = user.roles;
+    async signIn({ user }) {
+      // Obtener datos completos del usuario incluyendo la compañía
+      const fullUser = await db.user.findUnique({
+        where: { id: user.id },
+        include: { company: true }
+      });
+
+      if (fullUser?.company) {
+        user.company = {
+          id: fullUser.company.id,
+          name: fullUser.company.name || '',
+          phone: fullUser.company.phone || '',
+        };
       }
+
+      return true;
+    },
+    async jwt({ token, user, trigger, session }) {
+      console.log("JWT callback - User:", JSON.stringify(user, null, 2));
+      console.log("JWT callback - Trigger:", trigger);
+      
+      if (trigger === "signIn" && user) {
+        // Durante el inicio de sesión, guardar todos los datos del usuario
+        token.id = user.id;
+        token.roles = user.roles;
+        token.company = user.company;
+      } else if (trigger === "update" && session?.user?.company) {
+        // Actualizar el token si los datos de la sesión cambian
+        token.company = session.user.company;
+      }
+      
+      console.log("JWT callback - Final token:", JSON.stringify(token, null, 2));
       return token;
     },
-    // session() se utiliza para agregar la información del token a la sesión del usuario,
-    // lo que hace que esté disponible en el cliente.
-    session({ session, token }) {
+    async session({ session, token }) {
+      console.log("Session callback - Token:", JSON.stringify(token, null, 2));
+      
       if (session.user) {
-        session.user.roles = token.roles as RoleEnum[];
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          roles: token.roles as RoleEnum[],
+        };
+
+        if (token.company) {
+          session.user.company = token.company as {
+            id: string;
+            name: string;
+            phone?: string;
+          };
+        }
       }
+      
+      console.log("Session callback - Final session:", JSON.stringify(session, null, 2));
       return session;
     },
   },
