@@ -36,13 +36,12 @@ const FormLogin = () => {
     setError(null);
     startTransition(async () => {
       const response = await loginAction(values);
-      if (response.error) {
+      if (response?.error) {
         setError(response.error);
       } else {
         router.push('/dashboard');
       }
     });
-    await loginAction(values);
   }
 
   return (

@@ -24,7 +24,8 @@ export function ApplicationInfo({ companyInfo, contractInfo }: ApplicationInfoPr
     setDocuments,
     availableContracts,
     setContract,
-    contract
+    contract,
+    workerData
   } = useApplicationFormStore();
 
   // Función para limpiar el formulario manteniendo datos de empresa
@@ -76,13 +77,40 @@ export function ApplicationInfo({ companyInfo, contractInfo }: ApplicationInfoPr
               <p className="font-medium">{contractInfo.contractNumber || 'No disponible'}</p>
             </div>
             <div>
-            
               <p className="text-sm text-muted-foreground">Administrador de contrato:</p>
               <p className="font-medium">{contractInfo.userAc?.displayName || 'No disponible'}</p>
               <p className="text-sm text-muted-foreground">{contractInfo.userAc?.email || 'No disponible'}</p>
             </div>
           </div>
         </div>
+        </>
+      )}
+
+      {/* Datos del trabajador */}
+      {workerData && (
+        <>
+          <div className='w-full border-b border-muted py-2'></div>
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Datos del trabajador</h3>
+            <div className="space-y-2">
+              <div className='flex gap-2 items-center'>
+                <p className="text-sm text-muted-foreground">RUN:</p>
+                <p className="font-medium">{workerData?.workerRun || 'No disponible'}</p>
+              </div>
+              <div className='flex gap-2 items-center'>
+                <p className="text-sm text-muted-foreground">Nombre:</p>
+                <p className="font-medium">{workerData?.workerName || 'No disponible'}</p>
+              </div>
+              <div className='flex gap-2 items-center'>
+                <p className="text-sm text-muted-foreground">Apellido Paterno:</p>
+                <p className="font-medium">{workerData?.workerPaternal || 'No disponible'}</p>
+              </div>
+              <div className='flex gap-2 items-center'>
+                <p className="text-sm text-muted-foreground">Apellido Materno:</p>
+                <p className="font-medium">{workerData?.workerMaternal || '-'}</p>
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>

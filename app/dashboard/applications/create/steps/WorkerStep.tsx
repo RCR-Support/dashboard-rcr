@@ -124,6 +124,32 @@ export function WorkerStep({ initialData, onNext, onBack }: WorkerStepProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <h2 className="text-lg font-semibold mb-4">Información del Trabajador</h2>
+        
+        {/* Mostrar información actual del trabajador si existe */}
+        {workerData?.workerName && (
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+            <h3 className="text-sm font-medium mb-2">Datos Actuales</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Nombre</p>
+                <p className="font-medium">{workerData.workerName}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">RUN</p>
+                <p className="font-medium">{workerData.workerRun}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Apellido Paterno</p>
+                <p className="font-medium">{workerData.workerPaternal}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Apellido Materno</p>
+                <p className="font-medium">{workerData.workerMaternal || '-'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className='flex flex-col justify-between min-h-80'>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Campo de RUN */}
