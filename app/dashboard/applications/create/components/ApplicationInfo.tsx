@@ -1,37 +1,65 @@
 'use client';
 
 import { Contract } from '@/interfaces/contract.interface';
+import { useApplicationFormStore } from '@/store/application-form-store';
 
 interface CompanyInfo {
-  id?: string;
-  name?: string;
+  id: string;
+  name: string;
   email?: string;
   phone?: string;
 }
 
 interface ApplicationInfoProps {
-  companyInfo?: CompanyInfo;
+  companyInfo: CompanyInfo | null;
   contractInfo?: Contract | null;
 }
 
-export function ApplicationInfo({ companyInfo = {}, contractInfo }: ApplicationInfoProps) {
+export function ApplicationInfo({ companyInfo, contractInfo }: ApplicationInfoProps) {
+  // Acceder al store global
+  const { 
+    setCurrentStep, 
+    setWorkerData, 
+    setSelectedActivities, 
+    setDocuments,
+    availableContracts,
+    setContract,
+    contract
+  } = useApplicationFormStore();
+
+  // Función para limpiar el formulario manteniendo datos de empresa
+  const handleClear = () => {
+    console.log('Limpiando formulario...');
+    // Usamos la nueva acción que maneja todo el estado de una vez
+    useApplicationFormStore.getState().resetFormKeepingCompanyData();
+  };
+
   return (
     <div className="space-y-6 p-6 rounded-lg text-card-foreground bg-white shadow-xl dark:bg-[#282c34] dark:text-white">
       {/* Datos de la empresa */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Datos de la empresa</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Datos de la empresa</h3>
+          <button
+            onClick={handleClear}
+            className="px-3 py-1 text-sm rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+            type="button"
+          >
+            Limpiar
+          </button>
+        </div>
         <div className="space-y-2">
           <div className='flex gap-2 items-center'>
             <p className="text-sm text-muted-foreground">Nombre:</p>
-            <p className="font-medium">{companyInfo.name || 'No disponible'}</p>
+            <p className="font-medium">{companyInfo?.name || 'No disponible'}</p>
           </div>
           <div className='flex gap-2 items-center'>
             <p className="text-sm text-muted-foreground">Email:</p>
-            <p className="font-medium">{companyInfo.email || 'No disponible'}</p>
+            <p className="font-medium">{companyInfo?.email || 'No disponible'}</p>
           </div>
           <div className='flex gap-2 items-center'>
             <p className="text-sm text-muted-foreground">Teléfono:</p>
-            <p className="font-medium">{companyInfo.phone || 'No disponible'}</p>
+            <p className="font-medium">{companyInfo?.phone || 'No disponible'}</p>
           </div>
         </div>
       </div>

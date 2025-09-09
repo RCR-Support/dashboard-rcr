@@ -4,37 +4,29 @@ import { Contract } from '@/interfaces/contract.interface';
 import { useEffect, useState } from 'react';
 
 interface ContractStepProps {
-  data: {
-    contract?: Contract | null;
-    availableContracts?: Contract[];
-  };
-  onStepDataChange: (data: { contract: Contract }) => void;
+  initialData: Contract | null;
+  availableContracts: Contract[];
+  onNext: (contract: Contract) => void;
+  onCancel?: () => void;
 }
 
-export function ContractStep({ data, onStepDataChange }: ContractStepProps) {
-  const [contracts, setContracts] = useState<Contract[]>([]);
+export function ContractStep({ initialData, availableContracts, onNext, onCancel }: ContractStepProps) {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(
-    data.contract || null
+    initialData || null
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (data.availableContracts) {
-      setContracts(data.availableContracts);
-      
-      // Auto-selección si hay un solo contrato
-      if (data.availableContracts.length === 1) {
-        setSelectedContract(data.availableContracts[0]);
-      }
-      
-      setLoading(false);
+    // Auto-selección si hay un solo contrato
+    if (availableContracts.length === 1 && !selectedContract) {
+      setSelectedContract(availableContracts[0]);
     }
-  }, [data.availableContracts]);
+  }, [availableContracts, selectedContract]);
 
   const handleSelect = (contract: Contract) => {
     setSelectedContract(contract);
-    onStepDataChange({ contract });
+    onNext(contract);
   };
 
   if (loading) {
@@ -52,10 +44,23 @@ export function ContractStep({ data, onStepDataChange }: ContractStepProps) {
     );
   }
 
+  if (availableContracts.length === 0) {
+    return (
+      <div className="text-center space-y-4 py-8">
+        <p className="text-muted-foreground">No hay contratos disponibles</p>
+        {onCancel && (
+          <Button onClick={onCancel} variant="secondary">
+            Volver
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {contracts.map(contract => (
+        {availableContracts.map((contract: Contract) => (
           <Card
             key={contract.id}
             className={`relative p-4 transition-all hover:shadow-md ${
@@ -119,8 +124,6 @@ export function ContractStep({ data, onStepDataChange }: ContractStepProps) {
           </Card>
         ))}
       </div>
-
-
     </div>
   );
 }

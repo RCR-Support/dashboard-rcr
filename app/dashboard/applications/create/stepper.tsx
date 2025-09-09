@@ -12,25 +12,22 @@ import { useSession } from 'next-auth/react';
 import { Contract } from '@/interfaces/contract.interface';
 import { Company } from '@/interfaces/company.interface';
 import { getCompanyContracts } from '@/actions/contract/get-company-contracts';
+import { useApplicationFormStore } from '@/store/application-form-store';
 
 export type StepperProps = {
   initialStep?: number;
-  onComplete: (data: any) => void;
-  onCancel: () => void;
+  onComplete?: (data: any) => void;
+  onCancel?: () => void;
 };
 
-interface FormData {
-  company?: {
-    id?: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-  };
-  contract?: Contract | null;
-  availableContracts?: Contract[];
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  component: React.ComponentType<any>;
 }
 
-const steps = [
+const steps: Step[] = [
   {
     id: 'contract',
     title: 'Contrato',
@@ -69,46 +66,100 @@ export function ApplicationStepper({
   onCancel,
 }: StepperProps) {
   const { data: session } = useSession();
-  const [currentStep, setCurrentStep] = useState(initialStep);
-  const [formData, setFormData] = useState<FormData>({});
+  const store = useApplicationFormStore();
+  const { 
+    currentStep,
+    contract, 
+    workerData,
+    selectedActivities,
+    documents,
+    company,
+    availableContracts,
+    setCurrentStep,
+    setContract,
+    setWorkerData,
+    setSelectedActivities,
+    setDocuments,
+    setCompany,
+    setAvailableContracts,
+    clearForm 
+  } = store;
+
+  // Asegurar que el estado sea consistente
+  useEffect(() => {
+    if (!contract && currentStep > 0) {
+      setCurrentStep(0);
+    }
+  }, [contract, currentStep, setCurrentStep]);
+
+  // Solo limpiamos el formulario si no hay datos guardados
+  useEffect(() => {
+    if (!contract && !company && availableContracts.length === 0) {
+      clearForm();
+    }
+  }, [clearForm, contract, company, availableContracts.length]);
+
+  // Manejar la finalización de cada paso
+  const handleStepComplete = (stepData: any) => {
+    switch (currentStep) {
+      case 0:
+        setContract(stepData);
+        setCurrentStep(1);
+        break;
+      case 1:
+        setWorkerData(stepData);
+        setCurrentStep(2);
+        break;
+      case 2:
+        setSelectedActivities(stepData);
+        setCurrentStep(3);
+        break;
+      case 3:
+        setDocuments(stepData);
+        onComplete?.({
+          contract,
+          workerData,
+          selectedActivities,
+          documents,
+          company
+        });
+        break;
+    }
+  };
 
   // Cargar datos de la empresa y contrato al inicio
   useEffect(() => {
     async function loadCompanyData() {
       if (session?.user) {
         const user = session.user;
-        const company = user.company;
+        const userCompany = user.company;
         
-        // Establecer datos de la empresa
-        if (company) {
-          setFormData(prev => ({
-            ...prev,
-            company: {
-              id: company.id,
-              name: company.name,
-              phone: company.phone || undefined,
-              email: user.email || undefined
-            }
-          }));
+        // Establecer datos de la empresa solo si no hay una guardada
+        if (userCompany && !company) {
+          setCompany({
+            id: userCompany.id,
+            name: userCompany.name,
+            phone: userCompany.phone || undefined,
+            email: user.email || undefined
+          });
 
-          // Obtener contratos de la empresa
-          const result = await getCompanyContracts(company.id);
-          
-          if (result.ok && result.contracts) {
-            // Si solo hay un contrato, lo establecemos automáticamente y avanzamos
-            if (result.contracts.length === 1) {
-              setFormData(prev => ({
-                ...prev,
-                contract: result.contracts[0]
-              }));
-              setCurrentStep(1); // Avanzar al siguiente paso
-            }
-            // Si hay múltiples contratos, los guardamos para mostrarlos en el paso 1
-            else if (result.contracts.length > 1) {
-              setFormData(prev => ({
-                ...prev,
-                availableContracts: result.contracts
-              }));
+          // Cargar contratos si no hay ninguno disponible
+          if (availableContracts.length === 0) {
+            const result = await getCompanyContracts(userCompany.id);
+            
+            if (result.ok && result.contracts) {
+              // Siempre guardamos los contratos disponibles
+              setAvailableContracts(result.contracts);
+              
+              // Si solo hay uno y no hay contrato seleccionado, lo seleccionamos
+              if (result.contracts.length === 1 && !contract) {
+                setContract(result.contracts[0]);
+              }
+              
+              // Si no hay contrato seleccionado, asegurarnos de estar en el paso 0
+              if (!contract) {
+                setCurrentStep(0);
+              }
             }
           }
         }
@@ -116,7 +167,7 @@ export function ApplicationStepper({
     }
 
     loadCompanyData();
-  }, [session]);
+  }, [session, setCompany, setContract, setAvailableContracts]);
 
   const CurrentStepComponent = steps[currentStep].component;
 
@@ -161,36 +212,39 @@ export function ApplicationStepper({
       {/* Step Content */}
       <div className="grid grid-cols-[1fr_2fr] gap-8">
         <ApplicationInfo 
-          companyInfo={formData.company}
-          contractInfo={formData.contract}
+          companyInfo={company}
+          contractInfo={contract}
         />
-        <div className="rounded-lg border bg-card p-6">
-          <div className="space-y-6">
-            <CurrentStepComponent
-              data={formData}
-              onStepDataChange={(stepData: any) => {
-                setFormData(prev => ({ ...prev, ...stepData }));
-              }}
-            />
-            <StepNavigation
-              currentStep={currentStep}
-              totalSteps={steps.length}
-              onNext={() => {
-                if (currentStep === steps.length - 1) {
-                  onComplete(formData);
-                } else {
-                  setCurrentStep(prev => prev + 1);
-                }
-              }}
-              onBack={() => {
-                if (currentStep === 0) {
-                  onCancel();
-                } else {
-                  setCurrentStep(prev => prev - 1);
-                }
-              }}
-              isNextDisabled={!formData.contract && currentStep === 0}
-            />
+        <div className="rounded-lg p-6 bg-white shadow-xl dark:bg-[#282c34] dark:text-white">
+          <div className="space-y-6 min-h-[392px]">
+            {!contract ? (
+              <ContractStep
+                availableContracts={availableContracts}
+                initialData={contract}
+                onNext={handleStepComplete}
+                onCancel={onCancel}
+              />
+            ) : !workerData ? (
+              <WorkerStep
+                initialData={workerData}
+                onNext={handleStepComplete}
+                onBack={() => setCurrentStep(0)}
+              />
+            ) : !selectedActivities.length ? (
+              <ActivitiesStep
+                contract={contract}
+                initialData={selectedActivities}
+                onNext={handleStepComplete}
+                onBack={() => setCurrentStep(1)}
+              />
+            ) : (
+              <DocumentsStep
+                contract={contract} 
+                initialData={documents}
+                onNext={handleStepComplete}
+                onBack={() => setCurrentStep(2)}
+              />
+            )}
           </div>
         </div>
       </div>

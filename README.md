@@ -96,7 +96,10 @@ Para ver la base de datos con Prisma Studio:
 npm run prisma:studio
 ```
 
-## Módulo de Actividades
+## Documentación de Módulos
+
+- [Módulo de Solicitudes](./docs/MODULO-SOLICITUDES.md): Sistema de solicitudes de acreditación
+- [Módulo de Actividades](./docs/MODULO-ACTIVIDADES.md): Gestión de actividades
 
 El sistema incluye un módulo completo para la gestión de actividades con las siguientes características:
 
