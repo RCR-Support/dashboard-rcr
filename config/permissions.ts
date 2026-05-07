@@ -1,5 +1,13 @@
 import { PermissionsMapping } from '@/types/auth';
-import { RoleEnum } from '@prisma/client';
+
+// Inline the enum values to avoid importing @prisma/client in the Edge middleware bundle
+const RoleEnum = {
+  admin: 'admin',
+  user: 'user',
+  sheq: 'sheq',
+  adminContractor: 'adminContractor',
+  credential: 'credential',
+} as const;
 
 export const permissions: PermissionsMapping = {
   '/dashboard': {

@@ -2,9 +2,12 @@ import NextAuth, { type DefaultSession } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { RoleEnum } from '@prisma/client';
+import Credentials from 'next-auth/providers/credentials';
+import bcryptjs from 'bcryptjs';
 
 import authConfig from '@/auth.config';
 import { db } from './lib/db';
+import { loginSchema } from '@/lib/zod';
 
 // Extender los tipos de next-auth
 declare module 'next-auth' {
@@ -43,6 +46,64 @@ declare module 'next-auth/jwt' {
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   ...authConfig,
+  providers: [
+    Credentials({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        const { data, success } = loginSchema.safeParse(credentials);
+
+        if (!success) {
+          throw new Error('Invalid credentials');
+        }
+
+        const user = await db.user.findUnique({
+          where: {
+            email: data.email.toLowerCase(),
+          },
+          include: {
+            company: true,
+            roles: {
+              include: {
+                role: true,
+              },
+            },
+          },
+        });
+
+        if (!user || !user.password) {
+          throw new Error('Invalid credentials');
+        }
+
+        if (!user.isActive || user.deletedLogic) {
+          throw new Error('Usuario deshabilitado');
+        }
+
+        const isValid = await bcryptjs.compare(data.password, user.password);
+        if (!isValid) {
+          throw new Error('Invalid credentials');
+        }
+
+        return {
+          id: user.id,
+          email: user.email || '',
+          name: user.name || '',
+          image: user.image || '',
+          roles: user.roles.map(userRole => userRole.role.name as RoleEnum),
+          company: user.company
+            ? {
+                id: user.company.id,
+                name: user.company.name || '',
+                phone: user.company.phone || '',
+              }
+            : undefined,
+        } as any;
+      },
+    }),
+  ],
   session: {
     strategy: 'jwt',
   },
