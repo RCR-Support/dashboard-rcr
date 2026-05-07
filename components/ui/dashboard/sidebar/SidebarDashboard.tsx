@@ -10,7 +10,6 @@ import clsx from 'clsx';
 import { useEffect } from 'react';
 import Link from 'next/link';
 
-import { useTheme } from 'next-themes';
 export const SidebarDashboard = () => {
   const isSideMenuOpen = useUIStore(state => state.isSideMenuOpen);
   const closeMenu = useUIStore(state => state.closeSideMenu);
@@ -38,8 +37,6 @@ export const SidebarDashboard = () => {
     }
   }, [openMenu]);
 
-  const { theme } = useTheme();
-
   return (
     <>
       {/* Background black */}
@@ -66,13 +63,17 @@ export const SidebarDashboard = () => {
               <Link href="/">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={
-                    theme === 'light'
-                      ? '/images/logoInv.svg'
-                      : '/images/logo.svg'
-                  }
+                  src="/images/logoInv.svg"
                   alt="logo"
                   style={{ width: '136px', height: 'auto' }}
+                  className="block dark:hidden"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/logo.svg"
+                  alt="logo"
+                  style={{ width: '136px', height: 'auto' }}
+                  className="hidden dark:block"
                 />
               </Link>
             </div>

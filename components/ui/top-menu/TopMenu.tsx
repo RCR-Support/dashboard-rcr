@@ -4,10 +4,7 @@ import Link from 'next/link';
 import MenuIcon from './MenuIcon';
 import { usePathname } from 'next/navigation';
 
-import { useTheme } from 'next-themes';
-
 export const TopMenu = () => {
-  const { theme } = useTheme();
   const router = usePathname();
   return (
     <nav className="bg-gray-200 dark:bg-[#282c34]  w-full h-[94px] ">
@@ -18,11 +15,17 @@ export const TopMenu = () => {
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={
-                theme === 'light' ? '/images/logoInv.svg' : '/images/logo.svg'
-              }
+              src="/images/logoInv.svg"
               alt="logo"
               style={{ width: '136px', height: 'auto' }}
+              className="block dark:hidden"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo.svg"
+              alt="logo"
+              style={{ width: '136px', height: 'auto' }}
+              className="hidden dark:block"
             />
           </Link>
         </div>
