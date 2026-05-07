@@ -1,23 +1,9 @@
 'use server';
 
-import { auth } from '@/auth';
 import { db, withRetry } from '@/lib/db';
-import { hasActionPermission } from '@/config/action-permissions';
-import { RoleEnum } from '@prisma/client';
 
 export async function getCredentialStats() {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { ok: false, error: 'No autenticado' };
-    }
-
-    const userRoles = session.user.roles as RoleEnum[];
-    const canView = hasActionPermission('credentials:view:approved', userRoles);
-
-    if (!canView) {
-      return { ok: false, error: 'No tienes permiso' };
-    }
 
     const now = new Date();
 

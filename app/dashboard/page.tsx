@@ -1,3 +1,5 @@
+export const maxDuration = 30;
+
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getAdminStats } from '@/actions/dashboard/get-admin-stats';
@@ -38,7 +40,7 @@ export default async function Dashboard() {
   }
 
   if (isSheq) {
-    const result = await getSheqStats();
+    const result = await getSheqStats(user.id);
     if (!result.ok || !result.stats) return <DashboardConnectionError />;
     return (
       <DashboardSheq 
@@ -49,7 +51,7 @@ export default async function Dashboard() {
   }
 
   if (isAdminContractor) {
-    const result = await getAdminContractorStats();
+    const result = await getAdminContractorStats(user.id);
     if (!result.ok || !result.stats) return <DashboardConnectionError />;
     return (
       <DashboardAdminContractor 
@@ -60,7 +62,7 @@ export default async function Dashboard() {
   }
 
   if (isUser) {
-    const result = await getUserStats();
+    const result = await getUserStats(user.id, user.companyId || '');
     if (!result.ok || !result.stats) return <DashboardConnectionError />;
     return (
       <DashboardUser 

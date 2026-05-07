@@ -1,22 +1,11 @@
 'use server';
 
-import { auth } from '@/auth';
 import { db, withRetry } from '@/lib/db';
 import { startOfMonth, endOfMonth, addDays } from 'date-fns';
 
-export async function getUserStats() {
+export async function getUserStats(userId: string, companyId: string) {
   try {
-    const session = await auth();
-    
-    if (!session?.user) {
-      return { error: 'No autenticado' };
-    }
-
-    const user = session.user;
-
-    if (!user.companyId) {
-      return { error: 'Usuario sin empresa asignada' };
-    }
+    const user = { id: userId, companyId };
 
     const now = new Date();
     const monthStart = startOfMonth(now);

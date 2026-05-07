@@ -1,23 +1,10 @@
 'use server';
 
-import { auth } from '@/auth';
 import { db, withRetry } from '@/lib/db';
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 export async function getAdminStats() {
   try {
-    const session = await auth();
-    
-    if (!session?.user) {
-      return { error: 'No autenticado' };
-    }
-
-    const userRoles = session.user.roles || [];
-    
-    // Verificar que sea admin
-    if (!userRoles.includes('admin')) {
-      return { error: 'No tienes permiso para ver estas estadísticas' };
-    }
 
     const now = new Date();
     const monthStart = startOfMonth(now);

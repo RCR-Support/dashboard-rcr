@@ -24,8 +24,8 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  retries = 3,
-  delayMs = 500,
+  retries = 2,
+  delayMs = 300,
 ): Promise<T> {
   let lastError: unknown;
   for (let i = 0; i < retries; i++) {
@@ -41,7 +41,7 @@ export async function withRetry<T>(
         code === 'P1002' ||
         (typeof e?.message === 'string' && e.message.includes("Can't reach database server"));
       if (!isConnectionError || i === retries - 1) throw err;
-      await new Promise(res => setTimeout(res, delayMs * (i + 1)));
+      await new Promise(res => setTimeout(res, delayMs));
     }
   }
   throw lastError;

@@ -1,23 +1,11 @@
 'use server';
 
-import { auth } from '@/auth';
 import { db, withRetry } from '@/lib/db';
 import { startOfMonth, endOfMonth } from 'date-fns';
 
-export async function getAdminContractorStats() {
+export async function getAdminContractorStats(userId: string) {
   try {
-    const session = await auth();
-    
-    if (!session?.user) {
-      return { error: 'No autenticado' };
-    }
-
-    const user = session.user;
-
-    const userRoles = user.roles || [];
-    if (!userRoles.includes('adminContractor')) {
-      return { error: 'No tienes permiso para ver estas estadísticas' };
-    }
+    const user = { id: userId };
 
     const now = new Date();
     const monthStart = startOfMonth(now);

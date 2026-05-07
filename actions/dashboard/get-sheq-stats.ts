@@ -1,23 +1,11 @@
 'use server';
 
-import { auth } from '@/auth';
 import { db, withRetry } from '@/lib/db';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
-export async function getSheqStats() {
+export async function getSheqStats(userId: string) {
   try {
-    const session = await auth();
-    
-    if (!session?.user) {
-      return { error: 'No autenticado' };
-    }
-
-    const user = session.user;
-
-    const userRoles = user.roles || [];
-    if (!userRoles.includes('sheq')) {
-      return { error: 'No tienes permiso para ver estas estadísticas' };
-    }
+    const user = { id: userId };
 
     const now = new Date();
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
