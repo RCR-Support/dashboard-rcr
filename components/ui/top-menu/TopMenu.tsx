@@ -3,9 +3,17 @@ import { secundaryFont } from '@/config/fonts';
 import Link from 'next/link';
 import MenuIcon from './MenuIcon';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 export const TopMenu = () => {
   const router = usePathname();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const logoSrc = mounted && resolvedTheme === 'dark'
+    ? '/images/logo.svg'
+    : '/images/logoInv.svg';
   return (
     <nav className="bg-gray-200 dark:bg-[#282c34]  w-full h-[94px] ">
       <div className="container mx-auto px-4 py-6 flex justify-center md:justify-between items-center w-full h-[94px]">
@@ -15,17 +23,11 @@ export const TopMenu = () => {
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/logoInv.svg"
+              src={logoSrc}
               alt="logo"
-              style={{ width: '136px', height: 'auto' }}
-              className="block dark:hidden"
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/logo.svg"
-              alt="logo"
-              style={{ width: '136px', height: 'auto' }}
-              className="hidden dark:block"
+              width={136}
+              height={61}
+              style={{ width: '136px', height: '61px' }}
             />
           </Link>
         </div>

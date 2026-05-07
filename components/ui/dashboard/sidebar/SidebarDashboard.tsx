@@ -7,8 +7,9 @@ import { IoCloseOutline } from 'react-icons/io5';
 
 import { useUIStore } from '@/store/ui/ui-store';
 import clsx from 'clsx';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 
 export const SidebarDashboard = () => {
   const isSideMenuOpen = useUIStore(state => state.isSideMenuOpen);
@@ -37,6 +38,13 @@ export const SidebarDashboard = () => {
     }
   }, [openMenu]);
 
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const logoSrc = mounted && resolvedTheme === 'dark'
+    ? '/images/logo.svg'
+    : '/images/logoInv.svg';
+
   return (
     <>
       {/* Background black */}
@@ -63,17 +71,11 @@ export const SidebarDashboard = () => {
               <Link href="/">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/images/logoInv.svg"
+                  src={logoSrc}
                   alt="logo"
-                  style={{ width: '136px', height: 'auto' }}
-                  className="block dark:hidden"
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/logo.svg"
-                  alt="logo"
-                  style={{ width: '136px', height: 'auto' }}
-                  className="hidden dark:block"
+                  width={136}
+                  height={61}
+                  style={{ width: '136px', height: '61px' }}
                 />
               </Link>
             </div>
