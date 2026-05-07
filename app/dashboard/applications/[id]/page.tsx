@@ -21,7 +21,9 @@ export default async function ApplicationPage({
   const sheqUsers = await getSheqUsers();
   const versioningAvailable = false;
 
-  const application = await db.application.findUnique({
+  let application;
+  try {
+    application = await db.application.findUnique({
     where: {
       id: params.id,
     },
@@ -108,6 +110,9 @@ export default async function ApplicationPage({
       },
     },
   });
+  } catch {
+    notFound();
+  }
 
   if (!application) {
     notFound();
