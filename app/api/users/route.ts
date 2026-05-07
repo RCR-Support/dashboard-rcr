@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
 
 // 1. Control de errores más detallado
 function logError(error: unknown) {
@@ -11,19 +13,19 @@ function logError(error: unknown) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    // 2. Validación de permisos (ejemplo: solo admin puede cambiar)
-    // NOTA: Ajusta según tu sistema de autenticación real
-    // Si usas next-auth, puedes obtener el usuario de la sesión aquí
-    // const session = await getServerSession(authOptions);
-    // if (!session || session.user.role !== 'admin') {
-    //   return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    // }
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+    if (!hasActionPermission('companies:view:all', session.user.roles)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
 
     const { id, isActive, deletedLogic } = await req.json();
     if (!id) {
       return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
     }
-    const data: any = {};
+    const data: { isActive?: boolean; deletedLogic?: boolean } = {};
     if (typeof isActive === 'boolean') data.isActive = isActive;
     if (typeof deletedLogic === 'boolean') data.deletedLogic = deletedLogic;
     if (Object.keys(data).length === 0) {

@@ -33,11 +33,11 @@ export const getUserById = async (
         userName: true,
         email: true,
         run: true,
-        password: true,
         displayName: true,
         phoneNumber: true,
         companyId: true,
         adminContractorId: true,
+        image: true,
         adminContractor: {
           select: {
             id: true,
@@ -62,7 +62,6 @@ export const getUserById = async (
             },
           },
         },
-        image: true, // Agregado para incluir el campo image
       },
     });
 
@@ -73,14 +72,6 @@ export const getUserById = async (
       };
     }
 
-    // Log para debug
-    console.log('Datos del usuario:', {
-      id: userData.id,
-      roles: userData.roles,
-      adminContractorId: userData.adminContractorId,
-      adminContractor: userData.adminContractor,
-    });
-
     const user: UserEdit = {
       id: userData.id,
       name: userData.name,
@@ -89,7 +80,6 @@ export const getUserById = async (
       secondLastName: userData.secondLastName,
       userName: userData.userName,
       email: userData.email,
-      password: userData.password || undefined,
       run: userData.run,
       phoneNumber: userData.phoneNumber,
       companyId: userData.companyId,
@@ -109,7 +99,7 @@ export const getUserById = async (
     console.error('Error al obtener usuario:', error);
     return {
       ok: false,
-      message: 'Error al obtener el usuario XD',
+      message: 'Error al obtener el usuario',
     };
   }
 };

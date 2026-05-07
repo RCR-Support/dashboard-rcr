@@ -1,0 +1,1 @@
+{"receivedAt":"2026-01-31T17:35:17.401Z","payload":{"RecordType":"Bounce","Type":"HardBounce","MessageID":"test-123","Email":"test@example.com","BouncedAt":"2026-01-31T12:00:00Z"}}

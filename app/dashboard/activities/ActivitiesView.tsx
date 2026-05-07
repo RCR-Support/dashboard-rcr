@@ -5,11 +5,16 @@ import { CardActivity } from '@/components/ui/dashboard/activity/CardActivity';
 import { TablaActivity } from '@/components/ui/dashboard/activity/TablaActivity';
 import { VIEW_TYPES, ViewProps, ViewType } from './interfaces';
 import { CardViewButton, TableViewButton } from './ViewButtons';
+import { useExpandedActivity } from './useExpandedActivity';
+import { DetailModal } from './DetailModal';
 
 export default function ActivitiesView({ activities }: ViewProps) {
   const searchParams = useSearchParams();
   const view = (searchParams?.get('view') || VIEW_TYPES.CARDS) as ViewType;
   const router = useRouter();
+
+  // Usar el hook para manejar la actividad expandida
+  const { expandedActivityId } = useExpandedActivity();
 
   const toggleView = (newView: ViewType) => {
     const params = new URLSearchParams(searchParams?.toString() || '');
@@ -41,6 +46,7 @@ export default function ActivitiesView({ activities }: ViewProps) {
       ) : (
         <TablaActivity activities={activities} />
       )}
+      <DetailModal />
     </div>
   );
 }

@@ -3,13 +3,14 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { RoleEnum } from '@prisma/client';
+import { hasActionPermission } from '@/config/action-permissions';
 
 export const fetchUserData = async () => {
   const timestamp = Date.now(); // Agregar timestamp para evitar caché
 
   const session = await auth();
 
-  if (!session?.user || session.user.roles?.includes('admin') === false) {
+  if (!session?.user || !hasActionPermission('companies:view:all', session.user.roles)) {
     return {
       ok: false,
       message: 'No tienes permiso de administrador',
@@ -20,6 +21,7 @@ export const fetchUserData = async () => {
     const users = await db.user.findMany({
       // No filtramos por deletedLogic para traer todos los usuarios
       orderBy: { createdAt: 'desc' },
+      omit: { password: true },
       include: {
         company: true, // Relación con la empresa
         roles: {

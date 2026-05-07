@@ -20,7 +20,6 @@ export const ContractList = ({
   onAddContract,
   isEditing = false,
 }: ContractListProps) => {
-  console.log('contracts', contracts);
   if (contracts.length === 0) {
     return (
       <div className="text-center py-8 text-slate-500 dark:text-slate-400">

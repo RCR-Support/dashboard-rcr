@@ -8,6 +8,7 @@ export interface Company {
   phone: string;
   city: string | null;
   url: string | null;
+  logoUrl: string | null;
   status: boolean;
   users?: User[];
   contracts?: Contract[];
@@ -34,6 +35,7 @@ export interface CompanySelect {
   value: string;
   label: string;
   description: string;
+  logoUrl?: string | null;
   users?: Array<{
     id: string;
     displayName: string;

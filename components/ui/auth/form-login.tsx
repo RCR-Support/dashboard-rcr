@@ -18,10 +18,12 @@ import { Input } from '@/components/ui/input';
 import { loginAction } from '@/actions/auth-action';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 const FormLogin = () => {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -69,7 +71,17 @@ const FormLogin = () => {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input placeholder="password" type="password" {...field} />
+                  <div className="relative">
+                    <Input placeholder="password" type={showPassword ? 'text' : 'password'} {...field} />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(s => !s)}
+                      className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

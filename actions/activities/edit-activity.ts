@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { uploadActivityImage } from './cloudinary';
-const prisma = new PrismaClient();
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
 
 // Editar una actividad existente, incluyendo imagen y licencia
 export async function editActivity(
@@ -9,7 +10,12 @@ export async function editActivity(
   imageFile?: File,
   requiredDriverLicense?: string
 ) {
-  let data: any = { name };
+  const session = await auth();
+  if (!session?.user) throw new Error('No autenticado');
+  if (!hasActionPermission('activities:edit', session.user.roles)) {
+    throw new Error('No tienes permiso para editar actividades');
+  }
+  const data: { name: string; requiredDriverLicense?: string; imageUrl?: string } = { name };
   if (requiredDriverLicense !== undefined)
     data.requiredDriverLicense = requiredDriverLicense;
 
@@ -19,5 +25,5 @@ export async function editActivity(
     if (imageUrl) data.imageUrl = imageUrl;
   }
 
-  return await prisma.activity.update({ where: { id }, data });
+  return await db.activity.update({ where: { id }, data });
 }

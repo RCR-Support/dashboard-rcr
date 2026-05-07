@@ -1,5 +1,7 @@
-const UsersPage = () => {
-  return <div>Users Page SSS</div>;
+import { redirect } from 'next/navigation';
+
+const UserDetailPage = () => {
+  redirect('/dashboard/users');
 };
 
-export default UsersPage;
+export default UserDetailPage;

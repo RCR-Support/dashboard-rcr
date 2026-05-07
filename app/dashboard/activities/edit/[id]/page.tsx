@@ -12,11 +12,20 @@ export default async function EditActivityPage({
   const activity = activities.find((a: any) => a.id === params.id);
   if (!activity) return notFound();
 
+  // Map requiredDocumentations to include documentationId expected by the form
+  const mappedActivity = {
+    ...activity,
+    requiredDocumentations: activity.requiredDocumentations?.map((rd: any) => ({
+      ...rd,
+      documentationId: rd.documentation?.id ?? rd.id,
+    })),
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Editar Actividad</h1>
       {/* Renderiza el formulario en un componente cliente para evitar error de event handler */}
-      <EditActivityClient activity={activity} />
+      <EditActivityClient activity={mappedActivity} />
     </div>
   );
 }

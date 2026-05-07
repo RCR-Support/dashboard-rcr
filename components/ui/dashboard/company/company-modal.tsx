@@ -14,6 +14,10 @@ import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { IoClose } from 'react-icons/io5';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useSession } from 'next-auth/react';
+import { deleteCompany } from '@/actions/company/company-actions';
+import { useState } from 'react';
 
 interface CompanyModalProps {
   isOpen: boolean;
@@ -28,12 +32,50 @@ export const CompanyModal = ({
 }: CompanyModalProps) => {
   const router = useRouter();
   const setEditingCompany = useCompanyStore(state => state.setEditingCompany);
+  const { can } = usePermissions();
+  const { data: session } = useSession();
+
+  // Verificar permisos de edición
+  const canEditAny = can('companies:edit:any');
+  const canEditOwn = can('companies:edit:own');
+  
+  // Si puede editar solo las propias, verificar ownership
+  const userCompanyId = session?.user?.companyId;
+  const canEditThisCompany = canEditAny || (canEditOwn && company?.value === userCompanyId);
+
+  // Solo admin puede eliminar
+  const canDelete = can('companies:delete');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleEdit = () => {
-    if (company) {
+    if (company && canEditThisCompany) {
       setEditingCompany(company);
       onClose();
       router.push(`/dashboard/companies/edit/${company.value}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!company) return;
+    setDeleteError(null);
+    const confirmed = window.confirm(
+      `¿Estás seguro de eliminar la empresa "${company.label.split(' (')[0]}"?`
+    );
+    if (!confirmed) return;
+    setIsDeleting(true);
+    try {
+      const result = await deleteCompany(company.value);
+      if (result.error) {
+        setDeleteError(result.error);
+      } else {
+        onClose();
+        router.refresh();
+      }
+    } catch {
+      setDeleteError('Error al eliminar la empresa');
+    } finally {
+      setIsDeleting(false);
     }
   };
   return (
@@ -189,33 +231,45 @@ export const CompanyModal = ({
             )}
           </div>
         </ModalBody>
-        <ModalFooter className="flex justify-between items-center">
-          <Button
-            color="default"
-            className="self-start text-left text-default-500 hover:bg-default-100 dark:hover:bg-default-800 dark:hover:text-neutral-800"
-            variant="flat"
-            onPress={onClose}
-            startContent={<IoClose className="h-4 w-4" />}
-          >
-            Cerrar
-          </Button>
-          <div className="flex gap-4">
+        <ModalFooter className="flex flex-col gap-2">
+          {deleteError && (
+            <div className="w-full text-sm text-danger bg-danger-50 dark:bg-danger-950/20 px-3 py-2 rounded-lg">
+              {deleteError}
+            </div>
+          )}
+          <div className="flex justify-between items-center w-full">
             <Button
-              color="success"
-              variant="flat"
-              onPress={handleEdit}
-              startContent={<Pencil className="h-4 w-4" />}
-            >
-              Editar
-            </Button>
-            <Button
-              color="danger"
+              color="default"
+              className="self-start text-left text-default-500 hover:bg-default-100 dark:hover:bg-default-800 dark:hover:text-neutral-800"
               variant="flat"
               onPress={onClose}
-              startContent={<Trash className="h-4 w-4" />}
+              startContent={<IoClose className="h-4 w-4" />}
             >
-              Eliminar
+              Cerrar
             </Button>
+            <div className="flex gap-4">
+              {canEditThisCompany && (
+                <Button
+                  color="success"
+                  variant="flat"
+                  onPress={handleEdit}
+                  startContent={<Pencil className="h-4 w-4" />}
+                >
+                  Editar
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  color="danger"
+                  variant="flat"
+                  onPress={handleDelete}
+                  isLoading={isDeleting}
+                  startContent={!isDeleting ? <Trash className="h-4 w-4" /> : undefined}
+                >
+                  Eliminar
+                </Button>
+              )}
+            </div>
           </div>
         </ModalFooter>
       </ModalContent>

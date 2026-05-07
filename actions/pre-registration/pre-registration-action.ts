@@ -79,15 +79,10 @@ const preRegisterSchema = z
   });
 
 export const preRegisterAction = async (values: unknown) => {
-  console.log('[preRegisterAction] values recibidos:', values);
   try {
     // 1. Parseo general para obtener companyId
     const parsedGeneral = preRegisterSchema.safeParse(values);
     if (!parsedGeneral.success) {
-      console.log(
-        '[preRegisterAction] Error de validación general:',
-        parsedGeneral.error.errors
-      );
       return {
         error: 'Datos inválidos',
         validationErrors: parsedGeneral.error.errors.map(error => ({
@@ -98,7 +93,6 @@ export const preRegisterAction = async (values: unknown) => {
     }
     const data = parsedGeneral.data;
     const isEmpresaExistente = !!data.companyId && data.companyId !== '';
-    console.log('[preRegisterAction] isEmpresaExistente:', isEmpresaExistente);
 
     // Validación condicional de campos de empresa
     if (!isEmpresaExistente) {
@@ -115,7 +109,6 @@ export const preRegisterAction = async (values: unknown) => {
         where: { rut: data.companyRut },
       });
       if (companyExists) {
-        console.log('[preRegisterAction] Empresa ya existe');
         return { error: 'El RUT de la empresa ya está registrado' };
       }
     }
@@ -124,7 +117,6 @@ export const preRegisterAction = async (values: unknown) => {
       where: { OR: [{ email: data.userEmail }, { run: data.userRun }] },
     });
     if (userExists) {
-      console.log('[preRegisterAction] Usuario ya existe');
       return { error: 'El email o RUN del usuario ya está registrado' };
     }
     // Validar contrato único (siempre)
@@ -132,7 +124,6 @@ export const preRegisterAction = async (values: unknown) => {
       where: { contractNumber: data.contractNumber },
     });
     if (contractExists) {
-      console.log('[preRegisterAction] Contrato ya existe');
       return { error: 'El número de contrato ya existe' };
     }
 
@@ -148,51 +139,52 @@ export const preRegisterAction = async (values: unknown) => {
       if (!company) {
         return { error: 'La empresa seleccionada no existe' };
       }
-      // Crear usuario inactivo asociado a la empresa existente
-      const newUser = await db.user.create({
-        data: {
-          email: data.userEmail,
-          run: data.userRun,
-          name: data.userName,
-          lastName: data.userLastName,
-          middleName: data.userMiddleName,
-          secondLastName: data.userSecondLastName,
-          displayName:
-            data.displayName && data.displayName.trim() !== ''
-              ? data.displayName
-              : `${data.userName} ${data.userLastName}`.trim(),
-          userName: `${data.userName.charAt(0).toLowerCase()}${data.userLastName.toLowerCase()}`,
-          phoneNumber: data.userPhoneNumber,
-          category: 'default',
-          isActive: false,
-          companyId: data.companyId,
-          roles: {
-            create: [
-              {
-                role: {
-                  connect: { name: RoleEnum.user },
+      // Crear usuario y contrato en transacción para evitar datos huérfanos
+      const companyId = data.companyId!;
+      await db.$transaction(async (prisma) => {
+        await prisma.user.create({
+          data: {
+            email: data.userEmail,
+            run: data.userRun,
+            name: data.userName,
+            lastName: data.userLastName,
+            middleName: data.userMiddleName,
+            secondLastName: data.userSecondLastName,
+            displayName:
+              data.displayName && data.displayName.trim() !== ''
+                ? data.displayName
+                : `${data.userName} ${data.userLastName}`.trim(),
+            userName: `${data.userName.charAt(0).toLowerCase()}${data.userLastName.toLowerCase()}`,
+            phoneNumber: data.userPhoneNumber,
+            category: 'default',
+            isActive: false,
+            companyId: companyId,
+            roles: {
+              create: [
+                {
+                  role: {
+                    connect: { name: RoleEnum.user },
+                  },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      });
-      // Crear contrato asociado a la empresa existente y admin contractor seleccionado
-      const newContract = await db.contract.create({
-        data: {
-          contractNumber: data.contractNumber,
-          contractName: data.contractName,
-          initialDate: data.initialDate,
-          finalDate: data.finalDate,
-          companyId: data.companyId,
-          useracId: data.adminContractorId,
-        },
+        });
+        await prisma.contract.create({
+          data: {
+            contractNumber: data.contractNumber,
+            contractName: data.contractName,
+            initialDate: data.initialDate,
+            finalDate: data.finalDate,
+            companyId: companyId,
+            useracId: data.adminContractorId,
+          },
+        });
       });
       return {
         success: true,
         message:
           'Solicitud de pre-registro enviada correctamente. Un administrador la revisará.',
-        data: { company, newUser, newContract },
       };
     } else {
       // --- FLUJO: Crear nueva empresa ---
@@ -257,11 +249,9 @@ export const preRegisterAction = async (values: unknown) => {
         success: true,
         message:
           'Solicitud de pre-registro enviada correctamente. Un administrador la revisará.',
-        data: result,
       };
     }
   } catch (error) {
-    console.error('Error en preRegisterAction:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         const target = (error.meta?.target as string[]) || [];

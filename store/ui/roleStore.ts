@@ -22,7 +22,7 @@ export const useRoleStore = create<RoleState>()(
       storage: createJSONStorage(() => {
         return {
           setItem: (name, value) => {
-            document.cookie = `${name}=${value}; path=/; max-age=2592000; SameSite=Strict`;
+            document.cookie = `${name}=${value}; path=/; max-age=2592000; SameSite=Strict; Secure`;
           },
           getItem: name => {
             const value = document.cookie

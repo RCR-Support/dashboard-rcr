@@ -9,6 +9,7 @@ import { Building2, Globe, MapPin, Phone } from 'lucide-react';
 import { getCompanyUsers } from '@/actions/company/userCompany-actions';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { CompanyModal } from './company-modal';
+import Image from 'next/image';
 
 interface Props {
   companies: CompanySelect[];
@@ -43,7 +44,6 @@ export const CompaniesGrid = ({ companies }: Props) => {
   const openModal = async (company: CompanySelect) => {
     try {
       const response = await getCompanyUsers(company.value);
-      console.log('Respuesta de getCompanyUsers:', response); // Debug
 
       if (response.success) {
         setSelectedCompany({
@@ -116,11 +116,21 @@ export const CompaniesGrid = ({ companies }: Props) => {
             className="col-span-6 md:col-span-6 xl:col-span-3 card-box"
           >
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-primary" />
+              <div className="bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                {company.logoUrl ? (
+                  <Image
+                    src={company.logoUrl}
+                    alt={`Logo ${company.label.split(' (')[0]}`}
+                    width={112}
+                    height={56}
+                    className="object-contain w-full h-full"
+                  />
+                ) : (
+                  <Building2 className="h-6 w-6 text-primary" />
+                )}
               </div>
               <div className="flex flex-col gap-1">
-                <div className="font-semibold truncate text-ellipsis max-w-36 xl:max-w-44">
+                <div className="font-semibold line-clamp-2 break-words max-w-36 xl:max-w-44">
                   {company.label.split(' (')[0]}
                 </div>
                 <div className="hidden md:flex items-center gap-3 truncate text-ellipsis max-w-36 2xl:max-w-44">

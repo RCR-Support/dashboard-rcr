@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useState, ReactNode } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
+import { Users, Crown, Shield, Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight } from 'lucide-react';
 // Utilidad para actualizar usuario
 async function updateUserField(
   id: string,
@@ -34,32 +35,26 @@ import {
   SortDescriptor,
 } from '@heroui/react';
 import { Avatar } from '@mui/material';
-import { HiOutlinePlus, HiDotsVertical, HiEye } from 'react-icons/hi';
+import { HiOutlinePlus, HiDotsVertical } from 'react-icons/hi';
 import { CiSearch } from 'react-icons/ci';
 import { HiMiniChevronDown } from 'react-icons/hi2';
-import { RiDeleteBin2Fill } from 'react-icons/ri';
-import { TbUserEdit } from 'react-icons/tb';
 import { User } from '@/interfaces';
 import { formatRun } from '@/lib/validations';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import UserModal from './UserModal';
 interface Props {
   users: User[];
-}
-interface Company {
-  name: string;
-  rut: string;
 }
 export const columns = [
   { name: 'ID', uid: 'id', sortable: true },
   { name: 'NOMBRE', uid: 'name', sortable: true },
   { name: 'RUN', uid: 'run', sortable: true },
-  { name: 'ROL', uid: 'role', sortable: true },
+  { name: 'CONTACTO', uid: 'contact', sortable: false },
+  { name: 'ROLES', uid: 'roles', sortable: false },
   { name: 'EMPRESA', uid: 'companyName', sortable: true },
-  { name: 'Fono', uid: 'phoneNumber' },
-  { name: 'CORREO', uid: 'email' },
-  { name: 'FECHA CREACIÓN', uid: 'createdAt', sortable: true },
+  { name: 'Última ACTIVIDAD', uid: 'lastActivity', sortable: true },
   { name: 'ESTADO', uid: 'status' },
   { name: 'ACTIVO', uid: 'isActiveStatus' },
   { name: 'ACCIONES', uid: 'actions' },
@@ -78,6 +73,15 @@ export const isActiveOptions = [
 export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
 }
+
+// Configuración mejorada de roles con iconos
+const roleConfig = {
+  admin: { name: 'Administrador', icon: Crown, color: 'danger' },
+  sheq: { name: 'SHEQ', icon: Shield, color: 'primary' },
+  adminContractor: { name: 'Admin Contrato', icon: Building2, color: 'secondary' },
+  credential: { name: 'Credencial', icon: UserCheck, color: 'success' },
+  user: { name: 'Usuario', icon: Users, color: 'default' },
+};
 
 const stringToColor = (string: string) => {
   let hash = 0;
@@ -114,12 +118,16 @@ const statusColorMap: Record<string, ChipProps['color']> = {
 
 const INITIAL_VISIBLE_COLUMNS = [
   'name',
-  'run',
-  'role',
+  'run', 
+  'contact',
+  'roles',
+  'companyName',
+  'lastActivity',
   'status',
   'isActiveStatus',
   'actions',
 ];
+
 function formatShortDate(dateString: string | Date | undefined) {
   if (!dateString) return '-';
   const date =
@@ -131,6 +139,25 @@ function formatShortDate(dateString: string | Date | undefined) {
   return `${day}-${month}-${year}`;
 }
 
+// Función para calcular tiempo relativo
+function getRelativeTime(date: string | Date | undefined) {
+  if (!date) return 'Sin fecha';
+  
+  const now = new Date();
+  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  
+  if (isNaN(targetDate.getTime())) return 'Fecha inválida';
+  
+  const diffInDays = Math.floor((now.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffInDays === 0) return 'Hoy';
+  if (diffInDays === 1) return 'Ayer';
+  if (diffInDays < 7) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
+  if (diffInDays < 30) return `Hace ${Math.floor(diffInDays / 7)} semana${Math.floor(diffInDays / 7) > 1 ? 's' : ''}`;
+  if (diffInDays < 365) return `Hace ${Math.floor(diffInDays / 30)} mes${Math.floor(diffInDays / 30) > 1 ? 'es' : ''}`;
+  return `Hace ${Math.floor(diffInDays / 365)} año${Math.floor(diffInDays / 365) > 1 ? 's' : ''}`;
+}
+
 interface RoleMapping {
   [key: string]: string;
 }
@@ -138,7 +165,7 @@ interface RoleMapping {
 const roleMapping: RoleMapping = {
   admin: 'Administrador',
   sheq: 'Sheq',
-  adminContractor: 'Administrador de Contrato',
+  adminContractor: 'Administrador de Contrato', 
   user: 'Usuario',
   credential: 'Credenciales',
 };
@@ -146,7 +173,21 @@ const roleMapping: RoleMapping = {
 export default function App({ users }: Props) {
   const router = useRouter();
 
+  const [modalUser, setModalUser] = useState<User | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = (user: User) => {
+    setModalUser(user);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalUser(null);
+  };
+
   const [filterValue, setFilterValue] = useState('');
+  const [companyFilter, setCompanyFilter] = useState<'all' | string>('all');
   const [visibleColumns, setVisibleColumns] = useState<Selection>(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
@@ -172,11 +213,25 @@ export default function App({ users }: Props) {
     );
   }, [visibleColumns]);
 
+  const companyOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    users.forEach(u => {
+      if (u.company?.id) map.set(u.company.id, u.company.name || 'Sin nombre');
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [users]);
+
   const filteredItems = useMemo(() => {
     let filteredUsers = [...users];
     const normalizeText = (text: string) =>
       text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Elimina tildes
 
+    // Filtrado por empresa (quick filter)
+    if (companyFilter !== 'all') {
+      filteredUsers = filteredUsers.filter(
+        u => u.company?.id && u.company.id === companyFilter
+      );
+    }
     if (hasSearchFilter) {
       const normalizedFilter = normalizeText(filterValue.toLowerCase());
       filteredUsers = filteredUsers.filter(
@@ -205,7 +260,7 @@ export default function App({ users }: Props) {
     }
 
     return filteredUsers;
-  }, [users, filterValue, statusFilter, isActiveFilter, hasSearchFilter]);
+  }, [users, filterValue, statusFilter, isActiveFilter, hasSearchFilter, companyFilter]);
 
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -330,25 +385,79 @@ export default function App({ users }: Props) {
                 </p>
               </div>
             );
-          case 'role':
+          case 'contact':
             return (
-              <div className="flex flex-col  min-w-48 ">
-                <p className="text-bold text-small capitalize">
-                  {user.roles.map(role => roleMapping[role]).join(', ')}
-                </p>
-                <p className="text-bold text-tiny capitalize text-default-500 truncate text-ellipsis max-w-48">
-                  {user.userName ?? 'N/A'}
-                </p>
+              <div className="flex flex-col min-w-36 gap-1">
+                <div className="flex items-center gap-1">
+                  <Mail size={12} className="text-gray-400" />
+                  <p className="text-bold text-small truncate">
+                    {user.email || 'N/A'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Phone size={12} className="text-gray-400" />
+                  <p className="text-xs text-default-500">
+                    {user.phoneNumber ? formatPhoneNumber(user.phoneNumber) : '-'}
+                  </p>
+                </div>
+              </div>
+            );
+          case 'roles':
+            return (
+              <div className="flex items-center gap-1 flex-wrap min-w-48">
+                {Array.isArray(user.roles) && user.roles.length > 0 ? (
+                  user.roles.map(r => {
+                    const config = roleConfig[r] || { name: r, icon: Users, color: 'default' };
+                    const IconComponent = config.icon;
+                    return (
+                      <Chip 
+                        key={r} 
+                        size="sm" 
+                        variant="flat" 
+                        color={(config.color as 'danger' | 'primary' | 'secondary' | 'success' | 'default') || 'default'}
+                        startContent={<IconComponent size={12} />}
+                        className="capitalize"
+                      >
+                        {config.name}
+                      </Chip>
+                    );
+                  })
+                ) : (
+                  <span className="text-default-500">N/A</span>
+                )}
               </div>
             );
           case 'companyName':
             return (
-              <div className="flex flex-col min-w-32 max-w-56 ">
-                <p className="text-bold text-small capitalize truncate text-ellipsis max-w-56">
-                  {user?.company?.name}
-                </p>
+              <div className="flex flex-col min-w-32 max-w-56">
+                <div className="flex items-center gap-1">
+                  <Building2 size={12} className="text-gray-400" />
+                  <p className="text-bold text-small capitalize truncate text-ellipsis max-w-52">
+                    {user?.company?.id ? (
+                      <Link href={`/dashboard/companies/${user.company.id}`} className="text-primary hover:underline">
+                        {user.company.name}
+                      </Link>
+                    ) : (
+                      user?.company?.name || 'Sin empresa'
+                    )}
+                  </p>
+                </div>
                 <p className="text-bold text-tiny capitalize text-default-500">
                   {user?.company?.rut ? formatRun(user.company.rut) : 'N/A'}
+                </p>
+              </div>
+            );
+          case 'lastActivity':
+            return (
+              <div className="flex flex-col min-w-32">
+                <div className="flex items-center gap-1">
+                  <Clock size={12} className="text-gray-400" />
+                  <p className="text-bold text-small">
+                    {getRelativeTime(user.createdAt)}
+                  </p>
+                </div>
+                <p className="text-xs text-default-500">
+                  {formatShortDate(user.createdAt)}
                 </p>
               </div>
             );
@@ -367,6 +476,7 @@ export default function App({ users }: Props) {
           case 'status': {
             const statusText = user.deletedLogic ? 'Eliminado' : 'Activo';
             const chipColor = user.deletedLogic ? 'danger' : 'success';
+            const statusEmoji = user.deletedLogic ? '❌' : '✅';
             const isLoading =
               loadingField &&
               loadingField.id === user.id &&
@@ -383,6 +493,7 @@ export default function App({ users }: Props) {
                   size="sm"
                   variant="flat"
                 >
+                  <span className="mr-1">{statusEmoji}</span>
                   {statusText}
                   {isLoading && (
                     <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />
@@ -394,6 +505,7 @@ export default function App({ users }: Props) {
           case 'isActiveStatus': {
             const isActiveText = user.isActive ? 'Habilitado' : 'Pendiente';
             const isActiveColor = user.isActive ? 'success' : 'warning';
+            const activeEmoji = user.isActive ? '✅' : '⚠️';
             const isLoading =
               loadingField &&
               loadingField.id === user.id &&
@@ -410,6 +522,7 @@ export default function App({ users }: Props) {
                   size="sm"
                   variant="flat"
                 >
+                  <span className="mr-1">{activeEmoji}</span>
                   {isActiveText}
                   {isLoading && (
                     <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />
@@ -431,29 +544,41 @@ export default function App({ users }: Props) {
                     <DropdownItem
                       key="view"
                       startContent={
-                        <HiEye size={16} className="text-primary" />
+                        <Users size={16} className="text-primary" />
                       }
+                      onPress={() => openModal(user)}
                     >
                       Ver más
                     </DropdownItem>
                     <DropdownItem
                       key="edit"
                       startContent={
-                        <TbUserEdit size={16} className="text-primary" />
-                      }
-                      onPress={() =>
-                        router.push(`/dashboard/users/edit/${user.id}`)
+                        <Edit3 size={16} className="text-primary" />
                       }
                     >
-                      Editar
+                      <Link href={`/dashboard/users/edit/${user.id}`} className="block w-full h-full">Editar</Link>
                     </DropdownItem>
                     <DropdownItem
-                      key="delete"
+                      key="toggleActive"
                       startContent={
-                        <RiDeleteBin2Fill size={16} className="text-danger" />
+                        user.isActive ? 
+                          <ToggleRight size={16} className="text-warning" /> : 
+                          <ToggleLeft size={16} className="text-success" />
                       }
+                      onPress={() => handleChangeField(user, 'isActive')}
                     >
-                      Eliminar
+                      {user.isActive ? 'Deshabilitar' : 'Habilitar'}
+                    </DropdownItem>
+                    <DropdownItem
+                      key="toggleDeleted"
+                      startContent={
+                        user.deletedLogic ? 
+                          <UserCheck size={16} className="text-success" /> : 
+                          <UserX size={16} className="text-danger" />
+                      }
+                      onPress={() => handleChangeField(user, 'deletedLogic')}
+                    >
+                      {user.deletedLogic ? 'Restaurar' : 'Eliminar'}
                     </DropdownItem>
                   </DropdownMenu>
                 </Dropdown>
@@ -471,7 +596,7 @@ export default function App({ users }: Props) {
             }
         }
       },
-      [router]
+      [router, loadingField, updatingId]
     );
 
   const onRowsPerPageChange = useCallback(
@@ -566,6 +691,21 @@ export default function App({ users }: Props) {
                   ))}
                 </DropdownMenu>
               </Dropdown>
+              <div className="hidden sm:flex items-center">
+                <label className="text-default-500 mr-2 text-sm">Empresa:</label>
+                <select
+                  value={companyFilter}
+                  onChange={e => setCompanyFilter(e.target.value)}
+                  className="bg-transparent outline-none text-sm"
+                >
+                  <option value="all">Todas</option>
+                  {companyOptions.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <Dropdown>
                 <DropdownTrigger className="">
                   <Button
@@ -635,6 +775,8 @@ export default function App({ users }: Props) {
     onRowsPerPageChange,
     rowsPerPage,
     users.length,
+    companyFilter,
+    companyOptions,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -722,6 +864,17 @@ export default function App({ users }: Props) {
           )}
         </TableBody>
       </Table>
+      <UserModal
+        user={modalUser}
+        isOpen={modalOpen}
+        onClose={closeModal}
+        onEdit={() => {
+          if (modalUser) router.push(`/dashboard/users/edit/${modalUser.id}`);
+        }}
+        onDelete={() => {
+          if (modalUser) handleChangeField(modalUser, 'deletedLogic');
+        }}
+      />
     </div>
   );
 }

@@ -82,44 +82,6 @@ export const ContractModal = ({
   }, [initialDate, finalDate, form]);
 
   const handleSubmit = async (values: ContractFormValues) => {
-    // Formatear las fechas para mostrarlas de manera legible
-    const formattedInitialDate = new Date(
-      values.initialDate
-    ).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-    const formattedFinalDate = new Date(values.finalDate).toLocaleDateString(
-      'es-ES',
-      {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }
-    );
-
-    // Encontrar el administrador seleccionado para mostrar sus datos
-    const selectedAdmin = adminContractors.find(
-      admin => admin.value === values.useracId
-    );
-
-    // Mostrar los datos que se van a guardar
-    console.group('Datos del contrato a guardar:');
-    console.log('Número de contrato:', values.contractNumber);
-    console.log('Nombre del contrato:', values.contractName);
-    console.log('Fecha de inicio:', formattedInitialDate);
-    console.log('Fecha de término:', formattedFinalDate);
-    console.log('Administrador seleccionado:', {
-      id: selectedAdmin?.value,
-      nombre: selectedAdmin?.label,
-      email: selectedAdmin?.description,
-    });
-    console.log('ID de la empresa:', values.companyId);
-    console.log('Datos completos:', values);
-    console.groupEnd();
-
-    // Validación de fechas
     const startDate = new Date(values.initialDate);
     const endDate = new Date(values.finalDate);
 
@@ -127,31 +89,6 @@ export const ContractModal = ({
       form.setError('finalDate', {
         type: 'manual',
         message: 'La fecha de término debe ser posterior a la fecha de inicio',
-      });
-      return;
-    }
-
-    // Validación de campos obligatorios
-    if (!values.contractNumber.trim()) {
-      form.setError('contractNumber', {
-        type: 'manual',
-        message: 'El número de contrato es requerido',
-      });
-      return;
-    }
-
-    if (!values.contractName.trim()) {
-      form.setError('contractName', {
-        type: 'manual',
-        message: 'El nombre del contrato es requerido',
-      });
-      return;
-    }
-
-    if (!values.useracId) {
-      form.setError('useracId', {
-        type: 'manual',
-        message: 'Debe seleccionar un administrador',
       });
       return;
     }
@@ -166,14 +103,12 @@ export const ContractModal = ({
         companyId: values.companyId,
       };
 
-      console.log('Datos preparados para enviar:', contractData);
       await onSubmit(contractData);
 
-      console.log('Contrato guardado exitosamente');
       form.reset();
       onClose();
-    } catch (error) {
-      console.error('Error al guardar el contrato:', error);
+    } catch {
+      // Error handled by parent
     } finally {
       setIsPending(false);
     }

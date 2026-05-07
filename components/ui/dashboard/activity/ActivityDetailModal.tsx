@@ -13,6 +13,7 @@ import { IoClose } from 'react-icons/io5';
 import Image from 'next/image';
 import { getActivityById } from '@/app/dashboard/activities/actions';
 import { useRouter } from 'next/navigation';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface ActivityDetailModalProps {
   isOpen: boolean;
@@ -41,6 +42,9 @@ export function ActivityDetailModal({
   activityId,
 }: ActivityDetailModalProps) {
   const router = useRouter();
+  const { can } = usePermissions();
+  const canEdit = can('activities:edit');
+  
   const [activity, setActivity] = useState<Activity | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +58,6 @@ export function ActivityDetailModal({
           const data = await getActivityById(activityId);
           setActivity(data);
         } catch (err) {
-          console.error('Error al cargar los detalles de la actividad:', err);
           setError(
             'No se pudieron cargar los detalles de la actividad. Por favor, inténtalo de nuevo.'
           );
@@ -205,17 +208,19 @@ export function ActivityDetailModal({
           >
             Cerrar
           </Button>
-          <div className="flex gap-4">
-            <Button
-              color="success"
-              variant="flat"
-              onPress={handleEdit}
-              startContent={<Pencil className="h-4 w-4" />}
-              disabled={!activity}
-            >
-              Editar
-            </Button>
-          </div>
+          {canEdit && (
+            <div className="flex gap-4">
+              <Button
+                color="success"
+                variant="flat"
+                onPress={handleEdit}
+                startContent={<Pencil className="h-4 w-4" />}
+                disabled={!activity}
+              >
+                Editar
+              </Button>
+            </div>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>

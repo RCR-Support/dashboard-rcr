@@ -25,7 +25,7 @@ export async function uploadActivityImage(
       },
       (error, result) => {
         if (error) reject(error);
-        else resolve((result as any).secure_url);
+        else resolve(result?.secure_url ?? null);
       }
     );
   });

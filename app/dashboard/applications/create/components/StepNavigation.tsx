@@ -11,7 +11,7 @@ export function StepNavigation({
   totalSteps,
   onNext,
   onBack,
-  isNextDisabled
+  isNextDisabled,
 }: StepNavigationProps) {
   return (
     <div className="flex justify-between pt-6 border-t mt-6">

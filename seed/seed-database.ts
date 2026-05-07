@@ -1,6 +1,6 @@
 import { initialData } from './seed';
 import { db } from '../lib/db';
-import { RoleEnum } from '@prisma/client'; // Importa RoleEnum de Prisma
+import { RoleEnum } from '@prisma/client';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -8,7 +8,9 @@ const execAsync = promisify(exec);
 
 async function runOtherSeeds() {
   try {
-    // Ejecutar otros scripts de semilla
+    console.log('Ejecutando seed para zonas...');
+    await execAsync('npx ts-node seed/seed-zones.ts');
+
     console.log('Ejecutando seed para actividades y documentaciones...');
     await execAsync('npx ts-node seed/seed-activities-documentations.ts');
 
@@ -29,24 +31,30 @@ async function main() {
 
   // Eliminar datos existentes en orden para evitar violaciones de clave foránea
   try {
-    // Primero eliminar las tablas que tienen referencias a user, company, etc.
-    await db.contract.deleteMany({});
-    await db.userRole.deleteMany({});
-    await db.notification.deleteMany({});
+    // Primero tablas hijas (sin dependientes)
+    await db.applicationQR.deleteMany({});
     await db.applicationAudit.deleteMany({});
     await db.documentationFile.deleteMany({});
-    await db.application.deleteMany({});
+    await db.notification.deleteMany({});
+    await db.userRole.deleteMany({});
     await db.reassignmentLog.deleteMany({});
+    // Desconectar relaciones M-N antes de borrar application
+    await db.$executeRawUnsafe(`DELETE FROM "_ActivityApplications"`);
+    await db.$executeRawUnsafe(`DELETE FROM "_ZoneApplications"`);
+    await db.application.deleteMany({});
+    await db.contract.deleteMany({});
     await db.activityDocumentation.deleteMany({});
     await db.documentation.deleteMany({});
     await db.activity.deleteMany({});
+    await db.zone.deleteMany({});
+    await db.account.deleteMany({});
+    await db.verificationToken.deleteMany({});
 
-    // Ahora podemos eliminar usuarios y compañías
+    // Limpiar self-relation de User antes de borrar
+    await db.user.updateMany({ data: { adminContractorId: null } });
     await db.user.deleteMany({});
     await db.company.deleteMany({});
     await db.role.deleteMany({});
-    await db.account.deleteMany({});
-    await db.verificationToken.deleteMany({});
 
     console.log('Datos anteriores eliminados correctamente.');
   } catch (error) {
@@ -78,13 +86,13 @@ async function main() {
   );
 
   // Almacenar referencia del adminContractor
-  let adminContractorUser = null;
+  let adminContractorUser: { id: string; displayName: string } | null = null;
 
   // Crear usuarios y asignar roles
   for (const user of initialData.users) {
-    const company = companies.find(c => c.name === 'RCR-Support'); // Ajusta esto según tus necesidades
-    if (company) {
-      user.companyId = company.id;
+    const rcrCompany = companies.find(c => c.name === 'RCR-Support');
+    if (rcrCompany) {
+      user.companyId = rcrCompany.id;
     }
 
     const createdUser = await db.user.create({
@@ -108,39 +116,50 @@ async function main() {
 
     // Asignar roles al usuario
     for (const role of user.roles) {
-      const roleRecord = await db.role.findUnique({
-        where: { name: role },
-      });
-
+      const roleRecord = await db.role.findUnique({ where: { name: role } });
       if (roleRecord) {
         await db.userRole.create({
-          data: {
-            userId: createdUser.id,
-            roleId: roleRecord.id,
-          },
+          data: { userId: createdUser.id, roleId: roleRecord.id },
         });
       }
+    }
 
-      // Almacenar referencia del adminContractor
-      if (role === RoleEnum.adminContractor) {
-        adminContractorUser = createdUser; // Guarda el usuario creado como adminContractor
-      }
-      // Si es un usuario normal, asignarle el adminContractor
-      if (user.roles.includes('user') && adminContractorUser) {
-        await db.user.update({
-          where: { id: createdUser.id },
-          data: {
-            adminContractorId: adminContractorUser.id,
-          },
-        });
-        console.log(
-          `Asignado adminContractor ${adminContractorUser.displayName} al usuario ${createdUser.displayName}`
-        );
-      }
+    // Guardar referencia del primer adminContractor creado
+    if (user.roles.includes('adminContractor')) {
+      adminContractorUser = createdUser;
+    }
+
+    // Si es usuario normal, asignarle el adminContractor (fuera del loop de roles)
+    if (user.roles.includes('user') && adminContractorUser) {
+      await db.user.update({
+        where: { id: createdUser.id },
+        data: { adminContractorId: adminContractorUser.id },
+      });
+      console.log(
+        `Asignado adminContractor ${adminContractorUser.displayName} al usuario ${createdUser.displayName}`
+      );
     }
   }
 
-  console.log('Database seeded with users, roles and companies.');
+  // Crear un contrato de ejemplo vinculando RCR-Support con el adminContractor
+  if (adminContractorUser) {
+    const rcrCompany = companies.find(c => c.name === 'RCR-Support');
+    if (rcrCompany) {
+      await db.contract.create({
+        data: {
+          contractNumber: 'CONT-001',
+          contractName: 'Contrato de Prueba RCR',
+          initialDate: new Date('2025-01-01'),
+          finalDate: new Date('2026-12-31'),
+          companyId: rcrCompany.id,
+          useracId: adminContractorUser.id,
+        },
+      });
+      console.log('Contrato de prueba creado.');
+    }
+  }
+
+  console.log('Database seeded with users, roles, companies and contracts.');
 
   // Ejecutar otros scripts de semilla
   await runOtherSeeds();

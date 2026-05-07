@@ -5,12 +5,26 @@ import { Button } from '@heroui/button';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { MdOutlineAddBusiness } from 'react-icons/md';
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
+import { redirect } from 'next/navigation';
 
 export default async function CompaniesPage() {
-  const { ok, companies = [] } = await fetchCompanies();
-  if (!ok) {
-    throw new Error('Error al cargar empresas');
+  // Verificar permisos server-side
+  const session = await auth();
+  if (!session?.user) {
+    redirect('/auth/login');
   }
+
+  const userRoles = session.user.roles || [];
+  const canViewAll = hasActionPermission('companies:view:all', userRoles);
+  const canCreate = hasActionPermission('companies:create', userRoles);
+
+  if (!canViewAll) {
+    redirect('/unauthorized');
+  }
+
+  const { ok, companies = [], message } = await fetchCompanies();
 
   // Ya no necesitamos mapear porque companies ya viene en el formato CompanySelect
   const companiesToShow: CompanySelect[] = companies;
@@ -19,24 +33,32 @@ export default async function CompaniesPage() {
     <div className="grid grid-cols-12 grid-rows-auto gap-4 w-full mx-auto lg:max-w-[100%]">
       <div className="col-span-12 text-xl font-normal card-box flex justify-between">
         <h1>Listado de empresas</h1>
-        <Link href="/dashboard/companies/createCompany">
-          <Button
-            size="sm"
-            variant="ghost"
-            color="success"
-            startContent={<MdOutlineAddBusiness />}
-          >
-            {' '}
-            <span className="flex items-center gap-2 hover:text-white">
-              Crear empresa
-            </span>{' '}
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link href="/dashboard/companies/createCompany">
+            <Button
+              size="sm"
+              variant="ghost"
+              color="success"
+              startContent={<MdOutlineAddBusiness />}
+            >
+              {' '}
+              <span className="flex items-center gap-2 hover:text-white">
+                Crear empresa
+              </span>{' '}
+            </Button>
+          </Link>
+        )}
       </div>
       <div className="col-span-12">
-        <Suspense fallback={<div>Cargando...</div>}>
-          <CompaniesTable companies={companiesToShow} />
-        </Suspense>
+        {!ok ? (
+          <div className="card-box text-sm text-red-600 dark:text-red-400">
+            {message || 'Error al cargar empresas'}
+          </div>
+        ) : (
+          <Suspense fallback={<div>Cargando...</div>}>
+            <CompaniesTable companies={companiesToShow} />
+          </Suspense>
+        )}
       </div>
     </div>
   );

@@ -3,14 +3,12 @@ import { SidebarDashboardMenu } from './SidebarDashboardMenu';
 import { FaRegCopyright } from 'react-icons/fa6';
 import { ImageDarkmode } from './ImageDarkmode';
 
-import { SessionProvider } from 'next-auth/react';
 import { IoCloseOutline } from 'react-icons/io5';
 
 import { useUIStore } from '@/store/ui/ui-store';
 import clsx from 'clsx';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 import { useTheme } from 'next-themes';
 export const SidebarDashboard = () => {
@@ -43,7 +41,7 @@ export const SidebarDashboard = () => {
   const { theme } = useTheme();
 
   return (
-    <SessionProvider>
+    <>
       {/* Background black */}
       {isSideMenuOpen && (
         <div className="lg:hidden fixed top-0 left-0 w-screen h-screen z-10 bg-black opacity-30" />
@@ -66,16 +64,15 @@ export const SidebarDashboard = () => {
           <div className="relative flex-1 flex flex-col min-h-0 bg-white dark:bg-[#282c34] text-slate-800 dark:text-white ">
             <div className="px-3 w-full flex h-24 items-center justify-center">
               <Link href="/">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={
                     theme === 'light'
                       ? '/images/logoInv.svg'
                       : '/images/logo.svg'
                   }
                   alt="logo"
-                  width={136}
-                  height={50}
-                  quality={100}
+                  style={{ width: '136px', height: 'auto' }}
                 />
               </Link>
             </div>
@@ -94,9 +91,9 @@ export const SidebarDashboard = () => {
             >
               <div className="flex gap-3 items-center">
                 <span className="text-xs flex items-center gap-2">
-                  <FaRegCopyright /> 2024{' '}
+                  <FaRegCopyright /> {new Date().getFullYear()}{' '}
                 </span>
-                <div className="w-[95px] h-[40px]">
+                <div className="relative w-[95px] h-[40px] overflow-hidden">
                   <ImageDarkmode />
                 </div>
               </div>
@@ -105,6 +102,6 @@ export const SidebarDashboard = () => {
           </div>
         </aside>
       </div>
-    </SessionProvider>
+    </>
   );
 };

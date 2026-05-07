@@ -15,6 +15,7 @@ interface Props {
 }
 
 const EditUserPage = ({ params }: Props) => {
+  const router = useRouter();
   const [user, setUser] = useState<UserEdit | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,13 +48,43 @@ const EditUserPage = ({ params }: Props) => {
   }, [id]);
 
   if (isLoading) {
-    return <div className="flex justify-center items-center">Cargando...</div>;
+    return (
+      <div className="flex flex-col justify-center items-center">
+        <div className="grid grid-cols-12 grid-rows-auto gap-4 w-full lg:max-w-[1024px] card-box">
+          <div className="col-span-12 py-4">
+            <div className="h-7 w-64 bg-default-200 rounded animate-pulse" />
+          </div>
+          <div className="col-span-12 md:col-span-6 space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-24 bg-default-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-default-100 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="col-span-12 md:col-span-6 space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-24 bg-default-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-default-100 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center text-red-500">
-        {error}
+      <div className="flex flex-col justify-center items-center min-h-[300px] gap-4">
+        <div className="text-danger text-lg font-medium">{error}</div>
+        <button
+          onClick={() => router.push('/dashboard/users')}
+          className="text-primary underline text-sm hover:text-primary-600"
+        >
+          Volver al listado de usuarios
+        </button>
       </div>
     );
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { FormInput } from '@/components/ui/form/FormInput';
 import { useRouter } from 'next/navigation';
 import { companySchema } from '@/lib/validation-company';
@@ -19,10 +19,11 @@ import {
   createContract,
 } from '@/actions/contract/contract-actions';
 import { addToast } from '@heroui/toast';
-import { Building2, Phone, Globe, MapPin, PlusCircle } from 'lucide-react';
+import { Building2, Phone, Globe, MapPin, PlusCircle, ImageIcon, X } from 'lucide-react';
 import { CompanySelectEdit } from '@/interfaces/CompanySelectEdit';
 import { ContractModal } from './contract-modal';
 import { ContractList } from './contract-list';
+import Image from 'next/image';
 
 import { Contract, ContractFormValues } from '@/interfaces/contract.interface';
 import { AdminContractor } from '@/interfaces/admin-contractor.interface';
@@ -42,6 +43,13 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
     []
   );
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    initialData?.logoUrl || null
+  );
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const initialLogoUrl = initialData?.logoUrl || '';
 
   const router = useRouter();
   // Función para cargar los contratos
@@ -95,6 +103,7 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
       rut: initialData?.rut || '',
       url: initialData?.url || '',
       city: initialData?.city || '',
+      logoUrl: initialData?.logoUrl || '',
     },
   });
 
@@ -138,22 +147,58 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
   // Validaciones del formulario
   const formValues = form.watch();
   const hasErrors = Object.keys(form.formState.errors).length > 0;
-  const isFormComplete = Object.values(formValues).every(
-    value => value !== undefined && value !== ''
-  );
-  const hasChanges =
+  const isFormComplete =
+    (formValues.name?.trim() ?? '') !== '' &&
+    (formValues.rut?.trim() ?? '') !== '' &&
+    (formValues.phone?.trim() ?? '') !== '';
+  const hasFieldChanges =
     isEditing &&
     (Object.keys(formValues) as Array<keyof typeof formValues>).some(
-      key => formValues[key] !== form.formState.defaultValues?.[key]
+      key => (formValues[key] ?? '') !== (form.formState.defaultValues?.[key] ?? '')
     );
+  const hasLogoChanges =
+    isEditing && (Boolean(selectedLogoFile) || (logoPreview || '') !== initialLogoUrl);
+  const hasChanges = !isEditing || Boolean(hasFieldChanges || hasLogoChanges);
   const isButtonDisabled = isEditing
     ? !hasChanges || !isFormComplete || hasErrors
     : !isFormComplete || hasErrors;
 
+  const normalizeWebsiteUrl = (url?: string) => {
+    if (!url || !url.trim()) return undefined;
+    const value = url.trim();
+    return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  };
+
+  // Manejadores de logo
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      addToast({
+        title: 'Error',
+        description: 'El logo no debe superar los 5MB',
+        timeout: 3000,
+        icon: '❌',
+        color: 'danger',
+      });
+      return;
+    }
+    setSelectedLogoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setSelectedLogoFile(null);
+    form.setValue('logoUrl', '');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   // Manejadores
   const handleEditContract = (contract: Contract) => {
-    // TODO: Implementar edición
-    console.log('Editar contrato:', contract);
+    // TODO: Implementar edición de contratos
   };
 
   const handleContractSubmit = async (values: ContractFormValues) => {
@@ -213,9 +258,29 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
     setError(null);
     startTransition(async () => {
       try {
+        let logoUrl = values.logoUrl || '';
+        const normalizedUrl = normalizeWebsiteUrl(values.url);
+        const logoFormData = new FormData();
+
+        if (selectedLogoFile) {
+          logoFormData.append('logo', selectedLogoFile);
+        } else if (!logoPreview) {
+          // El usuario eliminó el logo
+          logoUrl = '';
+        }
+
+        setIsUploadingLogo(Boolean(selectedLogoFile));
+
         const response = isEditing
-          ? await updateCompany({ ...values, id: initialData!.value })
-          : await createCompany(values);
+          ? await updateCompany({
+              ...values,
+              url: normalizedUrl,
+              logoUrl,
+              id: initialData!.value,
+            }, logoFormData)
+          : await createCompany({ ...values, url: normalizedUrl, logoUrl }, logoFormData);
+
+        setIsUploadingLogo(false);
 
         if (response.error) {
           setError(response.error);
@@ -236,11 +301,14 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
         if (!isEditing) {
           form.reset();
           setHasAttempted(false);
+          setLogoPreview(null);
+          setSelectedLogoFile(null);
         }
 
         router.push('/dashboard/companies');
         router.refresh();
       } catch (error) {
+        setIsUploadingLogo(false);
         setError('Ocurrió un error inesperado. Por favor, intente nuevamente.');
       }
     });
@@ -256,6 +324,66 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
           {FormInputs.map(field => (
             <FormInput key={field.name} {...field} form={form} />
           ))}
+
+          {/* Logo de la empresa */}
+          <div className="col-span-12 mt-6">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Logo de la Empresa
+            </p>
+            <div className="flex items-start gap-6">
+              {/* Preview */}
+              <div className="relative w-40 h-20 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0">
+                {logoPreview ? (
+                  <>
+                    <Image
+                      src={logoPreview}
+                      alt="Logo empresa"
+                      fill
+                      className="object-contain p-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-slate-400">
+                    <ImageIcon size={24} />
+                    <span className="text-xs">Sin logo</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Controles */}
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={handleLogoChange}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-white dark:border-cyan-500 dark:text-cyan-500 dark:hover:bg-cyan-500 dark:hover:text-white"
+                >
+                  <ImageIcon size={14} />
+                  {logoPreview ? 'Cambiar logo' : 'Subir logo'}
+                </Button>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  PNG, JPG, SVG o WEBP · Máx. 5MB
+                  <br />
+                  Tamaño recomendado: 400×200px
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="col-span-12 border-t border-b border-slate-200 dark:border-slate-700 mt-8 pt-4">
             <div className="flex justify-between items-center mb-4">
@@ -293,6 +421,11 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
                 </span>
               </p>
             )}
+            {isEditing && !hasErrors && !hasChanges && (
+              <p className="text-amber-600 dark:text-amber-400 text-sm">
+                No hay cambios para guardar.
+              </p>
+            )}
           </div>
 
           <div className="col-span-5 flex justify-end mt-8">
@@ -308,16 +441,18 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
             <Button
               type="submit"
               variant="default"
-              disabled={isButtonDisabled}
-              className={`${isButtonDisabled ? 'opacity-50 bg-slate-500 cursor-not-allowed' : ''}`}
+              disabled={isButtonDisabled || isUploadingLogo}
+              className={`${isButtonDisabled || isUploadingLogo ? 'opacity-50 bg-slate-500 cursor-not-allowed' : ''}`}
             >
-              {isPending
-                ? isEditing
-                  ? 'Actualizando...'
-                  : 'Creando...'
-                : isEditing
-                  ? 'Actualizar Empresa'
-                  : 'Crear Empresa'}
+              {isUploadingLogo
+                ? 'Subiendo logo...'
+                : isPending
+                  ? isEditing
+                    ? 'Actualizando...'
+                    : 'Creando...'
+                  : isEditing
+                    ? 'Actualizar Empresa'
+                    : 'Crear Empresa'}
             </Button>
           </div>
         </form>

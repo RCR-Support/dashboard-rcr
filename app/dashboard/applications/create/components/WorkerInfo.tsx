@@ -1,8 +1,8 @@
-import { Card } from "@/components/ui/card";
-import { useApplicationFormStore } from "@/store/application-form-store";
+import { Card } from '@/components/ui/card';
+import { useApplicationFormStore } from '@/store/application-form-store';
 
 export function WorkerInfo() {
-  const { workerData } = useApplicationFormStore();
+  const workerData = useApplicationFormStore(state => state.workerData);
 
   if (!workerData?.workerName) return null;
 

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
+import { hasActionPermission } from '@/config/action-permissions';
 
 export async function GET() {
   try {
@@ -10,10 +11,12 @@ export async function GET() {
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    console.log('Session user:', session.user);
+    if (!hasActionPermission('contracts:view:all', session.user.roles) &&
+        !hasActionPermission('contracts:view:assigned', session.user.roles)) {
+      return new NextResponse('No autorizado', { status: 403 });
+    }
 
     // Primero obtenemos el usuario con su compañía y roles
-    // Obtener usuario con sus datos
     const user = await db.user.findUniqueOrThrow({
       where: {
         email: session.user.email,
@@ -22,8 +25,6 @@ export async function GET() {
         company: true,
       },
     });
-
-    console.log('User data:', user);
 
     if (!user) {
       return new NextResponse('Usuario no encontrado', { status: 404 });
@@ -59,8 +60,7 @@ export async function GET() {
     });
 
     return NextResponse.json(contracts);
-  } catch (error) {
-    console.error('[CONTRACTS_GET]', error);
+  } catch {
     return new NextResponse('Error interno', { status: 500 });
   }
 }

@@ -7,6 +7,13 @@ export interface ContractUser {
   displayName: string;
 }
 
+// Interfaz para Company simplificada (usada en listados)
+export interface ContractCompany {
+  id: string;
+  name: string | null;
+  rut: string;
+}
+
 // Interfaz principal del contrato
 export interface Contract {
   id: string;
@@ -14,13 +21,16 @@ export interface Contract {
   contractName: string;
   initialDate: Date;
   finalDate: Date;
-  companyId: string;
-  useracId: string;
-  company?: Company;
-  userAc?: ContractUser; // Cambiado a ContractUser en lugar de User completo
+  companyId?: string;
+  useracId?: string;
+  company?: ContractCompany;
+  userAc?: ContractUser;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
   deletedAt?: Date | null;
+  _count?: {
+    application: number;
+  };
 }
 
 export interface ContractResponse {

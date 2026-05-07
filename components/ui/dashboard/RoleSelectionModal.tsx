@@ -25,13 +25,8 @@ const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
   const { setRole } = useRoleStore();
 
   const handleSelect = (role: string) => {
-    try {
-      setRole(role);
-      const storedRole = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('role-storage='));
-      onRoleSelected();
-    } catch (error) {}
+    setRole(role);
+    onRoleSelected();
   };
 
   return (

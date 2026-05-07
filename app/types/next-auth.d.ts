@@ -29,6 +29,8 @@ declare module 'next-auth' {
   interface User {
     id: string;
     roles: RoleEnum[];
+    displayName?: string;
+    companyId?: string;
     company?: {
       id: string;
       name: string;
@@ -50,6 +52,8 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
     roles: RoleEnum[];
+    displayName?: string;
+    companyId?: string;
     company?: {
       id: string;
       name: string;

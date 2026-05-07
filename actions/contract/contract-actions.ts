@@ -13,6 +13,8 @@ import {
 } from '@/interfaces/admin-contractor.interface';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
 
 // Tipo para crear un contrato usando los tipos de Prisma
 type CreateContractInput = Prisma.ContractCreateInput;
@@ -21,6 +23,8 @@ export async function getContracts(
   companyId: string
 ): Promise<ContractResponse> {
   try {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: 'No autenticado', contracts: [] };
     const contracts = await db.contract.findMany({
       where: {
         companyId,
@@ -46,8 +50,7 @@ export async function getContracts(
       success: true,
       contracts: formattedContracts,
     };
-  } catch (error) {
-    console.error('Error al obtener contratos:', error);
+  } catch {
     return {
       success: false,
       error: 'Error al cargar los contratos',
@@ -58,6 +61,12 @@ export async function getContracts(
 
 export async function createContract(data: ContractFormValues) {
   try {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: 'No autenticado' };
+    if (!hasActionPermission('contracts:create', session.user.roles)) {
+      return { success: false, error: 'No tienes permiso para crear contratos' };
+    }
+
     const contract = await db.contract.create({
       data: {
         contractNumber: data.contractNumber,
@@ -86,9 +95,7 @@ export async function createContract(data: ContractFormValues) {
     revalidatePath('/dashboard/companies');
     return { success: true, contract };
   } catch (error) {
-    console.error('Error creando contrato:', error);
     return {
-      success: false,
       error:
         error instanceof Error ? error.message : 'Error al crear el contrato',
     };
@@ -125,8 +132,7 @@ export async function getAdminContractors(): Promise<AdminContractorResponse> {
       success: true,
       adminContractors: formattedAdmins,
     };
-  } catch (error) {
-    console.error('Error al obtener admin contractors:', error);
+  } catch {
     return {
       success: false,
       error: 'Error al cargar administradores',

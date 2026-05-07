@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 
 export default function UnauthorizedPage() {
   const router = useRouter();
@@ -54,12 +55,20 @@ export default function UnauthorizedPage() {
             )}{' '}
             segundos...
           </p>
-          <Link
-            href="/dashboard"
-            className="text-blue-500 hover:text-blue-700 font-medium"
-          >
-            Volver al Dashboard ahora
-          </Link>
+          <div className="flex gap-4 mt-2">
+            <Link
+              href="/dashboard"
+              className="text-blue-500 hover:text-blue-700 font-medium"
+            >
+              Volver al Dashboard
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="text-red-500 hover:text-red-700 font-medium"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </div>
     </>

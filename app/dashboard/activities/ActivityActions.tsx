@@ -17,22 +17,16 @@ export default function ActivityActions({
   activityName?: string;
 }) {
   const router = useRouter();
-  const { userRole } = usePermissions();
+  const { can } = usePermissions();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [name, setName] = useState(activityName || '');
 
-  // Verificar si el usuario es administrador
-  const isAdmin = userRole === 'admin';
-
-  // Verificar si el rol del usuario tiene permisos para ver actividades
-  const canViewActivities = [
-    'admin',
-    'sheq',
-    'adminContractor',
-    'user',
-  ].includes(userRole || '');
+  // ✅ Usar sistema de permisos granulares
+  const canEditActivities = can('activities:edit');
+  const canDeleteActivities = can('activities:delete');
+  const canViewActivities = can('activities:view');
 
   useEffect(() => {
     // Si no tenemos el nombre de la actividad y no está cargando, intenta obtenerlo
@@ -43,8 +37,8 @@ export default function ActivityActions({
           if (activity) {
             setName(activity.name);
           }
-        } catch (error) {
-          console.error('Error al obtener el nombre de la actividad:', error);
+        } catch {
+          // Error al obtener el nombre de la actividad
         }
       };
 
@@ -71,8 +65,8 @@ export default function ActivityActions({
         await deleteActivityServer(activityId);
         setIsConfirmModalOpen(false);
         router.refresh();
-      } catch (error) {
-        console.error('Error al eliminar la actividad:', error);
+      } catch {
+        // Error al eliminar la actividad
       } finally {
         setIsDeleting(false);
       }
@@ -81,20 +75,19 @@ export default function ActivityActions({
 
   return (
     <>
-      {canViewActivities ? (
-        isAdmin ? (
-          // Si es admin, mostrar los iconos originales
-          <div className="flex gap-3 mt-2 justify-center">
-            <Tooltip content="Ver detalles">
-              <button
-                className="text-blue-500 hover:text-blue-700 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={handleView}
-                aria-label="Ver detalles"
-              >
-                <Eye size={18} />
-              </button>
-            </Tooltip>
+      {canViewActivities && (
+        <div className="flex gap-3 mt-2 justify-center">
+          <Tooltip content="Ver detalles">
+            <button
+              className="text-blue-500 hover:text-blue-700 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={handleView}
+              aria-label="Ver detalles"
+            >
+              <Eye size={18} />
+            </button>
+          </Tooltip>
 
+          {canEditActivities && (
             <Tooltip content="Editar actividad">
               <button
                 className="text-yellow-500 hover:text-yellow-700 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -104,7 +97,9 @@ export default function ActivityActions({
                 <Pencil size={18} />
               </button>
             </Tooltip>
+          )}
 
+          {canDeleteActivities && (
             <Tooltip content="Eliminar actividad">
               <button
                 className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -115,25 +110,7 @@ export default function ActivityActions({
                 <Trash2 size={18} className={isDeleting ? 'opacity-50' : ''} />
               </button>
             </Tooltip>
-          </div>
-        ) : (
-          // Si no es admin pero tiene permiso para ver, mostrar botón grande
-          <div className="flex flex-col mt-2">
-            {/* Botón principal de Ver Detalles con icono y texto */}
-            <Button
-              color="primary"
-              variant="flat"
-              className="w-full flex items-center justify-center gap-2 text-sm"
-              onClick={handleView}
-            >
-              <Eye size={16} />
-              Ver detalles
-            </Button>
-          </div>
-        )
-      ) : (
-        <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-2">
-          Sin acceso
+          )}
         </div>
       )}
 

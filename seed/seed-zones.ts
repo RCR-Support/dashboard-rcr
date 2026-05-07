@@ -5,7 +5,13 @@ const zones = ['Verde', 'Amarilla', 'Despacho', 'Roja'];
 
 async function main() {
   for (const name of zones) {
-    await prisma.zone.create({ data: { name } });
+    const existingZone = await prisma.zone.findFirst({
+      where: { name },
+    });
+
+    if (!existingZone) {
+      await prisma.zone.create({ data: { name } });
+    }
   }
   console.log('Seed de zonas completado');
 }

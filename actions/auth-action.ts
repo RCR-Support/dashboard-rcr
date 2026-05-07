@@ -1,43 +1,38 @@
 'use server';
 
-import { signIn } from '@/auth';
-import { db } from '@/lib/db';
+import { db, withRetry } from '@/lib/db';
 import { loginSchema, registerSchema } from '@/lib/zod';
 import bcrypt from 'bcryptjs';
 import { AuthError } from 'next-auth';
 import { z } from 'zod';
+import { auth, signIn } from '@/auth';
 
 export const loginAction = async (values: z.infer<typeof loginSchema>) => {
   try {
-    const user = await db.user.findUnique({
+    const user = await withRetry(() => db.user.findUnique({
       where: {
         email: values.email.toLowerCase(),
       },
       include: {
         company: true,
       },
-    });
+    }));
 
     if (!user) {
       return { error: 'Invalid credentials' };
     }
 
-    const result = await signIn('credentials', {
+    await signIn('credentials', {
       email: values.email.toLowerCase(),
       password: values.password,
-      redirect: false,
-      company: JSON.stringify(user.company)
     });
-
-    if (!result?.ok) {
-      return { error: 'Invalid credentials' };
-    }
 
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: error.cause?.err?.message };
+      return { error: error.cause?.err?.message || 'Error de autenticación' };
     }
-    return { error: 'error 500' };
+    // signIn() lanza NEXT_REDIRECT en éxito — hay que dejarlo pasar
+    throw error;
   }
 };

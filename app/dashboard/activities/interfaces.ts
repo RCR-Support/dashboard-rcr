@@ -8,8 +8,11 @@ export interface Activity {
     documentation: {
       id: string;
       name: string;
+      acceptedFileType?: 'PDF' | 'IMAGE' | 'DOCUMENT' | 'ANY';
     };
-    notes?: string | null;
+    notes: string | null;
+    isSpecific: boolean;
+    quantity: number | null;
   }[];
 }
 

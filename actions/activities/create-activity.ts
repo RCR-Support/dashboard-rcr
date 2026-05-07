@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { uploadActivityImage } from './cloudinary';
-const prisma = new PrismaClient();
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
 
 // Crear una nueva actividad con imagen referencial
 export async function createActivity(
@@ -8,8 +9,14 @@ export async function createActivity(
   imageFile?: File,
   requiredDriverLicense?: string
 ) {
+  const session = await auth();
+  if (!session?.user) throw new Error('No autenticado');
+  if (!hasActionPermission('activities:create', session.user.roles)) {
+    throw new Error('No tienes permiso para crear actividades');
+  }
+
   // Primero crea la actividad sin imagen para obtener el id
-  const activity = await prisma.activity.create({
+  const activity = await db.activity.create({
     data: {
       name,
       requiredDriverLicense,
@@ -20,7 +27,7 @@ export async function createActivity(
   if (imageFile) {
     const imageUrl = await uploadActivityImage(imageFile, activity.id);
     if (imageUrl) {
-      await prisma.activity.update({
+      await db.activity.update({
         where: { id: activity.id },
         data: { imageUrl },
       });

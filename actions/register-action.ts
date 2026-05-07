@@ -39,6 +39,13 @@ export const registerAction = async (
 
     const data = parsed.data;
 
+    // Forzar que `admin` no tenga company ni adminContractor
+    if (Array.isArray(data.roles) && data.roles.includes('admin')) {
+      data.companyId = undefined;
+      // Algunos formularios pueden enviar adminContractorId en edición; evitarlo en registro
+      (data as any).adminContractorId = undefined;
+    }
+
     // Verificar si el email o run ya existe
     const userExists = await db.user.findFirst({
       where: {
@@ -53,9 +60,33 @@ export const registerAction = async (
       };
     }
 
+    // Asegurar que los roles existan (evita P2025 si la BD fue reseteada sin seed de roles)
+    const requestedRoles = data.roles as RoleEnum[];
+    const existingRoles = await db.role.findMany({
+      where: { name: { in: requestedRoles } },
+      select: { name: true },
+    });
+
+    const existingRoleNames = new Set(existingRoles.map(r => r.name));
+    const missingRoles = requestedRoles.filter(role => !existingRoleNames.has(role));
+
+    if (missingRoles.length > 0) {
+      await db.role.createMany({
+        data: missingRoles.map(role => ({ name: role })),
+        skipDuplicates: true,
+      });
+    }
+
+    // Hashear contraseña si existe
+    let hashedPassword: string | undefined;
+    if (data.password) {
+      hashedPassword = await bcrypt.hash(data.password, 10);
+    }
+
     // Preparar datos de creación
     const createData: Prisma.UserCreateInput = {
       email: data.email,
+      password: hashedPassword,
       name: data.name,
       middleName: data.middleName,
       lastName: data.lastName,
@@ -65,19 +96,22 @@ export const registerAction = async (
       run: data.run,
       phoneNumber: data.phoneNumber,
       category: data.category,
-      company: data.companyId
-        ? {
-            connect: {
-              id: Array.isArray(data.companyId)
-                ? data.companyId[0]
-                : data.companyId,
-            },
-          }
-        : undefined,
+      company:
+        Array.isArray(data.roles) && data.roles.includes('admin')
+          ? undefined
+          : data.companyId
+          ? {
+              connect: {
+                id: Array.isArray(data.companyId)
+                  ? data.companyId[0]
+                  : data.companyId,
+              },
+            }
+          : undefined,
       roles: {
-        create: data.roles.map(role => ({
+        create: requestedRoles.map(role => ({
           role: {
-            connect: { name: role as RoleEnum },
+            connect: { name: role },
           },
         })),
       },

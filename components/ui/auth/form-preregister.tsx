@@ -2,7 +2,7 @@
 
 import { addToast } from '@heroui/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -154,7 +154,6 @@ export const FormPreRegister = () => {
   const onSubmit = (data: PreRegisterFormValues) => {
     setError(null);
     setSuccess(null);
-    console.log('[PreRegistro] Enviando datos:', data);
 
     // Si companyId es string vacío, lo convertimos a undefined para el flujo correcto
     const normalizedCompanyId =
@@ -197,7 +196,6 @@ export const FormPreRegister = () => {
 
     startTransition(async () => {
       const result = await preRegisterAction(dataToSend);
-      console.log('[PreRegistro] Resultado de preRegisterAction:', result);
       if (result.error) {
         setError(result.error);
         setSuccess(null);
@@ -406,24 +404,15 @@ export const FormPreRegister = () => {
                   </FormLabel>
                   <FormControl>
                     <>
-                      <Controller
-                        name="companyId"
-                        control={form.control}
-                        render={({ field }) => (
-                          <SearchSelect
-                            {...field}
-                            onValueChange={value => {
-                              field.onChange(value);
-                              if (value) setShowCompanyFields(false);
-                            }}
-                            options={empresaOptions}
-                            placeholder="Seleccione una empresa"
-                            value={
-                              field.value === null ? undefined : field.value
-                            }
-                            className="w-full"
-                          />
-                        )}
+                      <SearchSelect
+                        value={field.value === null ? undefined : field.value}
+                        onValueChange={value => {
+                          field.onChange(value);
+                          if (value) setShowCompanyFields(false);
+                        }}
+                        options={empresaOptions}
+                        placeholder="Seleccione una empresa"
+                        className="w-full"
                       />
                       {!form.watch('companyId') && (
                         <div className="flex items-center mt-2">

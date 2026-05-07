@@ -2,10 +2,12 @@ import NextAuth from 'next-auth';
 import authConfig from '@/auth.config';
 import { NextResponse } from 'next/server';
 import { permissions } from '@/config/permissions';
+import { matchDynamicRoute } from '@/lib/permissions-helpers';
 
 const { auth: middleware } = NextAuth(authConfig);
 
 const publicRoutes = ['/', '/login', '/register', '/pre-register'];
+const publicPrefixes = ['/applications/status/'];
 
 export default middleware(req => {
   const { nextUrl, auth } = req;
@@ -14,6 +16,11 @@ export default middleware(req => {
 
   // Verificar si auth.user.roles existe y es un array
   const userRoles = auth?.user?.roles || [];
+
+  // Rutas públicas por prefijo (ej: /applications/status/[token])
+  if (publicPrefixes.some(prefix => path.startsWith(prefix))) {
+    return NextResponse.next();
+  }
 
   // Manejo de rutas públicas
   if (publicRoutes.includes(path)) {
@@ -28,16 +35,17 @@ export default middleware(req => {
     const loginUrl = new URL('/login', nextUrl);
     loginUrl.searchParams.set('callbackUrl', path);
     return NextResponse.redirect(loginUrl);
-  } // Verificar permisos de ruta
+  }
+
+  // Verificar permisos de ruta
   let routePermission = permissions[path];
 
-  // Manejar rutas dinámicas como /dashboard/activities/edit/[id]
+  // ✅ Manejar rutas dinámicas usando helper centralizado
   if (!routePermission) {
-    // Comprobar rutas dinámicas de actividades
-    if (path.startsWith('/dashboard/activities/edit/')) {
-      routePermission = permissions['/dashboard/activities/edit'];
+    const matchedKey = matchDynamicRoute(path);
+    if (matchedKey) {
+      routePermission = permissions[matchedKey];
     }
-    // Agregar otras rutas dinámicas aquí si es necesario
   }
 
   // Utilizar userRoles para verificar los permisos

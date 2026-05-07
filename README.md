@@ -74,6 +74,24 @@ Hemos implementado varias herramientas para facilitar el desarrollo:
 - **Verificador de Permisos**: `npm run check:permissions`
 - **Recordatorios**: Mensajes automáticos al iniciar el desarrollo
 
+### Linting y Formato
+
+**Antes de hacer commit, ejecuta:**
+
+```bash
+npm run lint:errors    # Verificar errores de ESLint (solo errores)
+npm run lint           # Ver todos los errores y warnings
+npm run lint:fix       # Corregir errores automáticamente
+npm run check-format   # Verificar formato de código con Prettier
+npm run format         # Formatear todo el código
+npm run fix-all        # Formatear + corregir lint (recomendado)
+```
+
+**Configuración:**
+
+- ESLint: `.eslintrc.js` - TypeScript + Next.js + Prettier
+- Prettier: `.prettierrc` - Reglas de formato consistente
+
 ## Documentación
 
 Para obtener más información sobre el desarrollo del proyecto, consulta:

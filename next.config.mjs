@@ -5,6 +5,25 @@ const nextConfig = {
         if (dev) {
             config.optimization.minimize = false;
         }
+
+        // Optimización para módulos específicos
+        if (!isServer) {
+            config.optimization.splitChunks.cacheGroups = {
+                ...config.optimization.splitChunks.cacheGroups,
+                '@heroui': {
+                    test: /[\\/]node_modules[\\/](@heroui)[\\/]/,
+                    name: '@heroui',
+                    priority: 10,
+                    reuseExistingChunk: true,
+                },
+                'framer-motion': {
+                    test: /[\\/]node_modules[\\/](framer-motion)[\\/]/,
+                    name: 'framer-motion',
+                    priority: 10,
+                    reuseExistingChunk: true,
+                },
+            };
+        }
         return config;
     },
 
@@ -18,6 +37,11 @@ const nextConfig = {
                 pathname: '/**',
             },
         ],
+    },
+    
+    // Optimizaciones experimentales
+    experimental: {
+        optimizePackageImports: ['@heroui/tooltip', '@heroui/button', '@heroui/react', 'framer-motion'],
     },
 };
 

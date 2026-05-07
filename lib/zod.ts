@@ -119,6 +119,8 @@ export const editSchema = baseUserSchema.extend({
       'La contraseña debe tener más de 6 caracteres'
     )
     .optional(),
+  // En edición permitimos que `companyId` sea vacío para poder remover la empresa
+  companyId: z.string().optional().or(z.literal('')),
 });
 
 export type FormValues =

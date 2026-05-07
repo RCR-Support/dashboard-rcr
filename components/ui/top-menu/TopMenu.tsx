@@ -3,7 +3,6 @@ import { secundaryFont } from '@/config/fonts';
 import Link from 'next/link';
 import MenuIcon from './MenuIcon';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 
 import { useTheme } from 'next-themes';
 
@@ -17,14 +16,13 @@ export const TopMenu = () => {
         <MenuIcon />
         <div>
           <Link href="/">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={
                 theme === 'light' ? '/images/logoInv.svg' : '/images/logo.svg'
               }
               alt="logo"
-              width={136}
-              height={100}
-              quality={100}
+              style={{ width: '136px', height: 'auto' }}
             />
           </Link>
         </div>

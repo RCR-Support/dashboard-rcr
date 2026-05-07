@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import { activityLicenses } from './activity-license-map';
 const prisma = new PrismaClient();
 
 async function main() {
+  const expectedLicenses = new Map(
+    activityLicenses.map(item => [item.activity, item.license])
+  );
+
   // Buscar todas las actividades ordenadas por nombre
   const activities = await prisma.activity.findMany({
     orderBy: {
@@ -12,17 +17,28 @@ async function main() {
   console.log(`Total de actividades encontradas: ${activities.length}`);
   console.log('-'.repeat(80));
 
-  // Buscar actividades sin licencia asignada
-  const missingLicenses = activities.filter(act => !act.requiredDriverLicense);
+  const activitiesWithoutConfiguredLicense = activities.filter(activity => {
+    const expectedLicense = expectedLicenses.get(activity.name);
+    return expectedLicense !== null && !activity.requiredDriverLicense;
+  });
 
-  console.log('Actividades sin licencias asignadas:');
-  if (missingLicenses.length === 0) {
-    console.log('Ninguna - Todas las actividades tienen licencias asignadas');
+  const activitiesWithNoRequiredLicense = activities.filter(activity => {
+    return expectedLicenses.get(activity.name) === null;
+  });
+
+  console.log('Actividades con licencia pendiente de configurar:');
+  if (activitiesWithoutConfiguredLicense.length === 0) {
+    console.log('Ninguna - Todas las actividades requeridas tienen licencia asignada');
   } else {
-    missingLicenses.forEach(act => {
+    activitiesWithoutConfiguredLicense.forEach(act => {
       console.log(`- ${act.name} (ID: ${act.id})`);
     });
   }
+
+  console.log('-'.repeat(80));
+  console.log(
+    `Actividades sin licencia por diseño: ${activitiesWithNoRequiredLicense.length}`
+  );
 
   console.log('-'.repeat(80));
   console.log('Detalle de todas las actividades:');

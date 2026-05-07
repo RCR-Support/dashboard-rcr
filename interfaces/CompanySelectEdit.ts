@@ -6,6 +6,7 @@ export interface CompanySelectEdit {
   status: boolean;
   city: string | null;
   url: string | null;
+  logoUrl: string | null;
   users?: Array<{
     id: string;
     name: string;

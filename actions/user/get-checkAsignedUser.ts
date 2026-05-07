@@ -2,11 +2,14 @@
 
 import { db } from '@/lib/db';
 import { AdminContractorWithUsers } from '@/interfaces/admin.interface';
+import { auth } from '@/auth';
 
 export const checkAssignedUsers = async (
   userId: string
 ): Promise<AdminContractorWithUsers | null> => {
   try {
+    const session = await auth();
+    if (!session?.user) return null;
     // Verificar si el usuario es adminContractor
     const user = await db.user.findFirst({
       where: {
@@ -32,7 +35,6 @@ export const checkAssignedUsers = async (
     });
 
     if (!user) {
-      console.log('No es adminContractor');
       return null;
     }
 
@@ -47,15 +49,12 @@ export const checkAssignedUsers = async (
         : null,
     }));
 
-    console.log('Usuarios asignados encontrados:', assignedUsers.length);
-
     return {
       id: user.id,
       displayName: user.displayName,
       assignedUsers,
     };
   } catch (error) {
-    console.error('Error al verificar usuarios:', error);
     return null;
   }
 };

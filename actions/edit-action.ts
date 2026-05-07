@@ -53,13 +53,6 @@ export const editAction = async (userId: string, formData: FormData) => {
 
     const data = parsed.data;
 
-    // Depuración: Verificar datos enviados
-    console.log('Datos enviados:', data);
-
-    // Depuración: Verificar userId y datos enviados
-    console.log('userId recibido:', userId);
-    console.log('Datos enviados para validación:', data);
-
     // 2. Verificar si el email o run ya existe (excluyendo el usuario actual)
     const userExists = await db.user.findFirst({
       where: {
@@ -71,9 +64,6 @@ export const editAction = async (userId: string, formData: FormData) => {
         ],
       },
     });
-
-    // Depuración: Verificar resultado de la consulta
-    console.log('Resultado de la consulta de duplicados:', userExists);
 
     if (userExists) {
       if (userExists.email === data.email) {
@@ -89,6 +79,34 @@ export const editAction = async (userId: string, formData: FormData) => {
     }
 
     // 3. Preparar datos de actualización
+    // Componer company/adminContractor según roles: si es admin, forzar desconexión
+    let companyField: any = undefined;
+    let adminContractorField: any = undefined;
+
+    if (Array.isArray(data.roles) && data.roles.includes('admin')) {
+      companyField = { disconnect: true };
+      adminContractorField = { disconnect: true };
+      // Evitar que se conecte un adminContractorId por error
+      data.adminContractorId = undefined;
+      data.companyId = undefined;
+    } else {
+      companyField = data.companyId
+        ? {
+            connect: {
+              id: Array.isArray(data.companyId)
+                ? data.companyId[0]
+                : data.companyId,
+            },
+          }
+        : undefined;
+
+      adminContractorField = data.roles.includes('user')
+        ? data.adminContractorId
+          ? { connect: { id: data.adminContractorId } }
+          : { disconnect: true }
+        : { disconnect: true };
+    }
+
     const updateData: Prisma.UserUpdateInput = {
       email: data.email,
       name: data.name,
@@ -100,31 +118,8 @@ export const editAction = async (userId: string, formData: FormData) => {
       run: data.run,
       phoneNumber: data.phoneNumber,
       category: data.category,
-      company: data.companyId
-        ? {
-            connect: {
-              id: Array.isArray(data.companyId)
-                ? data.companyId[0]
-                : data.companyId,
-            },
-          }
-        : undefined,
-      // Manejo de adminContractor
-      ...(data.roles.includes('user')
-        ? {
-            adminContractor: data.adminContractorId
-              ? {
-                  connect: { id: data.adminContractorId },
-                }
-              : {
-                  disconnect: true,
-                },
-          }
-        : {
-            adminContractor: {
-              disconnect: true,
-            },
-          }),
+      company: companyField,
+      adminContractor: adminContractorField,
     };
 
     // 4. Si hay contraseña nueva, hashearla

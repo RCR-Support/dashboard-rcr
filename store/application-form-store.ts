@@ -3,17 +3,18 @@ import { persist } from 'zustand/middleware';
 import { Contract } from '@/interfaces/contract.interface';
 import { WorkerFormValues } from '@/app/dashboard/applications/create/steps/WorkerStep';
 
-interface Activity {
-  id: string;
-  name: string;
-  description?: string;
-}
+import { Activity } from '@/app/dashboard/activities/interfaces';
+import { DocumentData } from '@/app/dashboard/applications/create/types';
 
-interface Document {
+interface Document extends DocumentData {
   id: string;
   name: string;
+  activityName?: string;
+  notes?: string;
+  isSpecific: boolean;
+  relatedActivities?: string[];
   file?: File;
-  status: 'pending' | 'uploading' | 'completed' | 'error';
+  status: 'pending' | 'uploading' | 'completed' | 'error' | 'approved' | 'rejected';
 }
 
 interface Company {
@@ -26,7 +27,7 @@ interface Company {
 interface ApplicationFormState {
   // Control de pasos
   currentStep: number;
-  
+
   // Paso 1: Contrato
   contract: Contract | null;
   availableContracts: Contract[];
@@ -34,12 +35,16 @@ interface ApplicationFormState {
 
   // Paso 2: Trabajador
   workerData: WorkerFormValues | null;
+  credentialPhoto: string | null; // URL o base64 de la foto de credencial
 
   // Paso 3: Actividades
   selectedActivities: Activity[];
+  availableActivities: Activity[];
+  isLoadingActivities: boolean;
 
   // Paso 4: Documentos
-  documents: Document[];
+  documents: DocumentData[];
+  existingDocuments: Map<string, any> | null; // Para modo edición
 
   // Acciones
   setCurrentStep: (step: number) => void;
@@ -47,8 +52,11 @@ interface ApplicationFormState {
   setAvailableContracts: (contracts: Contract[]) => void;
   setCompany: (company: Company | null) => void;
   setWorkerData: (data: WorkerFormValues) => void;
+  setCredentialPhoto: (photoUrl: string | null) => void;
   setSelectedActivities: (activities: Activity[]) => void;
+  setAvailableActivities: (activities: Activity[]) => void;
   setDocuments: (documents: Document[]) => void;
+  setExistingDocuments: (existingDocs: Map<string, any> | null) => void;
   clearForm: () => void;
   resetFormKeepingCompanyData: () => void;
 }
@@ -61,8 +69,11 @@ type ActionTypes = {
   setAvailableContracts: (contracts: Contract[]) => void;
   setCompany: (company: Company | null) => void;
   setWorkerData: (data: WorkerFormValues) => void;
+  setCredentialPhoto: (photoUrl: string | null) => void;
   setSelectedActivities: (activities: Activity[]) => void;
+  setAvailableActivities: (activities: Activity[]) => void;
   setDocuments: (documents: Document[]) => void;
+  setExistingDocuments: (existingDocs: Map<string, any> | null) => void;
   clearForm: () => void;
   resetFormKeepingCompanyData: () => void;
 };
@@ -73,132 +84,56 @@ const initialState: Omit<ApplicationFormState, keyof ActionTypes> = {
   availableContracts: [],
   company: null,
   workerData: null,
+  credentialPhoto: null,
   selectedActivities: [],
+  availableActivities: [],
+  isLoadingActivities: false,
   documents: [],
+  existingDocuments: null,
 };
 
 export const useApplicationFormStore = create<ApplicationFormState>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
+  // Sin persist middleware - Usar localStorage solo cuando sea necesario
+  (set, get) => ({
+    ...initialState,
 
-      // Nueva acción para reset controlado
-      resetFormKeepingCompanyData: () => {
+    // Nueva acción para reset controlado
+    resetFormKeepingCompanyData: () => {
         const state = get();
         const company = state.company;
         const availableContracts = state.availableContracts;
 
-        if (availableContracts.length > 1) {
-          // Caso de múltiples contratos
-          set({
-            ...initialState,
-            company,
-            availableContracts,
-            currentStep: 0,
-            contract: null
-          });
-        } else if (availableContracts.length === 1) {
-          // Caso de un solo contrato
-          set({
-            ...initialState,
-            company,
-            availableContracts,
-            contract: availableContracts[0],
-            currentStep: 1
-          });
-        }
+        // Siempre reseteamos a estado inicial manteniendo solo los datos de empresa
+        set({
+          ...initialState,
+          company,
+          availableContracts,
+          currentStep: 0,
+          contract: null,
+        });
       },
 
       // Acciones
-      setCurrentStep: (step) => {
-        const state = get();
-        
-        // Validar que el paso esté en el rango válido
-        if (step < 0 || step > 3) return;
-
-        // Reglas básicas de navegación
-        if (!state.contract) {
-          set({ currentStep: 0 });
-          return;
+      setCurrentStep: step => {
+        // Simplificar: solo validar rango, sin cambios automáticos
+        if (step >= 0 && step <= 3) {
+          set({ currentStep: step });
         }
-
-        // Si hay contrato y se solicita paso 1, permitir
-        if (step === 1) {
-          set({ currentStep: 1 });
-          return;
-        }
-
-        // Para otros pasos, validar requisitos
-        if (step === 2 && !state.workerData?.workerName) {
-          set({ currentStep: 1 });
-          return;
-        }
-
-        if (step === 3 && state.selectedActivities.length === 0) {
-          set({ currentStep: 2 });
-          return;
-        }
-
-        // Si pasa todas las validaciones, permitir el cambio
-        set({ currentStep: step });
       },
 
-      setContract: (contract) => set({ contract }),
-      setAvailableContracts: (contracts) => set({ availableContracts: contracts }),
-      setCompany: (company) => set({ company }),
-      setWorkerData: (data) => set({ workerData: data }),
-      setSelectedActivities: (activities) => set({ selectedActivities: activities }),
-      setDocuments: (documents) => set({ documents }),
-      
+      setContract: contract => set({ contract }),
+      setAvailableContracts: contracts =>
+        set({ availableContracts: contracts }),
+      setCompany: company => set({ company }),
+      setWorkerData: data => set({ workerData: data }),
+      setCredentialPhoto: photoUrl => set({ credentialPhoto: photoUrl }),
+      setSelectedActivities: activities =>
+        set({ selectedActivities: activities }),
+      setAvailableActivities: activities =>
+        set({ availableActivities: activities }),
+      setDocuments: documents => set({ documents }),
+      setExistingDocuments: existingDocs => set({ existingDocuments: existingDocs }),
+
       clearForm: () => set(initialState),
-    }),
-    {
-      name: 'application-form-storage',
-      version: 1, // Añadimos versión para manejar actualizaciones futuras
-      partialize: (state) => ({
-        currentStep: state.currentStep,
-        contract: state.contract,
-        availableContracts: state.availableContracts,
-        company: state.company,
-        workerData: state.workerData,
-        selectedActivities: state.selectedActivities,
-        documents: state.documents,
-      }),
-      merge: (persistedState: unknown, currentState: ApplicationFormState) => {
-        if (!persistedState) return currentState;
-        
-        const typedState = persistedState as Partial<ApplicationFormState>;
-        
-        // Asegurarse de que las arrays estén inicializadas
-        const state = {
-          ...currentState,
-          ...typedState,
-          availableContracts: typedState.availableContracts || [],
-          selectedActivities: typedState.selectedActivities || [],
-          documents: typedState.documents || [],
-        };
-
-        // Validar el paso actual
-        if (state.contract && state.currentStep === 0) {
-          state.currentStep = 1;
-        }
-        if (!state.contract && state.currentStep > 0) {
-          state.currentStep = 0;
-        }
-
-        return state;
-      },
-      // Asegurarnos de que los datos sean válidos al cargar
-      onRehydrateStorage: (_state) => {
-        return (state) => {
-          if (state) {
-            // Validar que tenemos los datos necesarios para el paso actual
-            if (state.currentStep > 1 && !state.workerData) {
-              state.currentStep = 1;
-            }
-          }
-        };
-      }
-    }
-  )
+    })
 );

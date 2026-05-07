@@ -1,14 +1,17 @@
 'use client';
 import { signOut } from 'next-auth/react';
 import { useRoleStore } from '@/store/ui/roleStore';
+import { useApplicationFormStore } from '@/store/application-form-store';
 import { Button } from '@/components/ui/button';
 
 const LogoutButton = () => {
   const resetRole = useRoleStore(state => state.resetRole);
+  const { clearForm } = useApplicationFormStore();
 
   const handleLogout = async () => {
-    // Reiniciamos el rol para limpiar datos de la sesión anterior
+    // Limpiar todos los stores
     resetRole();
+    clearForm(); // Limpiar el formulario de aplicación
 
     // Llamamos a signOut sin redirección automática para capturar la respuesta
     const result = await signOut({ redirect: false, callbackUrl: '/login' });

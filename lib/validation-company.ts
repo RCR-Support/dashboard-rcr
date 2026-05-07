@@ -18,9 +18,28 @@ export const companySchema = z.object({
       message: 'RUT inválido',
     }),
   status: z.boolean().default(true),
-  url: z.string().url('URL inválida').optional(),
+  url: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      val => {
+        if (!val || !val.trim()) return true;
+        const candidate = /^https?:\/\//i.test(val.trim())
+          ? val.trim()
+          : `https://${val.trim()}`;
+        try {
+          const parsed = new URL(candidate);
+          return Boolean(parsed.hostname);
+        } catch {
+          return false;
+        }
+      },
+      { message: 'URL inválida' }
+    ),
   city: z
     .string()
     .min(2, 'La ciudad debe tener al menos 2 caracteres')
     .optional(),
+  logoUrl: z.string().url('URL de logo inválida').optional().or(z.literal('')),
 });

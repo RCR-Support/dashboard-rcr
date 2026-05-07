@@ -1,26 +1,13 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { UserRoleProvider } from '@/context/UserRoleContext';
+import { useState, useEffect, useRef } from 'react';
 import { useRoleStore } from '@/store/ui/roleStore';
 import RoleSelectionModal from '@/components/ui/dashboard/RoleSelectionModal';
 import RoleCapturer from '@/components/ui/dashboard/RoleCapturer';
 import { SidebarDashboard } from '@/components/ui/dashboard/sidebar/SidebarDashboard';
 import { NavDashboard } from '@/components/ui/dashboard/nav/NavDashboard';
-
-// Contexto para el modal de roles
-interface RoleModalContextType {
-  showRoleModal: boolean;
-  setShowRoleModal: (show: boolean) => void;
-}
-
-export const RoleModalContext = createContext<RoleModalContextType>({
-  showRoleModal: false,
-  setShowRoleModal: () => {},
-});
-
-export const useRoleModal = () => useContext(RoleModalContext);
+import { RoleModalContext } from '@/context/role-modal-context';
 
 export default function DashboardLayout({
   children,
@@ -34,25 +21,27 @@ export default function DashboardLayout({
     },
   });
 
-  const { selectedRole } = useRoleStore();
+  const { selectedRole, resetRole } = useRoleStore();
   const [showRoleModal, setShowRoleModal] = useState(false);
   const initialized = useRef(false);
 
-  const previousRole = useRef(selectedRole);
-
   useEffect(() => {
-    if (status === 'authenticated' && !initialized.current) {
-      initialized.current = true;
-      console.log('Layout: Sesión autenticada', {
-        roles: session?.user?.roles,
-        selectedRole,
-      });
+    if (status !== 'authenticated' || !session?.user?.roles) return;
 
-      if (session?.user?.roles?.length > 1 && !selectedRole) {
+    // Safety: si el rol guardado no pertenece al usuario actual (sesión cruzada), limpiarlo
+    if (selectedRole && !session.user.roles.includes(selectedRole as any)) {
+      resetRole();
+      return;
+    }
+
+    if (!initialized.current) {
+      initialized.current = true;
+
+      if (session.user.roles.length > 1 && !selectedRole) {
         setShowRoleModal(true);
       }
     }
-  }, [status, session, selectedRole]);
+  }, [status, session, selectedRole, resetRole]);
 
   if (status === 'loading') {
     return (
@@ -68,26 +57,23 @@ export default function DashboardLayout({
 
   return (
     <RoleModalContext.Provider value={{ showRoleModal, setShowRoleModal }}>
-      <UserRoleProvider>
-        <RoleCapturer />
-        <main className="bg-[#f0f0f0] dark:bg-[#1a202c] text-gray-500 dark:text-white flex">
-          <SidebarDashboard />
-          <div className="flex flex-col min-h-screen flex-1 gap-4 p-4">
-            <NavDashboard />
-            <div className="container mx-auto mt-6">{children}</div>
-          </div>
-          {showRoleModal && session?.user?.roles && (
-            <RoleSelectionModal
-              isOpen={showRoleModal}
-              availableRoles={session.user.roles}
-              onRoleSelected={() => {
-                console.log('Rol seleccionado, cerrando modal');
-                setShowRoleModal(false);
-              }}
-            />
-          )}
-        </main>
-      </UserRoleProvider>
+      <RoleCapturer />
+      <main className="bg-[#f0f0f0] dark:bg-[#1a202c] text-gray-500 dark:text-white flex">
+        <SidebarDashboard />
+        <div className="flex flex-col min-h-screen flex-1 gap-4 p-4">
+          <NavDashboard />
+          <div className="container mx-auto mt-6">{children}</div>
+        </div>
+        {showRoleModal && session?.user?.roles && (
+          <RoleSelectionModal
+            isOpen={showRoleModal}
+            availableRoles={session.user.roles}
+            onRoleSelected={() => {
+              setShowRoleModal(false);
+            }}
+          />
+        )}
+      </main>
     </RoleModalContext.Provider>
   );
 }

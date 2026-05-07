@@ -1,12 +1,15 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input } from '@heroui/react';
 import { CiSearch } from 'react-icons/ci';
-import Image from 'next/image';
 import { TbSortAscending2, TbSortDescending2 } from 'react-icons/tb';
+import { FileText } from 'lucide-react';
+import { Tooltip } from '@heroui/tooltip';
+import { Chip } from '@heroui/chip';
+import Image from 'next/image';
 import ActivityActions from '@/app/dashboard/activities/ActivityActions';
 
-// Definimos la interfaz Activity basada en el uso actual
+// Interfaz Activity
 interface Activity {
   id: string;
   name: string;
@@ -29,15 +32,15 @@ interface Props {
 export const TablaActivity = ({ activities }: Props) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Activity;
+    key: string;
     direction: 'ascending' | 'descending';
   }>({
     key: 'name',
     direction: 'ascending',
   });
 
-  // Función para ordenar las actividades
-  const requestSort = (key: keyof Activity) => {
+  // Función para solicitar ordenamiento
+  const requestSort = (key: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
 
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -78,8 +81,27 @@ export const TablaActivity = ({ activities }: Props) => {
 
   // Ordenamos las actividades filtradas
   const sortedActivities = [...filteredActivities].sort((a, b) => {
-    const valueA = a[sortConfig.key] || '';
-    const valueB = b[sortConfig.key] || '';
+    let valueA: string | number = '';
+    let valueB: string | number = '';
+
+    // Manejar diferentes tipos de ordenamiento
+    switch (sortConfig.key) {
+      case 'name':
+        valueA = a.name;
+        valueB = b.name;
+        break;
+      case 'documents':
+        valueA = a.requiredDocumentations?.length || 0;
+        valueB = b.requiredDocumentations?.length || 0;
+        break;
+      case 'license':
+        valueA = a.requiredDriverLicense || '';
+        valueB = b.requiredDriverLicense || '';
+        break;
+      default:
+        valueA = '';
+        valueB = '';
+    }
 
     if (valueA < valueB) {
       return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -108,65 +130,65 @@ export const TablaActivity = ({ activities }: Props) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        {/* Usamos una tabla HTML estándar en lugar de los componentes de @heroui/table */}
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-20"
-                onClick={() => requestSort('imageUrl')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20"
               >
-                <div className="flex items-center">
-                  Imagen
-                  {sortConfig.key === 'imageUrl' &&
-                    (sortConfig.direction === 'ascending' ? (
-                      <TbSortAscending2 className="ml-1" />
-                    ) : (
-                      <TbSortDescending2 className="ml-1" />
-                    ))}
-                </div>
+                Imagen
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => requestSort('name')}
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                   Nombre
                   {sortConfig.key === 'name' &&
                     (sortConfig.direction === 'ascending' ? (
-                      <TbSortAscending2 className="ml-1" />
+                      <TbSortAscending2 className="w-4 h-4" />
                     ) : (
-                      <TbSortDescending2 className="ml-1" />
+                      <TbSortDescending2 className="w-4 h-4" />
                     ))}
                 </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                onClick={() => requestSort('requiredDriverLicense')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => requestSort('documents')}
               >
-                <div className="flex items-center">
-                  Licencia requerida
-                  {sortConfig.key === 'requiredDriverLicense' &&
+                <div className="flex items-center gap-1">
+                  <FileText className="w-4 h-4" />
+                  Documentos
+                  {sortConfig.key === 'documents' &&
                     (sortConfig.direction === 'ascending' ? (
-                      <TbSortAscending2 className="ml-1" />
+                      <TbSortAscending2 className="w-4 h-4" />
                     ) : (
-                      <TbSortDescending2 className="ml-1" />
+                      <TbSortDescending2 className="w-4 h-4" />
                     ))}
                 </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => requestSort('license')}
               >
-                Documentación requerida
+                <div className="flex items-center gap-1">
+                  Licencia
+                  {sortConfig.key === 'license' &&
+                    (sortConfig.direction === 'ascending' ? (
+                      <TbSortAscending2 className="w-4 h-4" />
+                    ) : (
+                      <TbSortDescending2 className="w-4 h-4" />
+                    ))}
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
               >
                 Acciones
               </th>
@@ -174,97 +196,103 @@ export const TablaActivity = ({ activities }: Props) => {
           </thead>
           <tbody className="bg-white dark:bg-[#282c34] divide-y divide-gray-200 dark:divide-gray-700">
             {sortedActivities.length > 0 ? (
-              sortedActivities.map(activity => (
-                <tr
-                  key={activity.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-600"
-                >
-                  <td className="px-6 py-2  whitespace-nowrap">
-                    {activity.imageUrl ? (
-                      <Image
-                        src={activity.imageUrl}
-                        alt={activity.name}
-                        width={80}
-                        height={40}
-                        className="rounded bg-slate-300"
+              sortedActivities.map(activity => {
+                return (
+                  <tr
+                    key={activity.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {activity.imageUrl ? (
+                        <Image
+                          src={activity.imageUrl}
+                          alt={activity.name}
+                          width={80}
+                          height={40}
+                          className="rounded bg-slate-300"
+                        />
+                      ) : (
+                        <div className="w-20 h-10 rounded bg-slate-200 flex items-center justify-center">
+                          <span className="text-xs text-slate-500">N/A</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {activity.name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-green-500" />
+                        <span className="text-lg font-semibold text-green-600 dark:text-green-400">
+                          {activity.requiredDocumentations?.length || 0}
+                        </span>
+                        {activity.requiredDocumentations && activity.requiredDocumentations.length > 0 && (
+                          <Tooltip 
+                            content={
+                              <div className="p-2 max-w-xs">
+                                <div className="font-semibold mb-1">Documentos requeridos:</div>
+                                {activity.requiredDocumentations.map((doc, idx) => (
+                                  <div key={idx} className="text-sm">• {doc.documentation.name}</div>
+                                ))}
+                              </div>
+                            }
+                          >
+                            <span className="text-xs text-gray-400 cursor-help hover:text-gray-600">ⓘ</span>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {activity.requiredDriverLicense ? (
+                        <div className="flex flex-wrap gap-1">
+                          {activity.requiredDriverLicense
+                            .split(',')
+                            .map((license, index) => (
+                              <Chip
+                                key={index}
+                                size="sm"
+                                color="primary"
+                                variant="flat"
+                              >
+                                {license.trim().toUpperCase()}
+                              </Chip>
+                            ))}
+                        </div>
+                      ) : (
+                        <Chip size="sm" color="success" variant="flat">
+                          NO REQUIERE
+                        </Chip>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <ActivityActions
+                        activityId={activity.id}
+                        activityName={activity.name}
                       />
-                    ) : (
-                      <div className="w-20 h-10 rounded bg-slate-200 flex items-center justify-center">
-                        <span className="text-xs text-slate-500">N/A</span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 whitespace-nowrap">{activity.name}</td>
-                  <td className="px-6 py-2 whitespace-nowrap">
-                    {activity.requiredDriverLicense ? (
-                      <div className="flex flex-wrap gap-1">
-                        {activity.requiredDriverLicense
-                          .split(',')
-                          .map((license, index) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                            >
-                              {license.trim().toUpperCase()}
-                            </span>
-                          ))}
-                      </div>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                        NO REQUIERE LICENCIA
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-2">
-                    {activity.requiredDocumentations &&
-                    activity.requiredDocumentations.length > 0 ? (
-                      <div className="flex flex-col space-y-2 max-h-20 overflow-y-auto">
-                        {activity.requiredDocumentations.map(doc => (
-                          <div key={doc.id} className="text-sm group relative">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-                              {doc.documentation.name}
-                            </span>
-                            {doc.notes && (
-                              <>
-                                <span
-                                  className="ml-2 text-xs text-gray-500 dark:text-gray-400 italic cursor-help hover:underline"
-                                  title={doc.notes}
-                                >
-                                  {doc.notes.length > 30
-                                    ? `${doc.notes.substring(0, 30)}...`
-                                    : doc.notes}
-                                </span>
-                                {doc.notes.length > 30 && (
-                                  <div className="hidden group-hover:block absolute z-10 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded p-2 shadow-lg text-xs mt-1 w-60">
-                                    {doc.notes}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        No hay documentación requerida
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-2 whitespace-nowrap">
-                    <ActivityActions
-                      activityId={activity.id}
-                      activityName={activity.name}
-                    />
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td
                   colSpan={5}
-                  className="text-center py-10 text-gray-500 dark:text-gray-400"
+                  className="text-center py-16 px-4"
                 >
-                  No se encontraron actividades que coincidan con tu búsqueda
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <CiSearch className="text-gray-400 dark:text-gray-300" size={30} />
+                    </div>
+                    <h3 className="font-medium text-lg text-gray-700 dark:text-gray-200">
+                      No se encontraron actividades
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 max-w-md">
+                      No se encontraron actividades que coincidan con tu búsqueda. 
+                      Prueba con otro término.
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}

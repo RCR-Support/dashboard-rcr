@@ -1,9 +1,12 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { auth } from '@/auth';
 
 export const getCompanyUsers = async (companyId: string) => {
   try {
+    const session = await auth();
+    if (!session?.user) return { error: 'No autenticado' };
     // 1. Hacemos una consulta única que trae todos los datos relacionados
     const company = await db.company.findUnique({
       where: {

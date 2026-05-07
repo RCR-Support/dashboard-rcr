@@ -339,6 +339,58 @@ const FormRegister = ({
 
   const [admins, setAdmins] = useState<AdminOption[]>([]);
   const watchedRoles = form.watch('roles');
+  const previousRolesRef = useRef<string[] | null>(null);
+
+  // Manejo de roles: si se selecciona 'admin' limpiamos empresa/adminContractor
+  // y guardamos los roles previos para poder restaurarlos al desmarcar.
+  useEffect(() => {
+    try {
+      if (!Array.isArray(watchedRoles)) return;
+
+      const isAdmin = watchedRoles.includes('admin');
+
+      if (isAdmin) {
+        // Guardar roles previos (sin 'admin') para restaurar luego
+        if (!previousRolesRef.current) {
+          previousRolesRef.current = watchedRoles.filter(r => r !== 'admin');
+        }
+
+        // Si hay otros roles, forzamos que solo quede 'admin'
+        if (!(watchedRoles.length === 1 && watchedRoles[0] === 'admin')) {
+          form.setValue('roles', ['admin'], { shouldValidate: true });
+        }
+
+        const currentCompany = form.getValues('companyId');
+        const currentAdminContractor = form.getValues('adminContractorId');
+        if (currentCompany && currentCompany !== '' && currentCompany !== undefined) {
+          form.setValue('companyId', undefined);
+          addToast({
+            title: 'Rol administrador seleccionado',
+            description:
+              'El rol "admin" no requiere empresa. Se ha removido la empresa seleccionada.',
+            timeout: 4000,
+            icon: 'ℹ️',
+            color: 'primary',
+            variant: 'flat',
+          });
+        }
+
+        if (currentAdminContractor && currentAdminContractor !== '') {
+          form.setValue('adminContractorId', undefined);
+        }
+      } else {
+        // Si admin fue deseleccionado, restaurar roles previos si existen
+        if (previousRolesRef.current) {
+          form.setValue('roles', previousRolesRef.current, {
+            shouldValidate: true,
+          });
+          previousRolesRef.current = null;
+        }
+      }
+    } catch (e) {
+      console.error('Error al procesar roles:', e);
+    }
+  }, [watchedRoles, form]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -360,15 +412,12 @@ const FormRegister = ({
 
   // Cargar la imagen existente cuando estamos en modo edición
   useEffect(() => {
-    console.log('Datos iniciales:', initialData);
-
     if (isEditing && initialData?.id) {
       const cloudinaryUrl = getCldImageUrl({
         src: `user-profiles/user-${initialData.id}.jpg`,
         width: 300,
         height: 300,
       });
-      console.log('Intentando cargar imagen desde:', cloudinaryUrl);
       setSelectedImage(cloudinaryUrl);
     } else {
       setSelectedImage('/placeholder-user.png');
@@ -417,7 +466,6 @@ const FormRegister = ({
       // Importante: No almacenamos el nombre del archivo en form.setValue
       // En su lugar, solo marcamos que la imagen ha cambiado
       setImageChanged(true);
-      console.log('Imagen cargada:', file);
     }
   };
 
@@ -461,22 +509,63 @@ const FormRegister = ({
                     name="roles"
                     control={form.control}
                     render={({ field }) => (
-                      <MultiSelect
-                        {...field}
-                        options={roleOptions}
-                        onValueChange={values => {
-                          field.onChange(values);
-                        }}
-                        placeholder="Seleccione uno o más roles"
-                        defaultValue={
-                          initialData?.roles?.map(r => r.role.name) || []
-                        }
-                        maxCount={3}
-                        className={cn(
-                          'w-full',
-                          hasErrors && 'border-destructive'
-                        )}
-                      />
+                      <>
+                        <MultiSelect
+                          {...field}
+                          options={roleOptions}
+                          onValueChange={values => {
+                            field.onChange(values);
+                          }}
+                          placeholder="Seleccione uno o más roles"
+                          defaultValue={
+                            initialData?.roles?.map(r => r.role.name) || []
+                          }
+                          maxCount={3}
+                          className={cn(
+                            'w-full',
+                            hasErrors && 'border-destructive'
+                          )}
+                        />
+                        {/* Checkbox para operar como admin global */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <input
+                            id="admin-global"
+                            type="checkbox"
+                            checked={Array.isArray(watchedRoles) && watchedRoles.includes('admin')}
+                            onChange={e => {
+                              const checked = e.target.checked;
+                              if (checked) {
+                                // Guardar roles previos y establecer solo admin
+                                try {
+                                  const current = form.getValues('roles') || [];
+                                  previousRolesRef.current = current.filter((r: string) => r !== 'admin');
+                                  form.setValue('roles', ['admin'], { shouldValidate: true });
+                                  form.setValue('companyId', undefined);
+                                  form.setValue('adminContractorId', undefined);
+                                  addToast({
+                                    title: 'Operando como admin global',
+                                    description: 'Se ha activado el modo administrador global. Las demás roles han sido removidas.',
+                                    timeout: 3000,
+                                    icon: 'ℹ️',
+                                    color: 'primary',
+                                  });
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              } else {
+                                // Restaurar roles previas si existen
+                                const prev = previousRolesRef.current || [];
+                                form.setValue('roles', prev, { shouldValidate: true });
+                                previousRolesRef.current = null;
+                              }
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="admin-global" className="text-sm select-none">
+                            Operar como admin global
+                          </label>
+                        </div>
+                      </>
                     )}
                   />
                 </FormControl>
@@ -489,32 +578,56 @@ const FormRegister = ({
           <FormField
             name="companyId"
             control={form.control}
-            render={({ field }) => (
-              <FormItem className="col-span-12 md:col-span-6 md:col-start-1 md:row-start-6">
-                <FormLabel>Empresa del usuario</FormLabel>
-                <FormControl>
-                  <Controller
-                    name="companyId"
-                    control={form.control}
-                    render={({ field }) => (
-                      <SearchSelect
-                        {...field}
-                        onValueChange={field.onChange}
-                        options={companies}
-                        placeholder="Seleccione una empresa"
-                        defaultValue={initialData?.companyId || ''}
-                        value={field.value === null ? undefined : field.value}
-                        className={cn(
-                          'w-full',
-                          hasErrors && 'border-destructive'
-                        )}
-                      />
-                    )}
-                  />
-                </FormControl>
-                <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const isAdminSelected = Array.isArray(watchedRoles)
+                ? watchedRoles.includes('admin')
+                : false;
+              return (
+                <FormItem className="col-span-12 md:col-span-6 md:col-start-1 md:row-start-6">
+                  <FormLabel>Empresa del usuario</FormLabel>
+                  <FormControl>
+                    <Controller
+                      name="companyId"
+                      control={form.control}
+                      render={({ field }) => (
+                        <SearchSelect
+                          {...field}
+                          onValueChange={value => {
+                            // Evitar seleccionar empresa si admin está seleccionado
+                            if (isAdminSelected) {
+                              form.setValue('companyId', undefined);
+                              return;
+                            }
+                            field.onChange(value);
+                          }}
+                          options={companies}
+                          placeholder={
+                            isAdminSelected
+                              ? 'No aplica para administradores'
+                              : 'Seleccione una empresa'
+                          }
+                          defaultValue={initialData?.companyId || ''}
+                          value={field.value === null ? undefined : field.value}
+                          disabled={isAdminSelected}
+                          className={cn(
+                            'w-full',
+                            hasErrors && 'border-destructive'
+                          )}
+                        />
+                      )}
+                    />
+                  </FormControl>
+                  {Array.isArray(watchedRoles) && watchedRoles.includes('admin') ? (
+                    <p className="text-sm text-slate-500 mt-2">
+                      Ha seleccionado el rol <strong>Administrador</strong>. La
+                      empresa ha sido removida porque este rol no requiere
+                      pertenecer a una empresa.
+                    </p>
+                  ) : null}
+                  <FormMessage className="text-red-600 dark:text-red-400 text-[12px] fade-in" />
+                </FormItem>
+              );
+            }}
           />
 
           {/* Campo de imagen */}
@@ -630,11 +743,6 @@ const FormRegister = ({
                   : 'Enviar Registro'}
             </Button>
           </div>
-
-          {/* Componente de depuración */}
-          {process.env.NODE_ENV === 'development' && (
-            <DebugForm form={form} enabled={true} />
-          )}
         </form>
       </Form>
     </>
