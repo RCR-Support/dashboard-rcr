@@ -10,7 +10,7 @@ const LoginPage = async () => {
   }
 
   return (
-    <div className="flex justify-center items-center text-4xl h-screen text-slate-800 dark:text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-[#171c23] px-4">
       <FormLogin />
     </div>
   );

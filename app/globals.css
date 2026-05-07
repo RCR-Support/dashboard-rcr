@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Logo theme switching — works immediately via next-themes' inline script that adds .dark to <html> */
+.logo-light { display: block; }
+.logo-dark  { display: none;  }
+html.dark .logo-light { display: none;  }
+html.dark .logo-dark  { display: block; }
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
