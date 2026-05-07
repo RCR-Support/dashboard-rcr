@@ -86,6 +86,12 @@ export default async function Page({ params }: Props) {
           }
         }
         html, body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+        .logo-light { display: block; }
+        .logo-dark  { display: none; }
+        @media (prefers-color-scheme: dark) {
+          .logo-light { display: none; }
+          .logo-dark  { display: block; }
+        }
       ` }} />
 
       <main style={{ minHeight: '100dvh', backgroundColor: 'var(--bg)', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -94,7 +100,9 @@ export default async function Page({ params }: Props) {
           {/* ── Header ──────────────────────────────────────────── */}
           <div style={{ textAlign: 'center', paddingTop: '8px', paddingBottom: '4px' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.svg" alt="RCR Support" width={72} height={32} style={{ height: '32px', width: '72px', margin: '0 auto 8px', display: 'block' }} />
+            <img src="/images/logoInv.svg" alt="RCR Support" width={72} height={32} className="logo-light" style={{ height: '32px', width: '72px', margin: '0 auto 8px' }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.svg" alt="RCR Support" width={72} height={32} className="logo-dark" style={{ height: '32px', width: '72px', margin: '0 auto 8px' }} />
             <p style={{ color: 'var(--muted)', fontSize: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               Verificación de Acreditación
             </p>
