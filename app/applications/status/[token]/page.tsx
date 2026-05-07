@@ -94,7 +94,7 @@ export default async function Page({ params }: Props) {
           {/* ── Header ──────────────────────────────────────────── */}
           <div style={{ textAlign: 'center', paddingTop: '8px', paddingBottom: '4px' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.svg" alt="RCR Support" style={{ height: '32px', margin: '0 auto 8px' }} />
+            <img src="/images/logo.svg" alt="RCR Support" width={72} height={32} style={{ height: '32px', width: '72px', margin: '0 auto 8px', display: 'block' }} />
             <p style={{ color: 'var(--muted)', fontSize: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               Verificación de Acreditación
             </p>
