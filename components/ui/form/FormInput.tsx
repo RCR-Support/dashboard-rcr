@@ -20,6 +20,7 @@ interface FormInputProps {
   className?: string;
   icon?: LucideIcon;
   isLastItem?: boolean;
+  disabled?: boolean;
 }
 
 export const FormInput = ({
@@ -32,6 +33,7 @@ export const FormInput = ({
   small,
   className = 'col-span-12 md:col-span-6  relative h-20',
   icon: Icon,
+  disabled = false,
 }: FormInputProps) => {
   return (
     <FormField
@@ -62,7 +64,7 @@ export const FormInput = ({
                   />
                 </div>
               ) : (
-                <Input type={type} {...field} placeholder={placeholder} />
+                <Input type={type} {...field} placeholder={placeholder} disabled={disabled} className={disabled ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800' : ''} />
               )}
             </FormControl>
             {Icon && <Icon className="absolute top-[10px] right-2 transform" />}

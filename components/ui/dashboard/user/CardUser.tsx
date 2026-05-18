@@ -26,6 +26,16 @@ async function softDeleteUser(id: string, deletedLogic: boolean) {
   if (!res.ok) throw new Error('Error al eliminar usuario');
   return res.json();
 }
+async function permanentDeleteUser(id: string) {
+  const res = await fetch('/api/users', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
+}
 interface Props {
   users: User[];
 }
@@ -100,6 +110,26 @@ export const CardUser = ({ users }: Props) => {
     
     return roleConfig[primaryRole as keyof typeof roleConfig] || 
            { name: primaryRole, color: 'bg-gray-500', icon: Users };
+  };
+
+  const handlePermanentDelete = async () => {
+    if (!selectedUser) return;
+    const displayName = selectedUser.displayName;
+    const input = window.prompt(
+      `Esta acción NO SE PUEDE DESHACER.\nEl usuario "${displayName}" será eliminado permanentemente.\n\nEscribe ELIMINAR para confirmar:`
+    );
+    if (input !== 'ELIMINAR') return;
+    try {
+      await permanentDeleteUser(selectedUser.id);
+      closeModal();
+      router.refresh();
+    } catch (err: unknown) {
+      const errData = err as { error?: string; blockers?: string[] };
+      const msg = errData?.blockers?.length
+        ? `${errData.error}\n\nRegistros asociados:\n• ${errData.blockers.join('\n• ')}`
+        : (errData?.error ?? 'Error inesperado');
+      alert(msg);
+    }
   };
 
   const handleDelete = async () => {
@@ -331,7 +361,7 @@ export const CardUser = ({ users }: Props) => {
           assignedUsers={assignedUsers}
           adminName={selectedUser?.displayName || ''}
         />
-        <UserModal user={selectedUser} isOpen={isOpen} onClose={closeModal} onEdit={handleEdit} onDelete={handleDelete} />
+        <UserModal user={selectedUser} isOpen={isOpen} onClose={closeModal} onEdit={handleEdit} onDelete={handleDelete} onPermanentDelete={handlePermanentDelete} />
       </div>
     </>
   );

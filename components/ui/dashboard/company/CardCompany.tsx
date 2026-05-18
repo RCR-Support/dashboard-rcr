@@ -49,7 +49,8 @@ export const CompaniesGrid = ({ companies }: Props) => {
         setSelectedCompany({
           ...company,
           users: response.users || [],
-          contracts: response.contracts || [], // Nota: Cambiado a Contract
+          contracts: response.contracts || [],
+          asSubcontractor: response.asSubcontractor || [],
           summary: {
             totalUsers: response.users?.length || 0,
             totalContracts: response.contracts?.length || 0,
@@ -115,8 +116,8 @@ export const CompaniesGrid = ({ companies }: Props) => {
             onClick={() => openModal(company)}
             className="col-span-6 md:col-span-6 xl:col-span-3 card-box"
           >
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="flex flex-col gap-4 items-center justify-between">
+              <div className="bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0 py-2 px-4">
                 {company.logoUrl ? (
                   <Image
                     src={company.logoUrl}
@@ -129,19 +130,21 @@ export const CompaniesGrid = ({ companies }: Props) => {
                   <Building2 className="h-6 w-6 text-primary" />
                 )}
               </div>
-              <div className="flex flex-col gap-1">
-                <div className="font-semibold line-clamp-2 break-words max-w-36 xl:max-w-44">
-                  {company.label.split(' (')[0]}
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-1">
+                  <div className="font-semibold line-clamp-2 break-words max-w-36 xl:max-w-44">
+                    {company.label.split(' (')[0]}
+                  </div>
+                  <div className="hidden md:flex items-center gap-3 truncate text-ellipsis max-w-36 2xl:max-w-44">
+                    <Phone className="text-cyan-500 dark:text-cyan-300 text-lg" />
+                    {/* Removemos el emoji del teléfono del texto */}
+                    {formatPhoneNumber(
+                      company.description.split(' | ')[0].replace('📞', '').trim()
+                    )}
+                  </div>
                 </div>
-                <div className="hidden md:flex items-center gap-3 truncate text-ellipsis max-w-36 2xl:max-w-44">
-                  <Phone className="h-4 w-4 text-cyan-500 dark:text-cyan-300" />
-                  {/* Removemos el emoji del teléfono del texto */}
-                  {formatPhoneNumber(
-                    company.description.split(' | ')[0].replace('📞', '').trim()
-                  )}
-                </div>
+                <TfiPlus className="hidden md:block text-2xl text-[#03c9d7] dark:text-[#327f84]" />
               </div>
-              <TfiPlus className="hidden md:block text-2xl text-[#03c9d7] dark:text-[#327f84]" />
             </div>
           </button>
         ))}

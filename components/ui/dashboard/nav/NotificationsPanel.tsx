@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Popover, PopoverTrigger, PopoverContent, Button, ScrollShadow } from '@heroui/react';
 import { FaBell } from 'react-icons/fa';
 import { getUserNotifications } from '@/actions/notifications/get-user-notifications';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '@/actions/notifications/mark-notification-read';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import Link from 'next/link';
 import { CheckCircle, XCircle, FileText, AlertCircle, User, FileCheck, Clock } from 'lucide-react';
 
 interface Notification {
@@ -33,6 +33,7 @@ const notificationIcons: Record<string, React.ReactNode> = {
 };
 
 export default function NotificationsPanel() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -48,11 +49,12 @@ export default function NotificationsPanel() {
     setLoading(false);
   };
 
+  // Carga inicial + polling cada 15 segundos
   useEffect(() => {
     loadNotifications();
-    // Recargar cada 30 segundos
-    const interval = setInterval(loadNotifications, 30000);
+    const interval = setInterval(loadNotifications, 15000);
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -64,6 +66,10 @@ export default function NotificationsPanel() {
       );
     }
     setIsOpen(false);
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl);
+      router.refresh();
+    }
   };
 
   const handleMarkAllAsRead = async () => {
@@ -90,7 +96,7 @@ export default function NotificationsPanel() {
         <div className="flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-default-200 dark:border-default-700">
-            <h3 className="text-lg font-semibold">Notificaciones</h3>
+            <h3 className="text-lg font-semibold">Notificaciones </h3>
             {unreadCount > 0 && (
               <Button size="sm" variant="flat" onPress={handleMarkAllAsRead}>
                 Marcar todas como leídas
@@ -115,58 +121,33 @@ export default function NotificationsPanel() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 hover:bg-default-100 dark:hover:bg-default-800 transition-colors cursor-pointer ${
+                    className={`p-4 hover:bg-default-100 dark:hover:bg-default-800 dark:hover:text-gray-800 transition-colors cursor-pointer ${
                       !notification.read ? 'bg-blue-50 dark:bg-blue-950/20' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    {notification.actionUrl ? (
-                      <Link href={notification.actionUrl} className="flex gap-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {notificationIcons[notification.type] || <FaBell className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm ${!notification.read ? 'font-semibold' : 'font-medium'}`}>
-                              {notification.title}
-                            </p>
-                            {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
-                            )}
-                          </div>
-                          <p className="text-xs text-default-500 mt-1 line-clamp-2">{notification.message}</p>
-                          <p className="text-xs text-default-400 mt-1">
-                            {formatDistanceToNow(new Date(notification.createdAt), {
-                              addSuffix: true,
-                              locale: es,
-                            })}
-                          </p>
-                        </div>
-                      </Link>
-                    ) : (
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {notificationIcons[notification.type] || <FaBell className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm ${!notification.read ? 'font-semibold' : 'font-medium'}`}>
-                              {notification.title}
-                            </p>
-                            {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
-                            )}
-                          </div>
-                          <p className="text-xs text-default-500 mt-1 line-clamp-2">{notification.message}</p>
-                          <p className="text-xs text-default-400 mt-1">
-                            {formatDistanceToNow(new Date(notification.createdAt), {
-                              addSuffix: true,
-                              locale: es,
-                            })}
-                          </p>
-                        </div>
+                    <div className="flex gap-3 cursor-pointer">
+                      <div className="flex-shrink-0 mt-1">
+                        {notificationIcons[notification.type] || <FaBell className="h-4 w-4" />}
                       </div>
-                    )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={`text-sm ${!notification.read ? 'font-semibold' : 'font-medium'}`}>
+                            {notification.title}
+                          </p>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+                          )}
+                        </div>
+                        <p className="text-xs text-default-500 mt-1 line-clamp-2">{notification.message}</p>
+                        <p className="text-xs text-default-400 mt-1">
+                          {formatDistanceToNow(new Date(notification.createdAt), {
+                            addSuffix: true,
+                            locale: es,
+                          })}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

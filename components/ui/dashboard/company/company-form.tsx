@@ -31,9 +31,10 @@ import { AdminContractor } from '@/interfaces/admin-contractor.interface';
 interface CompanyFormProps {
   initialData?: CompanySelectEdit;
   isEditing?: boolean;
+  isLimitedEdit?: boolean;
 }
 
-const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
+const CompanyForm = ({ initialData, isEditing = false, isLimitedEdit = false }: CompanyFormProps) => {
   // Estados
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -113,14 +114,16 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
       name: 'name',
       label: 'Nombre de la Empresa',
       placeholder: 'ej: Empresa S.A.',
-      required: true,
+      required: !isLimitedEdit,
       icon: Building2,
+      disabled: isLimitedEdit,
     },
     {
       name: 'rut',
       label: 'RUT',
       placeholder: 'ej: 12.345.678-9',
-      required: true,
+      required: !isLimitedEdit,
+      disabled: isLimitedEdit,
     },
     {
       name: 'phone',
@@ -147,13 +150,18 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
   // Validaciones del formulario
   const formValues = form.watch();
   const hasErrors = Object.keys(form.formState.errors).length > 0;
-  const isFormComplete =
-    (formValues.name?.trim() ?? '') !== '' &&
-    (formValues.rut?.trim() ?? '') !== '' &&
-    (formValues.phone?.trim() ?? '') !== '';
+  const isFormComplete = isLimitedEdit
+    ? (formValues.phone?.trim() ?? '') !== ''
+    : (formValues.name?.trim() ?? '') !== '' &&
+      (formValues.rut?.trim() ?? '') !== '' &&
+      (formValues.phone?.trim() ?? '') !== '';
+  const editableFields = isLimitedEdit
+    ? (['phone', 'url', 'city'] as const)
+    : (Object.keys(formValues) as Array<keyof typeof formValues>);
+
   const hasFieldChanges =
     isEditing &&
-    (Object.keys(formValues) as Array<keyof typeof formValues>).some(
+    editableFields.some(
       key => (formValues[key] ?? '') !== (form.formState.defaultValues?.[key] ?? '')
     );
   const hasLogoChanges =
@@ -173,10 +181,10 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'].includes(file.type)) {
       addToast({
         title: 'Error',
-        description: 'El logo no debe superar los 5MB',
+        description: 'Solo se aceptan imágenes JPG, PNG, WEBP o SVG',
         timeout: 3000,
         icon: '❌',
         color: 'danger',
@@ -305,7 +313,7 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
           setSelectedLogoFile(null);
         }
 
-        router.push('/dashboard/companies');
+        router.push(isLimitedEdit ? '/dashboard/my-company' : '/dashboard/companies');
         router.refresh();
       } catch (error) {
         setIsUploadingLogo(false);
@@ -385,7 +393,7 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
             </div>
           </div>
 
-          <div className="col-span-12 border-t border-b border-slate-200 dark:border-slate-700 mt-8 pt-4">
+          {!isLimitedEdit && <div className="col-span-12 border-t border-b border-slate-200 dark:border-slate-700 mt-8 pt-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-200">
                 Lista de Contratos
@@ -409,7 +417,7 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
               onAddContract={() => setIsContractModalOpen(true)}
               isEditing={isEditing}
             />
-          </div>
+          </div>}
 
           <div className="col-span-7 mt-8">
             {error && <p className="text-red-500">{error}</p>}
@@ -432,7 +440,7 @@ const CompanyForm = ({ initialData, isEditing = false }: CompanyFormProps) => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push('/dashboard/companies')}
+              onClick={() => router.push(isLimitedEdit ? '/dashboard' : '/dashboard/companies')}
               className="mr-4"
             >
               Cancelar

@@ -32,11 +32,33 @@ export const fetchUserData = async () => {
         },
         adminContractor: true,
         assignedUsers: {
-          // Si quieres ver todos los asignados, elimina el filtro aquí también
           include: {
             company: true,
           },
-        }, // Incluir la relación
+        },
+        Contract: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            contractName: true,
+            contractNumber: true,
+            Company: { select: { name: true } },
+          },
+          orderBy: { contractName: 'asc' },
+        },
+        subcontractsAsRep: {
+          where: { isActive: true },
+          select: {
+            status: true,
+            contract: {
+              select: {
+                contractName: true,
+                contractNumber: true,
+                Company: { select: { name: true } },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -44,7 +66,14 @@ export const fetchUserData = async () => {
       ok: true,
       users: users.map(user => ({
         ...user,
-        roles: user.roles.map(r => r.role.name as RoleEnum), // Asegúrate de que el tipo sea correcto
+        roles: user.roles.map(r => r.role.name as RoleEnum),
+        contracts: user.Contract,
+        asSubcontractor: user.subcontractsAsRep.map(s => ({
+          contractName: s.contract.contractName,
+          contractNumber: s.contract.contractNumber,
+          mandanteName: s.contract.Company?.name ?? null,
+          status: s.status,
+        })),
       })),
     };
   } catch (error) {

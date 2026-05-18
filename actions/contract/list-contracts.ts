@@ -22,8 +22,9 @@ export async function listContracts() {
     // ✅ VALIDACIÓN 2: Determinar qué puede ver
     const canViewAll = hasActionPermission('contracts:view:all', userRoles);
     const canViewAssigned = hasActionPermission('contracts:view:assigned', userRoles);
+    const canViewCompany = hasActionPermission('contracts:view:company', userRoles);
 
-    if (!canViewAll && !canViewAssigned) {
+    if (!canViewAll && !canViewAssigned && !canViewCompany) {
       return {
         ok: false,
         error: 'No tienes permiso para ver contratos',
@@ -58,6 +59,20 @@ export async function listContracts() {
           application: true,
         },
       },
+      // Sub-empresas vinculadas a este contrato
+      subcontracts: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          status: true,
+          subCompany: {
+            select: { id: true, name: true, rut: true },
+          },
+          user: {
+            select: { displayName: true },
+          },
+        },
+      },
     };
 
     // Tipo para los contratos retornados por la query
@@ -82,6 +97,12 @@ export async function listContracts() {
       _count: {
         application: number;
       };
+      subcontracts?: Array<{
+        id: string;
+        status: string;
+        subCompany: { id: string; name: string | null; rut: string };
+        user: { displayName: string } | null;
+      }>;
     };
 
     let contracts: ContractQueryResult[] = [];
@@ -106,12 +127,55 @@ export async function listContracts() {
           createdAt: 'desc',
         },
       });
+    } else if (canViewCompany) {
+      // User (trabajador): ve los contratos de su empresa (propios + como sub-empresa)
+      if (user.companyId) {
+        // Contratos propios (mandante)
+        const ownContracts = await db.contract.findMany({
+          where: { companyId: user.companyId, deletedAt: null },
+          select: selectQuery,
+          orderBy: { createdAt: 'desc' },
+        });
+
+        // Contratos donde su empresa es sub-empresa y el usuario es el representante designado
+        const subLinks = await db.subcontract.findMany({
+          where: {
+            subCompanyId: user.companyId,
+            userId: user.id,
+            isActive: true,
+            contract: { deletedAt: null },
+          },
+          select: {
+            status: true,
+            contract: {
+              select: {
+                ...selectQuery,
+                Company: { select: { id: true, name: true, rut: true } },
+              },
+            },
+          },
+        });
+
+        const subContracts = subLinks.map(link => ({
+          ...link.contract,
+          isSubcontract: true as const,
+          mandanteName: link.contract.Company?.name ?? null,
+        }));
+
+        contracts = [...ownContracts, ...subContracts] as typeof contracts;
+      }
     }
 
     // Mapear Company -> company para compatibilidad con la interfaz
     const mappedContracts = contracts.map((contract) => ({
       ...contract,
       company: contract.Company,
+      subcontracts: contract.subcontracts?.map(s => ({
+        id: s.id,
+        status: s.status,
+        subCompany: s.subCompany,
+        representativeName: s.user?.displayName ?? null,
+      })),
     }));
 
     return {

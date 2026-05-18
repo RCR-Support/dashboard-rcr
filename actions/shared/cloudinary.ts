@@ -1,7 +1,6 @@
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
-import { auth } from '@/auth';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -29,11 +28,6 @@ export async function uploadToCloudinary(
   resourceType: 'image' | 'raw' = 'image'
 ): Promise<CloudinaryUploadResult> {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: 'No autenticado' };
-    }
-
     const uploadResult = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
       cloudinary.uploader.upload(
         fileBase64,

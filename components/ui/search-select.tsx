@@ -96,7 +96,8 @@ export const SearchSelect = React.forwardRef<
       }
     };
 
-    const selectedOption = options.find(opt => opt.value === selectedValue);
+    const safeOptions = Array.isArray(options) ? options : [];
+    const selectedOption = safeOptions.find(opt => opt.value === selectedValue);
 
     return (
       <Popover
@@ -151,7 +152,7 @@ export const SearchSelect = React.forwardRef<
             <CommandList>
               <CommandEmpty>No se encontraron resultados</CommandEmpty>
               <CommandGroup>
-                {options.map(option => {
+                {safeOptions.map(option => {
                   const isSelected = selectedValue === option.value;
                   return (
                     <CommandItem

@@ -31,6 +31,20 @@ export interface Contract {
   _count?: {
     application: number;
   };
+  // Sub-contrato: el contrato pertenece al mandante y la empresa actual es sub-empresa
+  isSubcontract?: boolean;
+  mandanteName?: string | null;
+  // Sub-empresas vinculadas a este contrato (cuando esta empresa es mandante)
+  subcontracts?: Array<{
+    id: string;
+    status: string;
+    subCompany: {
+      id: string;
+      name: string | null;
+      rut: string;
+    };
+    representativeName?: string | null;
+  }>;
 }
 
 export interface ContractResponse {

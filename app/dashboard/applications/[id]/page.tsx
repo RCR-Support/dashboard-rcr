@@ -40,6 +40,7 @@ export default async function ApplicationPage({
       stateAc: true,
       stateSheq: true,
       createdAt: true,
+      contractId: true,
       company: {
         select: {
           id: true,
@@ -156,6 +157,31 @@ export default async function ApplicationPage({
             </div>
           </div>
         );
+      }
+
+      // Si la solicitud pertenece a un sub-contrato, solo el representante designado puede verla
+      if (application.contractId) {
+        const subcontractRecord = await db.subcontract.findFirst({
+          where: {
+            subCompanyId: application.company!.id,
+            contractId: application.contractId,
+            isActive: true,
+          },
+          select: { userId: true },
+        });
+        if (subcontractRecord && subcontractRecord.userId !== user.id) {
+          return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center">
+                <h2 className="text-2xl font-semibold mb-2">Acceso denegado</h2>
+                <p className="text-default-400">Solo el representante designado del sub-contrato puede ver esta solicitud.</p>
+                <div className="mt-4">
+                  <Link href="/dashboard" className="text-primary">Volver al Dashboard</Link>
+                </div>
+              </div>
+            </div>
+          );
+        }
       }
     } else {
       return (

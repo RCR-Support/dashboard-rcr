@@ -388,6 +388,8 @@ export function DocumentsStep({
           disabled={
             !credentialPhoto || 
             documents.some(doc => doc.status === 'pending') || 
+            documents.some(doc => doc.id !== 'credential-photo' && !doc.url) ||
+            documents.some(doc => doc.id !== 'credential-photo' && doc.url && !doc.expiresAt) ||
             isSubmitting
           }
         >

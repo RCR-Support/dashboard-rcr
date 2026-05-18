@@ -238,6 +238,10 @@ export const actionPermissions: Record<string, ActionPermission> = {
     roles: [RoleEnum.adminContractor],
     description: 'Ver contratos asignados como administrador',
   },
+  'contracts:view:company': {
+    roles: [RoleEnum.user],
+    description: 'Ver contratos de la empresa a la que pertenece el usuario',
+  },
   'contracts:create': {
     roles: [RoleEnum.admin],
     description: 'Crear nuevos contratos',
@@ -293,6 +297,30 @@ export const actionPermissions: Record<string, ActionPermission> = {
   'files:upload': {
     roles: [RoleEnum.admin, RoleEnum.user, RoleEnum.sheq, RoleEnum.adminContractor],
     description: 'Subir archivos al sistema',
+  },
+
+  // ========================================
+  // SUBCONTRATOS
+  // ========================================
+  'subcontracts:view:all': {
+    roles: [RoleEnum.admin],
+    description: 'Ver todos los subcontratos del sistema',
+  },
+  'subcontracts:view:own': {
+    roles: [RoleEnum.admin, RoleEnum.user, RoleEnum.adminContractor],
+    description: 'Ver subcontratos de la empresa propia (mandante)',
+  },
+  'subcontracts:create': {
+    roles: [RoleEnum.admin, RoleEnum.user],
+    description: 'Vincular empresa existente como sub-empresa (Flujo A)',
+  },
+  'subcontracts:request': {
+    roles: [RoleEnum.admin, RoleEnum.user],
+    description: 'Solicitar ingreso de nueva empresa como sub-empresa (Flujo B)',
+  },
+  'subcontracts:approve': {
+    roles: [RoleEnum.admin],
+    description: 'Aprobar/rechazar solicitudes de nuevas sub-empresas',
   },
 };
 

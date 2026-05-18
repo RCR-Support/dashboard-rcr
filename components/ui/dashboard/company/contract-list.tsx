@@ -4,7 +4,7 @@ import { Contract } from '@/interfaces/contract.interface';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit2, PlusCircle, User } from 'lucide-react';
+import { Edit2, PlusCircle, User, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ContractListProps {
@@ -44,12 +44,13 @@ export const ContractList = ({
   return (
     <div className="space-y-2 mt-4">
       {/* Encabezados de la tabla - visible solo en tablet y desktop */}
-      <div className="hidden md:grid md:grid-cols-6 md:gap-4 md:px-4 md:py-1 md:font-semibold md:text-sm md:text-slate-500 dark:md:text-slate-200">
+      <div className="hidden md:grid md:grid-cols-7 md:gap-4 md:px-4 md:py-1 md:font-semibold md:text-sm md:text-slate-500 dark:md:text-slate-200">
         <div>Nombre</div>
         <div>Número</div>
         <div>Fecha Inicio</div>
         <div>Fecha Fin</div>
         <div>Administrador</div>
+        <div>Rol</div>
         <div className="text-right">Acciones</div>
       </div>
       {/* Lista de contratos */}
@@ -58,17 +59,27 @@ export const ContractList = ({
           key={contract.id}
           className={cn(
             // Estilos base
-            'border rounded-lg border-slate-200 dark:border-slate-700',
+            contract.isSubcontract
+              ? 'border rounded-lg border-cyan-300 dark:border-cyan-700 bg-cyan-50/40 dark:bg-cyan-900/10'
+              : 'border rounded-lg border-slate-200 dark:border-slate-700',
             // Mobile: diseño en columnas
             'flex flex-col p-4 space-y-1 relative',
             // Tablet/Desktop: diseño en grid
-            'md:grid md:grid-cols-6 md:gap-4 md:items-center md:space-y-0 md:p-4'
+            'md:grid md:grid-cols-7 md:gap-4 md:items-center md:space-y-0 md:p-4'
           )}
         >
           {/* Nombre del Contrato */}
-          <h4 className="font-medium md:font-normal">
-            {contract.contractName}
-          </h4>
+          <div className="flex flex-col gap-1">
+            <h4 className="font-medium md:font-normal">
+              {contract.contractName}
+            </h4>
+            {contract.isSubcontract && (
+              <span className="inline-flex items-center gap-1 text-xs text-cyan-600 dark:text-cyan-400 font-medium md:hidden">
+                <Building2 size={11} />
+                Subcontratista de: {contract.mandanteName ?? 'Empresa mandante'}
+              </span>
+            )}
+          </div>
           {/* Número de Contrato */}
           <p className="text-sm text-slate-500 dark:text-slate-400">
             <span className="md:hidden">Número: </span>
@@ -99,6 +110,20 @@ export const ContractList = ({
               {contract.userAc.displayName}
             </div>
           )}
+
+          {/* Rol en el contrato (mandante / subcontratista) */}
+          <div className="hidden md:flex items-center gap-1 text-xs">
+            {contract.isSubcontract ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 font-medium">
+                <Building2 size={11} />
+                Sub de: {contract.mandanteName ?? 'Mandante'}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium">
+                Mandante
+              </span>
+            )}
+          </div>
 
           <div
             className={cn(

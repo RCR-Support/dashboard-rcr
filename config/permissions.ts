@@ -44,6 +44,10 @@ export const permissions: PermissionsMapping = {
     roles: [RoleEnum.user],
     description: 'Pagina vista ejemplo de  usuario',
   },
+  '/dashboard/my-company': {
+    roles: [RoleEnum.user],
+    description: 'Editar datos no críticos de la empresa propia',
+  },
   '/dashboard/companies': {
     roles: [RoleEnum.admin],
     description: 'Gestión de empresas',
@@ -57,7 +61,7 @@ export const permissions: PermissionsMapping = {
     description: 'Editar empresa',
   },
   '/dashboard/contracts': {
-    roles: [RoleEnum.admin, RoleEnum.adminContractor],
+    roles: [RoleEnum.admin, RoleEnum.adminContractor, RoleEnum.user],
     description: 'Gestión de contratos',
   },
   '/dashboard/activities': {

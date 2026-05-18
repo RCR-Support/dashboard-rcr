@@ -207,6 +207,12 @@ export function ContractStep({
             </div>
 
             <div className="space-y-2">
+              {/* Etiqueta Sub-contrato */}
+              {contract.isSubcontract && (
+                <span className="inline-block text-[10px] font-semibold uppercase tracking-wide bg-secondary/10 text-secondary px-2 py-0.5 rounded-full">
+                  Sub-contrato
+                </span>
+              )}
               <h3 className="text-lg font-medium pr-6">
                 Contrato #{contract.contractNumber}
               </h3>
@@ -232,6 +238,13 @@ export function ContractStep({
                     {contract.userAc?.displayName || 'No asignado'}
                   </p>
                 </div>
+
+                {contract.isSubcontract && contract.mandanteName && (
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground mb-1">Empresa mandante:</p>
+                    <p className="font-medium text-secondary">{contract.mandanteName}</p>
+                  </div>
+                )}
 
                 {/* Botón de seleccionar contrato */}
                 <div className="pt-4">

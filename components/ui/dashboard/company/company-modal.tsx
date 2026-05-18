@@ -9,7 +9,7 @@ import {
 import { Button } from '@heroui/react';
 import { useRouter } from 'next/navigation';
 import { useCompanyStore } from '@/store/ui/useCompanyStore';
-import { Phone, Globe, MapPin, Pencil, Trash } from 'lucide-react';
+import { Phone, Globe, MapPin, Pencil, Trash, Building2, Link2 } from 'lucide-react';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -168,13 +168,46 @@ export const CompanyModal = ({
               </>
             )}
 
+            {/* Sección: Esta empresa es sub-empresa de... */}
+            {company?.asSubcontractor && company.asSubcontractor.length > 0 && (
+              <>
+                <div className="border-t border-cyan-200 dark:border-cyan-800 my-4" />
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2 text-cyan-700 dark:text-cyan-400">
+                    <Link2 className="h-4 w-4" />
+                    Participa como subcontratista en
+                    <span className="text-xs bg-cyan-100 dark:bg-cyan-900/40 px-2 py-0.5 rounded-full">
+                      {company.asSubcontractor.length}
+                    </span>
+                  </h4>
+                  <div className="space-y-2">
+                    {company.asSubcontractor.map(sc => (
+                      <div key={sc.contractId} className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 p-2 rounded-lg">
+                        <p className="font-semibold text-sm text-cyan-800 dark:text-cyan-200">{sc.contractName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">N° {sc.contractNumber}</p>
+                        {sc.mandanteName && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                            <Building2 size={11} />
+                            Empresa mandante: <span className="font-semibold text-slate-700 dark:text-slate-300">{sc.mandanteName}</span>
+                          </p>
+                        )}
+                        <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200">
+                          {sc.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Sección de Contratos */}
             {company?.contracts && company.contracts.length > 0 && (
               <>
                 <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
-                    Contratos
+                    Contratos (mandante)
                     <span className="text-xs bg-primary/10 px-2 py-1 rounded-full text-amber-500 dark:text-amber-300">
                       {company.contracts.length}
                     </span>
@@ -186,7 +219,7 @@ export const CompanyModal = ({
                         className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg"
                       >
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="flex-1">
                             <p className="font-semibold uppercase text-sm dark:text-amber-100">
                               {contract.contractName}
                             </p>
@@ -197,30 +230,47 @@ export const CompanyModal = ({
                               </span>
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Inicio contrato:{' '}
+                              Inicio:{' '}
                               <span className="font-semibold text-amber-400 dark:text-amber-100">
-                                {format(
-                                  new Date(contract.initialDate),
-                                  'dd MMM yyyy',
-                                  { locale: es }
-                                )}
-                              </span>{' '}
-                              {' - '} Final contrato:{' '}
+                                {format(new Date(contract.initialDate), 'dd MMM yyyy', { locale: es })}
+                              </span>
+                              {' — '}
+                              Fin:{' '}
                               <span className="font-semibold text-amber-400 dark:text-amber-100">
-                                {format(
-                                  new Date(contract.finalDate),
-                                  'dd MMM yyyy',
-                                  { locale: es }
-                                )}
+                                {format(new Date(contract.finalDate), 'dd MMM yyyy', { locale: es })}
                               </span>
                             </p>
                             <p className="text-sm text-muted-foreground">
                               Administrador:{' '}
                               <span className="font-semibold text-amber-400 dark:text-amber-100">
-                                {contract.userAc?.displayName ||
-                                  'Sin administrador'}
+                                {contract.userAc?.displayName || 'Sin administrador'}
                               </span>
                             </p>
+                            {/* Sub-empresas vinculadas a este contrato */}
+                            {contract.subcompanies && contract.subcompanies.length > 0 && (
+                              <div className="mt-2 pl-2 border-l-2 border-cyan-300 dark:border-cyan-700">
+                                <p className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 mb-1 flex items-center gap-1">
+                                  <Link2 size={11} />
+                                  Sub-empresas contratistas ({contract.subcompanies.length})
+                                </p>
+                                {contract.subcompanies.map(sub => (
+                                  <div key={sub.id} className="flex flex-col text-xs text-slate-600 dark:text-slate-300 py-0.5 gap-0.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="flex items-center gap-1">
+                                        <Building2 size={11} className="text-cyan-500" />
+                                        {sub.name ?? sub.rut}
+                                      </span>
+                                      <span className="px-1.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300">
+                                        {sub.status}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 pl-4">
+                                      Rep: {sub.representativeName ?? <span className="italic">Sin representante asignado</span>}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -57,7 +57,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { data, success } = loginSchema.safeParse(credentials);
 
         if (!success) {
-          throw new Error('Invalid credentials');
+          throw new Error('Credenciales inválidas');
         }
 
         const user = await db.user.findUnique({
@@ -75,7 +75,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user || !user.password) {
-          throw new Error('Invalid credentials');
+          throw new Error('Credenciales inválidas');
         }
 
         if (!user.isActive || user.deletedLogic) {
@@ -84,7 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const isValid = await bcryptjs.compare(data.password, user.password);
         if (!isValid) {
-          throw new Error('Invalid credentials');
+          throw new Error('Credenciales inválidas');
         }
 
         return {

@@ -43,6 +43,26 @@ export default async function Home() {
           </Link>
         </div>
 
+        {/* Pre-registro CTA */}
+        {!session && (
+          <div className="w-full max-w-2xl mt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-5 rounded-xl bg-white dark:bg-[#1e2530] border border-gray-100 dark:border-gray-700/50 shadow-sm">
+              <div className="flex-1 text-center sm:text-left">
+                <p className="font-semibold text-slate-800 dark:text-white text-sm">¿Primera vez aquí?</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Si tu empresa aún no está registrada, completa el formulario de pre-registro con los datos de tu empresa y contrato.
+                </p>
+              </div>
+              <Link
+                href="/pre-register"
+                className="shrink-0 inline-flex items-center justify-center h-9 px-5 rounded-lg border-2 border-[#D05F27] text-[#D05F27] hover:bg-[#D05F27] hover:text-white font-semibold text-sm transition-colors"
+              >
+                Formulario de pre-registro
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Features */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full mt-8">
           {[

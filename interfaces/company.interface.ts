@@ -12,6 +12,13 @@ export interface Company {
   status: boolean;
   users?: User[];
   contracts?: Contract[];
+  // Contratos en los que esta empresa participa como sub-empresa
+  asSubcontractor?: Array<{
+    contractName: string;
+    contractNumber: string;
+    mandanteName: string | null;
+    status: string;
+  }>;
 }
 
 export interface CompanyUser {
@@ -57,6 +64,23 @@ export interface CompanySelect {
       displayName: string;
       email: string;
     };
+    subcompanies?: Array<{
+      id: string;
+      name: string | null;
+      rut: string;
+      status: string;
+      representativeName?: string | null;
+    }>;
+  }>;
+  // Contratos en los que esta empresa participa como sub-empresa
+  asSubcontractor?: Array<{
+    contractId: string;
+    contractName: string;
+    contractNumber: string;
+    mandanteId?: string;
+    mandanteName?: string | null;
+    mandanteRut?: string;
+    status: string;
   }>;
   summary?: {
     totalUsers: number;

@@ -7,10 +7,11 @@ import {
   DropdownMenu,
   DropdownItem,
 } from '@heroui/dropdown';
-import { Building2, ChevronDown, KeyRound, LogOut, MapPin, Phone, RefreshCw } from 'lucide-react';
+import { Building2, ChevronDown, KeyRound, LogOut, MapPin, Phone, RefreshCw, UserPen } from 'lucide-react';
 import { useRoleStore } from '@/store/ui/roleStore';
 import Image from 'next/image';
 import ChangePasswordModal from './ChangePasswordModal';
+import EditProfileModal from './EditProfileModal';
 
 interface UserInfoProfileProps {
   name: string;
@@ -30,6 +31,7 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email, role, im
   const resetRole = useRoleStore(state => state.resetRole);
   const { data: session } = useSession();
   const [changePwOpen, setChangePwOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   const handleLogout = async () => {
     resetRole();
@@ -123,6 +125,15 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email, role, im
         ) : <DropdownItem key="empty" className="hidden" textValue="" />}
 
         <DropdownItem
+          key="edit_profile"
+          startContent={<UserPen className="h-4 w-4" />}
+          onPress={() => setEditProfileOpen(true)}
+          textValue="Editar perfil"
+        >
+          Editar perfil
+        </DropdownItem>
+
+        <DropdownItem
           key="change_password"
           startContent={<KeyRound className="h-4 w-4" />}
           onPress={() => setChangePwOpen(true)}
@@ -145,6 +156,7 @@ const UserInfoProfile: React.FC<UserInfoProfileProps> = ({ name, email, role, im
     </Dropdown>
 
     <ChangePasswordModal isOpen={changePwOpen} onClose={() => setChangePwOpen(false)} />
+    <EditProfileModal isOpen={editProfileOpen} onClose={() => setEditProfileOpen(false)} />
     </>
   );
 };

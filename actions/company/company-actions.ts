@@ -43,7 +43,9 @@ const uploadLogoToCloudinary = async (file: File, companyId?: string) => {
             ? `company-logo-${companyId}-${Date.now()}`
             : `company-logo-${Date.now()}`,
           overwrite: true,
-          transformation: [{ width: 400, height: 200, crop: 'fit' }],
+          transformation: [
+            { width: 400, height: 200, crop: 'fit', quality: 'auto:best', fetch_format: 'auto' },
+          ],
         },
         (error, result) => {
           if (error) reject(error);
@@ -319,12 +321,14 @@ export const updateCompany = async (
 
     let company;
     try {
+      // Si es canEditOwn (no admin), solo actualizar campos no críticos
+      const updateData = canEditAny
+        ? { ...parsed.data, logoUrl: nextLogoUrl }
+        : { phone: parsed.data.phone, url: parsed.data.url, city: parsed.data.city, logoUrl: nextLogoUrl };
+
       company = await db.company.update({
         where: { id },
-        data: {
-          ...parsed.data,
-          logoUrl: nextLogoUrl,
-        },
+        data: updateData,
       });
     } catch (error) {
       if (uploadedLogoUrl) {

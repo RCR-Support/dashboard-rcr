@@ -113,7 +113,7 @@ export async function listApplications(contractId?: string) {
         },
       });
     } else if (canViewOwn) {
-      // User (empresas contratistas): solo ve solicitudes de su empresa
+      // User (empresas contratistas): ve solicitudes según su rol en el contrato
       if (!user.companyId) {
         return {
           ok: false,
@@ -121,10 +121,50 @@ export async function listApplications(contractId?: string) {
         };
       }
 
+      // 1. Sub-empresas activas donde el usuario es el representante designado
+      const repSubcontracts = await db.subcontract.findMany({
+        where: {
+          userId: user.id,
+          isActive: true,
+          status: 'activo',
+          ...(contractId ? { contractId } : {}),
+        },
+        select: { contractId: true },
+      });
+      const repContractIds = repSubcontracts.map(s => s.contractId);
+
+      // 2. Sub-empresas activas vinculadas a contratos de su empresa (como mandante)
+      const mandanteSubcontracts = await db.subcontract.findMany({
+        where: {
+          isActive: true,
+          status: 'activo',
+          contract: { companyId: user.companyId },
+          ...(contractId ? { contractId } : {}),
+        },
+        select: { subCompanyId: true },
+      });
+      const subCompanyIds = mandanteSubcontracts.map(s => s.subCompanyId);
+
       applications = await db.application.findMany({
         where: {
-          ...contractFilter,
-          companyId: user.companyId,
+          ...(contractId ? { contractId } : {}),
+          OR: [
+            // Solicitudes propias de contratos donde la empresa es mandante
+            {
+              companyId: user.companyId,
+              contract: { companyId: user.companyId },
+            },
+            // Solicitudes de sub-contratos donde el usuario es representante designado
+            {
+              companyId: user.companyId,
+              contractId: { in: repContractIds },
+            },
+            // Solicitudes de sub-empresas (vista mandante)
+            ...(subCompanyIds.length > 0 ? [{
+              companyId: { in: subCompanyIds },
+              contract: { companyId: user.companyId },
+            }] : []),
+          ],
         },
         select: selectQuery,
         orderBy: {

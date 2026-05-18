@@ -37,5 +37,17 @@ export interface User {
       name: string | null;
     } | null;
   }[];
+  contracts?: {
+    id: string;
+    contractName: string;
+    contractNumber: string;
+    Company?: { name: string | null } | null;
+  }[];
+  asSubcontractor?: {
+    contractName: string;
+    contractNumber: string;
+    mandanteName: string | null;
+    status: string;
+  }[];
   createdAt?: string | Date;
 }

@@ -3,6 +3,29 @@
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { Prisma, RoleEnum } from '@prisma/client';
+import { sendPreRegistrationEmails } from '@/lib/email/postmark';
+import { revalidatePath } from 'next/cache';
+
+async function notifyAdminsNewPreRegister(displayName: string, companyName: string) {
+  try {
+    const adminRoles = await db.userRole.findMany({
+      where: { role: { name: 'admin' } },
+      select: { userId: true },
+    });
+    if (adminRoles.length === 0) return;
+    await db.notification.createMany({
+      data: adminRoles.map(({ userId }) => ({
+        userId,
+        type: 'NEW_USER',
+        title: 'Nuevo pre-registro pendiente',
+        message: `${displayName} de ${companyName} solicitó pre-registro y está esperando aprobación.`,
+        actionUrl: '/dashboard/users',
+      })),
+    });
+  } catch (err) {
+    console.error('[pre-register] Error creando notificaciones:', err);
+  }
+}
 
 // 1. Esquema de validación para el pre-registro
 const preRegisterSchema = z
@@ -33,18 +56,13 @@ const preRegisterSchema = z
     userPhoneNumber: z.string().min(9, 'El teléfono es requerido'),
     displayName: z.string().optional(),
 
-    // Datos del Contrato
-    contractNumber: z.string().min(1, 'El número de contrato es requerido'),
-    contractName: z.string().min(3, 'El nombre del contrato es requerido'),
-    initialDate: z.coerce.date({
-      required_error: 'La fecha de inicio es requerida',
-    }),
-    finalDate: z.coerce.date({
-      required_error: 'La fecha de término es requerida',
-    }),
-    adminContractorId: z
-      .string()
-      .min(1, 'Debe seleccionar un administrador de contrato'),
+    // Datos del Contrato (opcionales cuando isSubcontract = true)
+    isSubcontract: z.boolean().optional(),
+    contractNumber: z.string().optional().or(z.literal('')),
+    contractName: z.string().optional().or(z.literal('')),
+    initialDate: z.coerce.date().optional(),
+    finalDate: z.coerce.date().optional(),
+    adminContractorId: z.string().optional().or(z.literal('')),
   })
   .superRefine((data, ctx) => {
     // Solo validar datos de empresa si NO hay companyId
@@ -76,6 +94,24 @@ const preRegisterSchema = z
         });
       }
     }
+    // Si NO es sub-contratista, los datos de contrato son obligatorios
+    if (!data.isSubcontract) {
+      if (!data.contractNumber || data.contractNumber.trim().length < 1) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['contractNumber'], message: 'El número de contrato es requerido' });
+      }
+      if (!data.contractName || data.contractName.trim().length < 3) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['contractName'], message: 'El nombre del contrato es requerido' });
+      }
+      if (!data.initialDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['initialDate'], message: 'La fecha de inicio es requerida' });
+      }
+      if (!data.finalDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['finalDate'], message: 'La fecha de término es requerida' });
+      }
+      if (!data.adminContractorId || data.adminContractorId.trim().length < 1) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['adminContractorId'], message: 'Debe seleccionar un administrador de contrato' });
+      }
+    }
   });
 
 export const preRegisterAction = async (values: unknown) => {
@@ -93,6 +129,7 @@ export const preRegisterAction = async (values: unknown) => {
     }
     const data = parsedGeneral.data;
     const isEmpresaExistente = !!data.companyId && data.companyId !== '';
+    const isSubcontract = !!data.isSubcontract;
 
     // Validación condicional de campos de empresa
     if (!isEmpresaExistente) {
@@ -113,18 +150,35 @@ export const preRegisterAction = async (values: unknown) => {
       }
     }
     // Validar usuario único (siempre)
+    const generatedUserName = `${data.userName.charAt(0).toLowerCase()}${data.userLastName.toLowerCase()}`;
     const userExists = await db.user.findFirst({
-      where: { OR: [{ email: data.userEmail }, { run: data.userRun }] },
+      where: {
+        OR: [
+          { email: data.userEmail },
+          { run: data.userRun },
+          { userName: generatedUserName },
+        ],
+      },
+      select: { email: true, run: true, userName: true },
     });
     if (userExists) {
-      return { error: 'El email o RUN del usuario ya está registrado' };
+      if (userExists.email === data.userEmail)
+        return { error: 'El email ya está registrado en el sistema.' };
+      if (userExists.run === data.userRun)
+        return { error: 'El RUN ya está registrado en el sistema.' };
+      return {
+        error:
+          'Ya existe un usuario con un nombre de usuario similar. Por favor contacte al administrador.',
+      };
     }
-    // Validar contrato único (siempre)
-    const contractExists = await db.contract.findFirst({
-      where: { contractNumber: data.contractNumber },
-    });
-    if (contractExists) {
-      return { error: 'El número de contrato ya existe' };
+    // Validar contrato único (solo si NO es sub-contratista)
+    if (!isSubcontract) {
+      const contractExists = await db.contract.findFirst({
+        where: { contractNumber: data.contractNumber },
+      });
+      if (contractExists) {
+        return { error: 'El número de contrato ya existe' };
+      }
     }
 
     // 2. Lógica principal según si es empresa existente o nueva
@@ -141,6 +195,7 @@ export const preRegisterAction = async (values: unknown) => {
       }
       // Crear usuario y contrato en transacción para evitar datos huérfanos
       const companyId = data.companyId!;
+      const existingCompany = await db.company.findUnique({ where: { id: companyId }, select: { name: true } });
       await db.$transaction(async (prisma) => {
         await prisma.user.create({
           data: {
@@ -170,17 +225,41 @@ export const preRegisterAction = async (values: unknown) => {
             },
           },
         });
-        await prisma.contract.create({
-          data: {
-            contractNumber: data.contractNumber,
-            contractName: data.contractName,
-            initialDate: data.initialDate,
-            finalDate: data.finalDate,
-            companyId: companyId,
-            useracId: data.adminContractorId,
-          },
-        });
+        // Solo crear contrato si NO es sub-contratista
+        if (!isSubcontract && data.contractNumber && data.contractName && data.initialDate && data.finalDate && data.adminContractorId) {
+          await prisma.contract.create({
+            data: {
+              contractNumber: data.contractNumber,
+              contractName: data.contractName,
+              initialDate: data.initialDate,
+              finalDate: data.finalDate,
+              companyId: companyId,
+              useracId: data.adminContractorId,
+            },
+          });
+        }
       });
+      // Enviar correos (sin bloquear respuesta si fallan)
+      try {
+        await sendPreRegistrationEmails({
+          userEmail: data.userEmail,
+          userName: data.userName,
+          userLastName: data.userLastName,
+          userRun: data.userRun,
+          companyName: existingCompany?.name ?? companyId,
+          contractNumber: data.contractNumber ?? '',
+          contractName: data.contractName ?? '',
+          initialDate: data.initialDate ?? new Date(),
+          finalDate: data.finalDate ?? new Date(),
+          adminContractorId: data.adminContractorId ?? '',
+          isSubcontract,
+        });
+      } catch (emailError) {
+        console.error('[pre-register] Error enviando correos:', emailError);
+      }
+      const displayName = `${data.userName} ${data.userLastName}`.trim();
+      await notifyAdminsNewPreRegister(displayName, existingCompany?.name ?? companyId);
+      revalidatePath('/dashboard/users');
       return {
         success: true,
         message:
@@ -232,19 +311,42 @@ export const preRegisterAction = async (values: unknown) => {
             },
           },
         });
-        // Crear Contrato con el adminContractorId seleccionado
-        const newContract = await prisma.contract.create({
-          data: {
-            contractNumber: data.contractNumber,
-            contractName: data.contractName,
-            initialDate: data.initialDate,
-            finalDate: data.finalDate,
-            companyId: newCompany.id,
-            useracId: data.adminContractorId,
-          },
-        });
-        return { newCompany, newUser, newContract };
+        // Crear Contrato con el adminContractorId seleccionado (solo si NO es sub-contratista)
+        if (!isSubcontract && data.contractNumber && data.contractName && data.initialDate && data.finalDate && data.adminContractorId) {
+          await prisma.contract.create({
+            data: {
+              contractNumber: data.contractNumber,
+              contractName: data.contractName,
+              initialDate: data.initialDate,
+              finalDate: data.finalDate,
+              companyId: newCompany.id,
+              useracId: data.adminContractorId,
+            },
+          });
+        }
+        return { newCompany, newUser };
       });
+      // Enviar correos (sin bloquear respuesta si fallan)
+      try {
+        await sendPreRegistrationEmails({
+          userEmail: data.userEmail,
+          userName: data.userName,
+          userLastName: data.userLastName,
+          userRun: data.userRun,
+          companyName: data.companyName ?? '',
+          contractNumber: data.contractNumber ?? '',
+          contractName: data.contractName ?? '',
+          initialDate: data.initialDate ?? new Date(),
+          finalDate: data.finalDate ?? new Date(),
+          adminContractorId: data.adminContractorId ?? '',
+          isSubcontract,
+        });
+      } catch (emailError) {
+        console.error('[pre-register] Error enviando correos:', emailError);
+      }
+      const displayName2 = `${data.userName} ${data.userLastName}`.trim();
+      await notifyAdminsNewPreRegister(displayName2, data.companyName ?? '');
+      revalidatePath('/dashboard/users');
       return {
         success: true,
         message:
@@ -257,8 +359,15 @@ export const preRegisterAction = async (values: unknown) => {
         const target = (error.meta?.target as string[]) || [];
         if (target.includes('rut'))
           return { error: 'El RUT de la empresa ya existe.' };
-        if (target.includes('email') || target.includes('run'))
-          return { error: 'El email o RUN del usuario ya existe.' };
+        if (target.includes('email'))
+          return { error: 'El email ya está registrado.' };
+        if (target.includes('run'))
+          return { error: 'El RUN ya está registrado.' };
+        if (target.includes('userName'))
+          return {
+            error:
+              'Ya existe un usuario con un nombre de usuario similar. Por favor contacte al administrador.',
+          };
         if (target.includes('contractNumber'))
           return { error: 'El número de contrato ya existe.' };
       }

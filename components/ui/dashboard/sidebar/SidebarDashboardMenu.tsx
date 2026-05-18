@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AiFillDashboard } from 'react-icons/ai';
 import { FaUsers, FaUserPlus, FaUserTie, FaFileContract } from 'react-icons/fa';
-import { MdAnalytics, MdWork } from 'react-icons/md';
+import { MdAnalytics, MdWork, MdEmail } from 'react-icons/md';
 import { Accordion, AccordionItem } from '@heroui/react';
 import { useSession } from 'next-auth/react';
 import { useUIStore } from '@/store/ui/ui-store';
@@ -14,6 +14,7 @@ import { IoIosList } from 'react-icons/io';
 import { IoBusinessSharp } from 'react-icons/io5';
 import { MdOutlineAddBusiness } from 'react-icons/md';
 import { GiMineTruck } from 'react-icons/gi';
+import { MdEdit } from 'react-icons/md';
 export const SidebarDashboardMenu = () => {
   const closeMenu = useUIStore(state => state.closeSideMenu);
   const { data: session } = useSession();
@@ -126,6 +127,38 @@ export const SidebarDashboardMenu = () => {
                         <span className="ml-3">Roles y Permisos</span>
                       </Link>
                     </li>
+                    <li
+                      className={`px-2 py-1 ${
+                        router === '/dashboard/admin/email-preview'
+                          ? 'bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white'
+                          : 'hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]'
+                      }`}
+                    >
+                      <Link
+                        href="/dashboard/admin/email-preview"
+                        onClick={handleClick}
+                        className="font-normal rounded-lg flex items-center p-2 group"
+                      >
+                        <MdEmail className="text-[18px]" />
+                        <span className="ml-3">Vista previa correos</span>
+                      </Link>
+                    </li>
+                    <li
+                      className={`px-2 py-1 ${
+                        router === '/dashboard/admin/subcontracts'
+                          ? 'bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white'
+                          : 'hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]'
+                      }`}
+                    >
+                      <Link
+                        href="/dashboard/admin/subcontracts"
+                        onClick={handleClick}
+                        className="font-normal rounded-lg flex items-center p-2 group"
+                      >
+                        <MdWork className="text-[18px]" />
+                        <span className="ml-3">Sub-empresas</span>
+                      </Link>
+                    </li>
                   </ul>
                 </AccordionItem>
               </Accordion>
@@ -183,7 +216,46 @@ export const SidebarDashboardMenu = () => {
             </Accordion>
           )}
 
-          {/* Menú de contratos para admin y adminContractor */}
+          {/* Mi Empresa: solo para user */}
+          {isUser && (
+            <li
+              className={`px-2 py-1 ${
+                router === '/dashboard/my-company'
+                  ? 'bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white'
+                  : 'hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]'
+              }`}
+            >
+              <Link
+                href="/dashboard/my-company"
+                onClick={handleClick}
+                className="font-normal rounded-lg flex items-center p-2 group"
+              >
+                <MdEdit className="text-[18px]" />
+                <span className="ml-3">Mi Empresa</span>
+              </Link>
+            </li>
+          )}
+
+          {/* Menú de contratos: link directo para user, acordeón para admin/adminContractor */}
+          {isUser && (
+            <li
+              className={`px-2 py-1 ${
+                router === '/dashboard/contracts'
+                  ? 'bg-[#03c9d7] dark:bg-[#03c9d7] rounded-lg text-white'
+                  : 'hover:text-[#03c9d7] hover:bg-[#ebf9fa] dark:hover:bg-[#082e45]'
+              }`}
+            >
+              <Link
+                href="/dashboard/contracts"
+                onClick={handleClick}
+                className="font-normal rounded-lg flex items-center p-2 group"
+              >
+                <FaFileContract className="text-[18px]" />
+                <span className="ml-3">Mis Contratos</span>
+              </Link>
+            </li>
+          )}
+
           {(isAdmin || isAdminContractor) && (
             <Accordion
               key={`contracts-${isContractsRoute}`}
@@ -194,7 +266,7 @@ export const SidebarDashboardMenu = () => {
                 key="contracts"
                 startContent={<FaFileContract className="text-[18px]" />}
                 aria-label="Contratos"
-                title={isAdmin ? 'Contratos' : 'Mis Contratos'}
+                title="Contratos"
               >
                 <ul className="pl-2">
                   <li

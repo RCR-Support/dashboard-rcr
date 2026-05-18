@@ -10,6 +10,7 @@ import {
   RegisterActionInput,
 } from '@/interfaces/action.interface';
 import { v2 as cloudinary } from 'cloudinary';
+import { sendWelcomeEmail } from '@/lib/email/postmark';
 
 // Configurar Cloudinary con las credenciales del .env
 cloudinary.config({
@@ -157,6 +158,19 @@ export const registerAction = async (
         },
       },
     });
+
+    // Enviar correo de bienvenida con credenciales (sin bloquear si falla)
+    try {
+      await sendWelcomeEmail({
+        toEmail: newUser.email!,
+        displayName: newUser.displayName || `${newUser.name} ${newUser.lastName}`,
+        userName: newUser.userName!,
+        password: data.password, // texto plano antes de hashear
+        isTemporaryPassword: false,
+      });
+    } catch (emailError) {
+      console.error('[registerAction] Error enviando correo de bienvenida:', emailError);
+    }
 
     return {
       success: true,

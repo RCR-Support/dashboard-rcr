@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Users, Crown, Shield, Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Users, Crown, Shield, Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, Link2 } from 'lucide-react';
 // Utilidad para actualizar usuario
 async function updateUserField(
   id: string,
@@ -14,6 +14,16 @@ async function updateUserField(
   });
   if (!res.ok) throw new Error('Error al actualizar usuario');
   return res.json();
+}
+async function permanentDeleteUser(id: string) {
+  const res = await fetch('/api/users', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
 }
 import {
   Table,
@@ -44,6 +54,9 @@ import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import UserModal from './UserModal';
+import { CompanyModal } from '@/components/ui/dashboard/company/company-modal';
+import { getCompanyUsers } from '@/actions/company/userCompany-actions';
+import { CompanySelect } from '@/interfaces/company.interface';
 interface Props {
   users: User[];
 }
@@ -175,6 +188,36 @@ export default function App({ users }: Props) {
 
   const [modalUser, setModalUser] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const [companyModalOpen, setCompanyModalOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<CompanySelect | null>(null);
+  const [loadingCompanyId, setLoadingCompanyId] = useState<string | null>(null);
+
+  const openCompanyModal = async (companyId: string, companyName: string) => {
+    setLoadingCompanyId(companyId);
+    try {
+      const response = await getCompanyUsers(companyId);
+      if (response.success) {
+        setSelectedCompany({
+          value: companyId,
+          label: companyName,
+          description: '',
+          users: response.users || [],
+          contracts: response.contracts || [],
+          asSubcontractor: response.asSubcontractor || [],
+          summary: {
+            totalUsers: response.users?.length || 0,
+            totalContracts: response.contracts?.length || 0,
+          },
+        });
+        setCompanyModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Error al cargar empresa:', error);
+    } finally {
+      setLoadingCompanyId(null);
+    }
+  };
 
   const openModal = (user: User) => {
     setModalUser(user);
@@ -325,6 +368,17 @@ export default function App({ users }: Props) {
       showCancelButton: true,
       confirmButtonText: 'Sí',
       cancelButtonText: 'No',
+      showLoaderOnConfirm: true,
+      allowOutsideClick: () => !Swal.isLoading(),
+      preConfirm: async () => {
+        try {
+          await updateUserField(user.id, field, !currentValue);
+          return true;
+        } catch {
+          Swal.showValidationMessage('No se pudo actualizar el usuario. Intenta nuevamente.');
+          return false;
+        }
+      },
       showClass: {
         popup: 'swal2-show swal2-animate-fade-in',
       },
@@ -333,22 +387,44 @@ export default function App({ users }: Props) {
       },
     });
     if (result.isConfirmed) {
-      setUpdatingId(user.id);
-      setLoadingField({ id: user.id, field });
-      try {
-        await updateUserField(user.id, field, !currentValue);
-        setLocalUsers(prev =>
-          prev.map(u =>
-            u.id === user.id ? { ...u, [field]: !currentValue } : u
-          )
-        );
-        Swal.fire('Actualizado', 'El usuario fue actualizado', 'success');
-      } catch {
-        Swal.fire('Error', 'No se pudo actualizar el usuario', 'error');
-      } finally {
-        setUpdatingId(null);
-        setLoadingField(null);
-      }
+      setLocalUsers(prev =>
+        prev.map(u =>
+          u.id === user.id ? { ...u, [field]: !currentValue } : u
+        )
+      );
+      Swal.fire({ title: 'Actualizado', text: 'El usuario fue actualizado', icon: 'success', timer: 1500, showConfirmButton: false });
+    }
+  };
+
+  const handlePermanentDelete = async (user: User) => {
+    const result = await Swal.fire({
+      title: '¿Eliminar permanentemente?',
+      html: `Esta acción <strong>no se puede deshacer</strong>.<br/>El usuario <strong>${user.displayName}</strong> será eliminado de forma definitiva del sistema.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar para siempre',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      input: 'text',
+      inputPlaceholder: 'Escribe ELIMINAR para confirmar',
+      inputValidator: (value) => {
+        if (value !== 'ELIMINAR') return 'Debes escribir ELIMINAR para confirmar';
+      },
+    });
+    if (!result.isConfirmed) return;
+    setUpdatingId(user.id);
+    try {
+      await permanentDeleteUser(user.id);
+      setLocalUsers(prev => prev.filter(u => u.id !== user.id));
+      Swal.fire('Eliminado', 'El usuario fue eliminado permanentemente.', 'success');
+    } catch (err: unknown) {
+      const errData = err as { error?: string; blockers?: string[] };
+      const blockerMsg = errData?.blockers?.length
+        ? `<br/><ul class="text-left mt-2 list-disc pl-4">${errData.blockers.map(b => `<li>${b}</li>`).join('')}</ul>`
+        : '';
+      Swal.fire('No se pudo eliminar', (errData?.error ?? 'Error inesperado') + blockerMsg, 'error');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -434,9 +510,13 @@ export default function App({ users }: Props) {
                   <Building2 size={12} className="text-gray-400" />
                   <p className="text-bold text-small capitalize truncate text-ellipsis max-w-52">
                     {user?.company?.id ? (
-                      <Link href={`/dashboard/companies/${user.company.id}`} className="text-primary hover:underline">
-                        {user.company.name}
-                      </Link>
+                      <button
+                        onClick={() => openCompanyModal(user.company!.id, user.company!.name ?? '')}
+                        disabled={loadingCompanyId === user.company.id}
+                        className="text-primary hover:underline disabled:opacity-50 disabled:cursor-wait"
+                      >
+                        {loadingCompanyId === user.company.id ? 'Cargando...' : user.company.name}
+                      </button>
                     ) : (
                       user?.company?.name || 'Sin empresa'
                     )}
@@ -445,6 +525,20 @@ export default function App({ users }: Props) {
                 <p className="text-bold text-tiny capitalize text-default-500">
                   {user?.company?.rut ? formatRun(user.company.rut) : 'N/A'}
                 </p>
+                {user?.asSubcontractor && user.asSubcontractor.length > 0 && (
+                  <div className="mt-1 flex flex-col gap-0.5">
+                    {user.asSubcontractor.map((sc, i) => (
+                      <span
+                        key={i}
+                        title={`Representante subcontrato — Sub de: ${sc.mandanteName ?? 'Empresa mandante'} — Contrato: ${sc.contractName}`}
+                        className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 font-medium truncate max-w-full"
+                      >
+                        <Link2 size={9} className="shrink-0" />
+                        Rep. Sub de: {sc.mandanteName ?? '—'}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           case 'lastActivity':
@@ -580,6 +674,17 @@ export default function App({ users }: Props) {
                     >
                       {user.deletedLogic ? 'Restaurar' : 'Eliminar'}
                     </DropdownItem>
+                    {user.deletedLogic ? (
+                      <DropdownItem
+                        key="permanentDelete"
+                        startContent={<Trash2 size={16} className="text-danger" />}
+                        className="text-danger"
+                        color="danger"
+                        onPress={() => handlePermanentDelete(user)}
+                      >
+                        Eliminar definitivo
+                      </DropdownItem>
+                    ) : null}
                   </DropdownMenu>
                 </Dropdown>
               </div>
@@ -874,6 +979,11 @@ export default function App({ users }: Props) {
         onDelete={() => {
           if (modalUser) handleChangeField(modalUser, 'deletedLogic');
         }}
+      />
+      <CompanyModal
+        isOpen={companyModalOpen}
+        onClose={() => { setCompanyModalOpen(false); setSelectedCompany(null); }}
+        company={selectedCompany}
       />
     </div>
   );

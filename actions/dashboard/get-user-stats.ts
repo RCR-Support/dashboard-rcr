@@ -60,6 +60,28 @@ export async function getUserStats(userId: string, companyId: string) {
       }),
     ]));
 
+    // Contratos como sub-empresa
+    const subcontractLinks = companyId ? await db.subcontract.findMany({
+      where: {
+        subCompanyId: companyId,
+        isActive: true,
+        contract: { deletedAt: null },
+      },
+      select: {
+        status: true,
+        user: {
+          select: { displayName: true },
+        },
+        contract: {
+          select: {
+            contractName: true,
+            contractNumber: true,
+            Company: { select: { name: true } },
+          },
+        },
+      },
+    }) : [];
+
     return {
       ok: true,
       stats: {
@@ -76,6 +98,13 @@ export async function getUserStats(userId: string, companyId: string) {
           workerName: `${app.workerName} ${app.workerPaternal}`,
           status: app.processStatus,
           createdAt: app.createdAt,
+        })),
+        subcontractLinks: subcontractLinks.map(s => ({
+          contractName: s.contract.contractName,
+          contractNumber: s.contract.contractNumber,
+          mandanteName: s.contract.Company?.name ?? null,
+          status: s.status,
+          representativeName: s.user?.displayName ?? null,
         })),
       },
     };

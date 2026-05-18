@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
   const companies = await db.company.findMany({
     where: { status: true, name: { not: null } },
     select: { id: true, name: true, rut: true },

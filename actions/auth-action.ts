@@ -19,7 +19,7 @@ export const loginAction = async (values: z.infer<typeof loginSchema>) => {
     }));
 
     if (!user) {
-      return { error: 'Invalid credentials' };
+      return { error: 'Credenciales inválidas' };
     }
 
     await signIn('credentials', {

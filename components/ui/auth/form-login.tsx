@@ -18,6 +18,7 @@ import { loginAction } from '@/actions/auth-action';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 const FormLogin = () => {
   const [error, setError] = useState<string | null>(null);
@@ -144,7 +145,26 @@ const FormLogin = () => {
         </Form>
       </div>
 
-      <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-6">
+      {/* Links de pie */}
+      <div className="flex flex-col items-center gap-3 mt-6">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-slate-400 dark:text-slate-500">¿No tienes cuenta?</span>
+          <Link
+            href="/pre-register"
+            className="font-semibold text-[#D05F27] hover:text-[#b8501f] transition-colors"
+          >
+            Regístrate aquí
+          </Link>
+        </div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+        >
+          ← Volver al inicio
+        </Link>
+      </div>
+
+      <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-4">
         © {new Date().getFullYear()} RCR Support. Todos los derechos reservados.
       </p>
     </div>

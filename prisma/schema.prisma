@@ -56,10 +56,11 @@ model Company {
   city        String?
   status      Boolean       @default(true)
   url         String?
-  logoUrl     String?
-  Contract    Contract[]
-  User        User[]
-  application application[]
+  logoUrl      String?
+  Contract     Contract[]
+  User         User[]
+  application  application[]
+  subcontracts Subcontract[] @relation("SubcontractCompany")
 }
 
 model Contract {
@@ -77,6 +78,7 @@ model Contract {
   userAc          User              @relation(fields: [useracId], references: [id])
   ReassignmentLog ReassignmentLog[]
   application     application[]
+  subcontracts    Subcontract[]
 
   @@index([companyId])
   @@index([useracId])
@@ -118,6 +120,7 @@ model User {
   applicationsAsAc      application[]      @relation("AdminContractorApplications")
   application           application[]      @relation("UserApplications")
   applicationsAsSheq    application[]      @relation("SheqApplications")
+  subcontractsAsRep     Subcontract[]      @relation("SubcontractRepresentative")
 }
 
 model application {
@@ -152,12 +155,33 @@ model application {
   userSheq           User?               @relation("SheqApplications", fields: [userSheqId], references: [id])
   activities         Activity[]          @relation("ActivityApplications")
   zones              Zone[]              @relation("ZoneApplications")
+  subcontractId      String?
+  subcontract        Subcontract?        @relation(fields: [subcontractId], references: [id])
 
   @@index([stateAc, userAcId], map: "idx_ac_review")
   @@index([stateSheq, userSheqId], map: "idx_sheq_review")
   @@index([workerRun], map: "idx_worker_run")
   @@index([companyId, status], map: "idx_company_status")
   @@index([contractId, createdAt], map: "idx_contract_date")
+}
+
+model Subcontract {
+  id           String            @id @default(cuid())
+  contractId   String
+  subCompanyId String
+  userId       String?
+  createdAt    DateTime          @default(now())
+  isActive     Boolean           @default(true)
+  status       SubcontractStatus @default(pendiente)
+  contract     Contract          @relation(fields: [contractId], references: [id])
+  subCompany   Company           @relation("SubcontractCompany", fields: [subCompanyId], references: [id])
+  user         User?             @relation("SubcontractRepresentative", fields: [userId], references: [id])
+  applications application[]
+
+  @@unique([contractId, subCompanyId])
+  @@index([contractId])
+  @@index([subCompanyId])
+  @@index([userId])
 }
 
 model ApplicationQR {
@@ -278,6 +302,12 @@ enum RoleEnum {
   credential
 }
 
+enum SubcontractStatus {
+  pendiente
+  activo
+  inactivo
+}
+
 enum NotificationType {
   INACTIVE_REQUEST
   REASSIGNMENT
@@ -288,6 +318,9 @@ enum NotificationType {
   CONTRACT_EXPIRING
   CREDENTIAL_READY
   NEW_USER
+  SUBCONTRACT_REQUEST
+  SUBCONTRACT_LINKED
+  SUBCONTRACT_APPLICATION
 }
 
 enum Status {

@@ -3,7 +3,7 @@
 import StatCard from '../_components/StatCard';
 import QuickActions from '../_components/QuickActions';
 import RecentActivity from '../_components/RecentActivity';
-import { FileText, Clock, CheckCircle, XCircle, Plus, Eye } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, Plus, Eye, Link2, Building2, User } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '@heroui/react';
 
 interface UserStatsData {
@@ -21,6 +21,13 @@ interface UserStatsData {
   contractsCount?: number;
   contractsExpiringSoon?: number;
   documentsPending?: number;
+  subcontractLinks?: Array<{
+    contractName: string;
+    contractNumber: string;
+    mandanteName: string | null;
+    status: string;
+    representativeName?: string | null;
+  }>;
   recentApplications: Array<{
     id: string;
     workerName: string;
@@ -82,6 +89,32 @@ export default function DashboardUser({ stats, userName }: DashboardUserProps) {
                 <p className="text-sm text-default-500">RUT: {stats.company.rut}</p>
                 {stats.company.phone && <p className="text-sm text-default-500">Tel: {stats.company.phone}</p>}
                 <p className="text-sm text-default-500">Estado: {stats.company.status ? 'Activo' : 'Inactivo'}</p>
+
+                {/* Contratos como sub-empresa */}
+                {stats.subcontractLinks && stats.subcontractLinks.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-default-100">
+                    <p className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 mb-2 flex items-center gap-1">
+                      <Link2 className="h-3 w-3" />
+                      Subcontratista en {stats.subcontractLinks.length} contrato(s)
+                    </p>
+                    {stats.subcontractLinks.map((sc, i) => (
+                      <div key={i} className="mb-1.5 pl-2 border-l-2 border-cyan-300 dark:border-cyan-700">
+                        <p className="text-xs font-medium text-default-700 dark:text-default-300">{sc.contractName}</p>
+                        <p className="text-xs text-default-400">N° {sc.contractNumber}</p>
+                        {sc.mandanteName && (
+                          <p className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+                            <Building2 className="h-3 w-3" />
+                            {sc.mandanteName}
+                          </p>
+                        )}
+                        <p className="text-xs text-default-400 flex items-center gap-1 mt-0.5">
+                          <User className="h-3 w-3" />
+                          Rep: {sc.representativeName ?? <span className="italic">Sin representante</span>}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-default-500">Sin empresa asociada</p>

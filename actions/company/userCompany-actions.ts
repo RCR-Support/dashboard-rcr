@@ -41,12 +41,42 @@ export const getCompanyUsers = async (companyId: string) => {
             contractName: true,
             initialDate: true,
             finalDate: true,
-            // 4. Agregamos datos del administrador del contrato
             userAc: {
               select: {
                 id: true,
                 email: true,
                 displayName: true,
+              },
+            },
+            // Sub-empresas vinculadas a cada contrato
+            subcontracts: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                status: true,
+                subCompanyId: true,
+                subCompany: {
+                  select: { id: true, name: true, rut: true },
+                },
+                user: {
+                  select: { displayName: true },
+                },
+              },
+            },
+          },
+        },
+        // Si esta empresa es sub-empresa de alguien
+        subcontracts: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            status: true,
+            contract: {
+              select: {
+                id: true,
+                contractName: true,
+                contractNumber: true,
+                Company: { select: { id: true, name: true, rut: true } },
               },
             },
           },
@@ -67,7 +97,24 @@ export const getCompanyUsers = async (companyId: string) => {
         company?.Contract.map(contract => ({
           ...contract,
           adminName: contract.userAc?.displayName || 'Sin administrador',
+          subcompanies: contract.subcontracts?.map(s => ({
+            id: s.subCompany.id,
+            name: s.subCompany.name,
+            rut: s.subCompany.rut,
+            status: s.status,
+            representativeName: s.user?.displayName ?? null,
+          })) || [],
         })) || [],
+      // Contratos en los que esta empresa es sub-empresa
+      asSubcontractor: company.subcontracts?.map(s => ({
+        contractId: s.contract.id,
+        contractName: s.contract.contractName,
+        contractNumber: s.contract.contractNumber,
+        mandanteId: s.contract.Company?.id,
+        mandanteName: s.contract.Company?.name,
+        mandanteRut: s.contract.Company?.rut,
+        status: s.status,
+      })) || [],
       summary: {
         totalUsers: company.User.length,
         totalContracts: company.Contract.length,
@@ -85,6 +132,7 @@ export const getCompanyUsers = async (companyId: string) => {
       error: 'Error interno del servidor',
       users: [],
       contracts: [],
+      asSubcontractor: [],
       summary: {
         totalUsers: 0,
         totalContracts: 0,

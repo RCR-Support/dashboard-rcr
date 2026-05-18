@@ -108,7 +108,6 @@ export const fetchCompanies = async (onlyWithContracts = false) => {
       };
     }
   } catch (error) {
-    // console.error('Error al obtener empresas:', error);
     return {
       ok: false,
       message: 'Error al cargar las empresas',

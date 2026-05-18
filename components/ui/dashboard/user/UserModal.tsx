@@ -5,7 +5,7 @@ import Avatar from '@mui/material/Avatar';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/react';
 import { IoClose } from 'react-icons/io5';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, Trash2 } from 'lucide-react';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { formatRun } from '@/lib/validations';
 import type { User } from '@/interfaces';
@@ -17,9 +17,10 @@ interface Props {
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPermanentDelete?: () => void;
 }
 
-export const UserModal = ({ user, isOpen, onClose, onEdit, onDelete }: Props) => {
+export const UserModal = ({ user, isOpen, onClose, onEdit, onDelete, onPermanentDelete }: Props) => {
   if (!user) return null;
 
   function stringAvatar(displayName: string) {
@@ -79,6 +80,27 @@ export const UserModal = ({ user, isOpen, onClose, onEdit, onDelete }: Props) =>
               </>
             )}
 
+            {user.contracts && user.contracts.length > 0 && (
+              <>
+                <div className="border-b border-gray-200 dark:border-gray-800"></div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Contratos asignados:</h3>
+                  <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                    {user.contracts.map(c => (
+                      <div key={c.id} className="text-sm border-b pb-2 last:border-0">
+                        <p className="font-medium">{c.contractName}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">N° {c.contractNumber}</p>
+                        {c.Company?.name && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{c.Company.name}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-amber-500">Total contratos: {user.contracts.length}</p>
+                </div>
+              </>
+            )}
+
             {user.roles?.includes('adminContractor' as RoleEnum) && user.assignedUsers && (
               <>
                 {user.assignedUsers.length === 0 ? (
@@ -120,6 +142,9 @@ export const UserModal = ({ user, isOpen, onClose, onEdit, onDelete }: Props) =>
           <div className="flex gap-4">
             <Button color="success" variant="flat" onPress={onEdit} startContent={<Pencil className="h-4 w-4" />}>Editar</Button>
             <Button color="danger" variant="flat" onPress={onDelete} startContent={<Trash className="h-4 w-4" />}>Eliminar</Button>
+            {user.deletedLogic && onPermanentDelete && (
+              <Button color="danger" variant="solid" onPress={onPermanentDelete} startContent={<Trash2 className="h-4 w-4" />}>Eliminar definitivo</Button>
+            )}
           </div>
         </ModalFooter>
       </ModalContent>

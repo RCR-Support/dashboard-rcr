@@ -101,9 +101,15 @@ export default function CreateApplicationPage() {
         }));
 
       // 3. Crear la solicitud
+      // Si el contrato es un sub-contrato, la solicitud pertenece a la sub-empresa (store.company),
+      // no a la empresa dueña del contrato (mandante).
+      const companyId = data.contract.isSubcontract
+        ? store.company?.id
+        : data.contract.companyId;
+
       const result = await createApplication({
         contractId: data.contract.id,
-        companyId: data.contract.companyId,
+        companyId,
         workerName: data.workerData.workerName,
         workerPaternal: data.workerData.workerPaternal,
         workerMaternal: data.workerData.workerMaternal,
