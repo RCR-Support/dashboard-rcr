@@ -73,6 +73,18 @@ export async function listContracts() {
           },
         },
       },
+      // Traspaso temporal activo
+      ReassignmentLog: {
+        where: { mode: 'temporal', returnedAt: null },
+        orderBy: { createdAt: 'desc' as const },
+        take: 1,
+        select: {
+          reason: true,
+          returnDate: true,
+          createdAt: true,
+          previousAc: { select: { id: true, displayName: true } },
+        },
+      },
     };
 
     // Tipo para los contratos retornados por la query
@@ -167,16 +179,28 @@ export async function listContracts() {
     }
 
     // Mapear Company -> company para compatibilidad con la interfaz
-    const mappedContracts = contracts.map((contract) => ({
-      ...contract,
-      company: contract.Company,
-      subcontracts: contract.subcontracts?.map(s => ({
-        id: s.id,
-        status: s.status,
-        subCompany: s.subCompany,
-        representativeName: s.user?.displayName ?? null,
-      })),
-    }));
+    const mappedContracts = contracts.map((contract) => {
+      const activeLog = (contract as any).ReassignmentLog?.[0] ?? null;
+      return {
+        ...contract,
+        company: contract.Company,
+        subcontracts: contract.subcontracts?.map(s => ({
+          id: s.id,
+          status: s.status,
+          subCompany: s.subCompany,
+          representativeName: s.user?.displayName ?? null,
+        })),
+        activeReassignment: activeLog
+          ? {
+              originalAcId: activeLog.previousAc.id,
+              originalAcName: activeLog.previousAc.displayName,
+              returnDate: activeLog.returnDate?.toISOString() ?? null,
+              reason: activeLog.reason,
+              assignedAt: activeLog.createdAt.toISOString(),
+            }
+          : null,
+      };
+    });
 
     return {
       ok: true,

@@ -43,7 +43,14 @@ interface ContractModalProps {
   onClose: () => void;
   companyId: string;
   onSubmit: (values: ContractFormValues) => void;
-  adminContractors: AdminContractor[]; // Actualizamos el tipo
+  adminContractors: AdminContractor[];
+  initialData?: {
+    contractNumber: string;
+    contractName: string;
+    initialDate: Date | string;
+    finalDate: Date | string;
+    useracId: string;
+  };
 }
 
 export const ContractModal = ({
@@ -52,20 +59,55 @@ export const ContractModal = ({
   companyId,
   onSubmit,
   adminContractors,
+  initialData,
 }: ContractModalProps) => {
   const [isPending, setIsPending] = useState(false);
+  const isEditing = !!initialData;
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractSchema),
-    defaultValues: {
-      contractNumber: '',
-      contractName: '',
-      initialDate: new Date(new Date().toISOString().split('T')[0]),
-      finalDate: new Date(new Date().toISOString().split('T')[0]),
-      useracId: '',
-      companyId: companyId,
-    },
+    defaultValues: initialData
+      ? {
+          contractNumber: initialData.contractNumber,
+          contractName: initialData.contractName,
+          initialDate: new Date(initialData.initialDate),
+          finalDate: new Date(initialData.finalDate),
+          useracId: initialData.useracId,
+          companyId,
+        }
+      : {
+          contractNumber: '',
+          contractName: '',
+          initialDate: new Date(new Date().toISOString().split('T')[0]),
+          finalDate: new Date(new Date().toISOString().split('T')[0]),
+          useracId: '',
+          companyId,
+        },
   });
+
+  // Sincronizar cuando se abre el modal en modo edicion
+  useEffect(() => {
+    if (isOpen && initialData) {
+      form.reset({
+        contractNumber: initialData.contractNumber,
+        contractName: initialData.contractName,
+        initialDate: new Date(initialData.initialDate),
+        finalDate: new Date(initialData.finalDate),
+        useracId: initialData.useracId,
+        companyId,
+      });
+    } else if (isOpen && !initialData) {
+      form.reset({
+        contractNumber: '',
+        contractName: '',
+        initialDate: new Date(new Date().toISOString().split('T')[0]),
+        finalDate: new Date(new Date().toISOString().split('T')[0]),
+        useracId: '',
+        companyId,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
   // Validar que la fecha final sea posterior a la inicial
   const initialDate = form.watch('initialDate');
   const finalDate = form.watch('finalDate');
@@ -119,7 +161,7 @@ export const ContractModal = ({
       <ModalContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <ModalHeader>Agregar Nuevo Contrato</ModalHeader>
+            <ModalHeader>{isEditing ? 'Editar Contrato' : 'Agregar Nuevo Contrato'}</ModalHeader>
             <ModalBody>
               <div className="space-y-4">
                 {/* Número de Contrato */}
@@ -279,7 +321,7 @@ export const ContractModal = ({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Guardando...' : 'Guardar Contrato'}
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar Contrato' : 'Guardar Contrato'}
               </Button>
             </ModalFooter>
           </form>

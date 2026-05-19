@@ -119,6 +119,41 @@ export default async function ApplicationPage({
     notFound();
   }
 
+  // Buscar traspaso temporal activo del contrato de esta solicitud
+  let activeReassignment: {
+    originalAcId: string;
+    originalAcName: string;
+    returnDate: string | null;
+    reason: string;
+    assignedAt: string;
+  } | null = null;
+
+  if (application.contractId) {
+    const activeLog = await db.reassignmentLog.findFirst({
+      where: {
+        contractId: application.contractId,
+        mode: 'temporal',
+        returnedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        reason: true,
+        returnDate: true,
+        createdAt: true,
+        previousAc: { select: { id: true, displayName: true } },
+      },
+    });
+    if (activeLog) {
+      activeReassignment = {
+        originalAcId: activeLog.previousAc.id,
+        originalAcName: activeLog.previousAc.displayName,
+        returnDate: activeLog.returnDate?.toISOString() ?? null,
+        reason: activeLog.reason,
+        assignedAt: activeLog.createdAt.toISOString(),
+      };
+    }
+  }
+
   // ===== Permisos de visualización =====
   const user = session.user;
   const userRoles = user.roles as RoleEnum[];
@@ -205,6 +240,7 @@ export default async function ApplicationPage({
       userId={session.user.id}
       sheqUsers={sheqUsers}
       versioningAvailable={versioningAvailable}
+      activeReassignment={activeReassignment}
     />
   );
 }

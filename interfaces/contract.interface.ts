@@ -45,6 +45,14 @@ export interface Contract {
     };
     representativeName?: string | null;
   }>;
+  // Traspaso temporal activo (si el AC actual no es el AC original)
+  activeReassignment?: {
+    originalAcId: string;
+    originalAcName: string;
+    returnDate: string | null;
+    reason: string;
+    assignedAt: string;
+  } | null;
 }
 
 export interface ContractResponse {

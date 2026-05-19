@@ -18,6 +18,7 @@ import {
   getAdminContractors,
   createContract,
 } from '@/actions/contract/contract-actions';
+import { updateContract } from '@/actions/contract/update-contract';
 import { addToast } from '@heroui/toast';
 import { Building2, Phone, Globe, MapPin, PlusCircle, ImageIcon, X } from 'lucide-react';
 import { CompanySelectEdit } from '@/interfaces/CompanySelectEdit';
@@ -44,6 +45,7 @@ const CompanyForm = ({ initialData, isEditing = false, isLimitedEdit = false }: 
     []
   );
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(
     initialData?.logoUrl || null
   );
@@ -206,7 +208,43 @@ const CompanyForm = ({ initialData, isEditing = false, isLimitedEdit = false }: 
 
   // Manejadores
   const handleEditContract = (contract: Contract) => {
-    // TODO: Implementar edición de contratos
+    setEditingContract(contract);
+  };
+
+  const handleEditContractSubmit = async (values: ContractFormValues) => {
+    if (!editingContract) return;
+    const result = await updateContract(editingContract.id, {
+      contractNumber: values.contractNumber,
+      contractName: values.contractName,
+      initialDate: values.initialDate,
+      finalDate: values.finalDate,
+      useracId: values.useracId,
+    });
+    if (result.success) {
+      addToast({
+        title: 'Contrato actualizado',
+        description: 'El contrato se ha actualizado correctamente',
+        timeout: 2000,
+        icon: '✅',
+        color: 'success',
+        variant: 'flat',
+        radius: 'md',
+        shouldShowTimeoutProgress: true,
+      });
+      setEditingContract(null);
+      await loadContracts();
+    } else {
+      addToast({
+        title: 'Error',
+        description: result.error || 'Error al actualizar el contrato',
+        timeout: 2000,
+        icon: '❌',
+        color: 'danger',
+        variant: 'flat',
+        radius: 'md',
+        shouldShowTimeoutProgress: true,
+      });
+    }
   };
 
   const handleContractSubmit = async (values: ContractFormValues) => {
@@ -473,6 +511,23 @@ const CompanyForm = ({ initialData, isEditing = false, isLimitedEdit = false }: 
         onSubmit={handleContractSubmit}
         adminContractors={adminContractors}
       />
+
+      {editingContract && (
+        <ContractModal
+          isOpen={!!editingContract}
+          onClose={() => setEditingContract(null)}
+          companyId={editingContract.companyId || initialData?.value || ''}
+          onSubmit={handleEditContractSubmit}
+          adminContractors={adminContractors}
+          initialData={{
+            contractNumber: editingContract.contractNumber,
+            contractName: editingContract.contractName,
+            initialDate: editingContract.initialDate,
+            finalDate: editingContract.finalDate,
+            useracId: editingContract.useracId || editingContract.userAc?.id || '',
+          }}
+        />
+      )}
     </>
   );
 };

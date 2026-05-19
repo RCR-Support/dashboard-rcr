@@ -5,7 +5,8 @@ import { Card, CardBody } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { Button } from '@heroui/button';
 import { Tooltip } from '@heroui/tooltip';
-import { Eye, User, Pencil, Trash2, Building2, Calendar, FileText, Activity, Clock, CheckCircle2, XCircle, AlertCircle, Printer } from 'lucide-react';
+import { Eye, User, Pencil, Trash2, Building2, Calendar, FileText, Activity, Clock, CheckCircle2, XCircle, AlertCircle, Printer, Circle } from 'lucide-react';
+import { getNearestExpiry, getExpiryStatus } from '@/lib/expiry-utils';
 import Link from 'next/link';
 import Image from 'next/image';
 import Swal from 'sweetalert2';
@@ -33,6 +34,7 @@ interface Application {
     url: string;
     type: string;
     documentationId: string | null;
+    expiresAt?: Date | string | null;
   }>;
   activities: Array<{
     name: string;
@@ -160,6 +162,8 @@ export function ApplicationsCards({ applications, userRole, canEdit = false, can
         const progressPercentage = getProgressPercentage(app.stateAc, app.stateSheq);
         const progressColor = getProgressColor(app.stateAc, app.stateSheq);
         const documentCount = app.documentationFiles.filter(doc => doc.documentationId).length;
+        const nearestExpiry = getNearestExpiry(app.licenseExpiration, app.documentationFiles);
+        const expiryStatus = getExpiryStatus(nearestExpiry);
         const createdDate = new Date(app.createdAt).toLocaleDateString('es-CL', { 
           day: '2-digit', 
           month: '2-digit' 
@@ -251,12 +255,28 @@ export function ApplicationsCards({ applications, userRole, canEdit = false, can
 
                   {/* Fecha de expiración */}
                   <div className="text-center">
-                    <p className="text-xs text-gray-500">
-                      {app.licenseExpiration 
-                        ? `Vence: ${new Date(app.licenseExpiration).toLocaleDateString('es-CL')}`
-                        : 'Sin fecha de expiración'
+                    <Tooltip
+                      content={
+                        nearestExpiry
+                          ? `Vence: ${new Date(nearestExpiry).toLocaleDateString('es-CL')}`
+                          : 'Sin fecha de vencimiento'
                       }
-                    </p>
+                    >
+                      <div className="inline-flex items-center gap-1.5 cursor-default">
+                        <Circle
+                          className="h-2.5 w-2.5 flex-shrink-0"
+                          fill="currentColor"
+                          stroke="none"
+                          color={
+                            expiryStatus.color === 'success' ? '#22c55e'
+                            : expiryStatus.color === 'warning' ? '#f59e0b'
+                            : expiryStatus.color === 'danger'  ? '#ef4444'
+                            : '#9ca3af'
+                          }
+                        />
+                        <p className="text-xs text-gray-500">{expiryStatus.label}</p>
+                      </div>
+                    </Tooltip>
                   </div>
 
                   {/* Estados mejorados */}

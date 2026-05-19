@@ -5,7 +5,7 @@ import Avatar from '@mui/material/Avatar';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/react';
 import { IoClose } from 'react-icons/io5';
-import { Pencil, Trash, Trash2 } from 'lucide-react';
+import { Pencil, Trash, Trash2, ArrowRightLeft, Clock, CheckCircle } from 'lucide-react';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { formatRun } from '@/lib/validations';
 import type { User } from '@/interfaces';
@@ -125,6 +125,73 @@ export const UserModal = ({ user, isOpen, onClose, onEdit, onDelete, onPermanent
                     </div>
                   </>
                 )}
+              </>
+            )}
+
+            {user.roles?.includes('adminContractor' as RoleEnum) && user.reassignmentLogs && user.reassignmentLogs.length > 0 && (
+              <>
+                <div className="border-b border-gray-200 dark:border-gray-800"></div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm flex items-center gap-1">
+                    <ArrowRightLeft size={14} />
+                    Historial de traspasos
+                  </h3>
+                  <div className="border rounded-md max-h-64 overflow-y-auto divide-y">
+                    {(() => {
+                      // Agrupar logs por evento (contratos traspasados juntos en el mismo día al mismo AC)
+                      const groups: Record<string, typeof user.reassignmentLogs> = {};
+                      user.reassignmentLogs!.forEach(log => {
+                        const key = `${log.newAcId}_${log.createdAt.slice(0, 10)}`;
+                        if (!groups[key]) groups[key] = [];
+                        groups[key]!.push(log);
+                      });
+                      return Object.values(groups).map((group) => {
+                        const first = group![0]!;
+                        const returnDate = first.returnDate ? new Date(first.returnDate) : null;
+                        const now = new Date();
+                        const isPermanente = first.mode === 'permanente';
+                        const returnPassed = returnDate && returnDate < now;
+
+                        return (
+                          <div key={`${first.newAcId}_${first.createdAt}`} className="p-3 text-sm">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-1">
+                                {isPermanente
+                                  ? <CheckCircle size={13} className="text-danger shrink-0 mt-0.5" />
+                                  : <Clock size={13} className="text-warning shrink-0 mt-0.5" />
+                                }
+                                <span className="font-medium">
+                                  {isPermanente ? 'Permanente' : 'Temporal'}
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-400">
+                                {new Date(first.createdAt).toLocaleDateString('es-CL')}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              → <span className="font-medium">{first.newAcName}</span>
+                            </p>
+                            <p className="text-xs text-gray-500 mb-1">
+                              Contratos: {group!.map(l => `#${l.contractNumber}`).join(', ')}
+                            </p>
+                            {!isPermanente && (
+                              <p className={`text-xs ${returnPassed ? 'text-orange-500' : 'text-blue-500'}`}>
+                                {returnDate
+                                  ? returnPassed
+                                    ? `Retorno estimado: ${returnDate.toLocaleDateString('es-CL')} (pendiente)`
+                                    : `Retorna: ${returnDate.toLocaleDateString('es-CL')}`
+                                  : 'Sin fecha de retorno'}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1 italic truncate">
+                              Motivo: {first.reason}
+                            </p>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
               </>
             )}
           </div>

@@ -5,6 +5,7 @@ import { companySchema } from '@/lib/validation-company';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
+import { revalidatePath } from 'next/cache';
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
@@ -106,8 +107,8 @@ export const createCompany = async (
       },
     });
 
-    if (companyExists) {
-      return { error: 'Ya existe una empresa con ese RUT' };
+    if (companyExists && companyExists.status === true) {
+      return { error: 'Ya existe una empresa activa con ese RUT' };
     }
 
     const logoFile = formData?.get('logo') as File | null;
@@ -124,39 +125,60 @@ export const createCompany = async (
     }
 
     try {
-      // Crear la empresa
-      const company = await db.company.create({
-        data: {
-          name: data.name,
-          phone: data.phone,
-          rut: data.rut,
-          status: data.status,
-          url: data.url,
-          city: data.city,
-          logoUrl: uploadedLogoUrl ?? data.logoUrl ?? null,
-        },
-        include: {
-          User: {
-            select: {
-              id: true,
-              name: true,
-              lastName: true,
-              run: true,
-              email: true,
-              roles: {
-                select: {
-                  role: {
-                    select: {
-                      name: true,
-                    },
+      const includeClause = {
+        User: {
+          select: {
+            id: true,
+            name: true,
+            lastName: true,
+            run: true,
+            email: true,
+            roles: {
+              select: {
+                role: {
+                  select: {
+                    name: true,
                   },
                 },
               },
             },
           },
         },
-      });
+      };
 
+      let company;
+
+      if (companyExists && companyExists.status === false) {
+        // Reactivar empresa eliminada con los nuevos datos
+        company = await db.company.update({
+          where: { rut: data.rut },
+          data: {
+            name: data.name,
+            phone: data.phone,
+            url: data.url,
+            city: data.city,
+            logoUrl: uploadedLogoUrl ?? data.logoUrl ?? companyExists.logoUrl ?? null,
+            status: true,
+          },
+          include: includeClause,
+        });
+      } else {
+        // Crear la empresa nueva
+        company = await db.company.create({
+          data: {
+            name: data.name,
+            phone: data.phone,
+            rut: data.rut,
+            status: data.status,
+            url: data.url,
+            city: data.city,
+            logoUrl: uploadedLogoUrl ?? data.logoUrl ?? null,
+          },
+          include: includeClause,
+        });
+      }
+
+      revalidatePath('/dashboard/companies');
       return {
         success: true,
         company,
@@ -384,12 +406,13 @@ export const deleteCompany = async (companyId: string) => {
       };
     }
 
-    // Soft delete: desactivar empresa
+    // Soft delete: marcar como inactiva
     await db.company.update({
       where: { id: companyId },
       data: { status: false },
     });
 
+    revalidatePath('/dashboard/companies');
     return { success: true };
   } catch {
     return { error: 'Error interno del servidor' };

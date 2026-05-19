@@ -83,6 +83,7 @@ export async function listApplications(contractId?: string) {
           url: true,
           type: true,
           documentationId: true,
+          expiresAt: true,
         },
       },
     };

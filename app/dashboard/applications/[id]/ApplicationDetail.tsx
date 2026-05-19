@@ -8,7 +8,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@herou
 import { Select, SelectItem } from '@heroui/select';
 import { Textarea } from '@heroui/input';
 import Image from 'next/image';
-import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit } from 'lucide-react';
+import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit, ArrowRightLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -94,6 +94,13 @@ interface ApplicationDetailProps {
   userId: string;
   sheqUsers: SheqUser[];
   versioningAvailable: boolean;
+  activeReassignment?: {
+    originalAcId: string;
+    originalAcName: string;
+    returnDate: string | null;
+    reason: string;
+    assignedAt: string;
+  } | null;
 }
 
 const stateAcColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -117,7 +124,7 @@ const actionLabels: Record<string, string> = {
   ELIMINACION: 'Eliminación',
 };
 
-export function ApplicationDetail({ application, userRoles, userId, sheqUsers, versioningAvailable }: ApplicationDetailProps) {
+export function ApplicationDetail({ application, userRoles, userId, sheqUsers, versioningAvailable, activeReassignment }: ApplicationDetailProps) {
   const router = useRouter();
   const { can } = usePermissions();
   
@@ -622,8 +629,29 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                   <Divider />
                   <div>
                     <p className="text-sm text-default-500">Administrador de Contrato</p>
-                    <p className="font-medium">{application.userAc.displayName}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium">{application.userAc.displayName}</p>
+                      {activeReassignment && (
+                        <Chip size="sm" variant="flat" color="warning">Cobertura temporal</Chip>
+                      )}
+                    </div>
                     <p className="text-sm text-default-400">{application.userAc.email}</p>
+                    {activeReassignment && (
+                      <div className="mt-2 rounded-md bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-3 py-2 text-xs space-y-1">
+                        <p className="flex items-center gap-1 text-warning-700 dark:text-warning-300 font-medium">
+                          <ArrowRightLeft size={12} />
+                          AC original ausente: {activeReassignment.originalAcName}
+                        </p>
+                        {activeReassignment.returnDate ? (
+                          <p className="text-warning-600 dark:text-warning-400">
+                            Retorno estimado:{' '}
+                            {new Date(activeReassignment.returnDate).toLocaleDateString('es-CL')}
+                          </p>
+                        ) : (
+                          <p className="text-warning-500">Sin fecha de retorno pactada</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -631,7 +659,6 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
           </Card>
         </div>
 
-        {/* Columna Derecha: Actividades y Documentos */}
         <div className="lg:col-span-2 space-y-6">
           {/* Actividades */}
           <Card>
@@ -790,8 +817,29 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                   <Divider />
                   <div>
                     <p className="text-sm text-default-500">Admin. Contrato Asignado</p>
-                    <p className="font-medium">{application.userAc.displayName}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium">{application.userAc.displayName}</p>
+                      {activeReassignment && (
+                        <Chip size="sm" variant="flat" color="warning">Cobertura temporal</Chip>
+                      )}
+                    </div>
                     <p className="text-sm text-default-400">{application.userAc.email}</p>
+                    {activeReassignment && (
+                      <div className="mt-2 rounded-md bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-3 py-2 text-xs space-y-1">
+                        <p className="flex items-center gap-1 text-warning-700 dark:text-warning-300 font-medium">
+                          <ArrowRightLeft size={12} />
+                          AC original ausente: {activeReassignment.originalAcName}
+                        </p>
+                        {activeReassignment.returnDate ? (
+                          <p className="text-warning-600 dark:text-warning-400">
+                            Retorno estimado:{' '}
+                            {new Date(activeReassignment.returnDate).toLocaleDateString('es-CL')}
+                          </p>
+                        ) : (
+                          <p className="text-warning-500">Sin fecha de retorno pactada</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
               )}

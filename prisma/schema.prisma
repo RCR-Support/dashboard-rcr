@@ -212,17 +212,20 @@ model UserRole {
 }
 
 model ReassignmentLog {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   previousAcId String
   newAcId      String
   contractId   String
   userId       String?
   reason       String
-  createdAt    DateTime @default(now())
-  contract     Contract @relation(fields: [contractId], references: [id])
-  newAc        User     @relation("NewAC", fields: [newAcId], references: [id])
-  previousAc   User     @relation("PreviousAC", fields: [previousAcId], references: [id])
-  owner        User?    @relation("ReassignmentOwner", fields: [userId], references: [id])
+  mode         String    @default("temporal")
+  returnDate   DateTime?
+  returnedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  contract     Contract  @relation(fields: [contractId], references: [id])
+  newAc        User      @relation("NewAC", fields: [newAcId], references: [id])
+  previousAc   User      @relation("PreviousAC", fields: [previousAcId], references: [id])
+  owner        User?     @relation("ReassignmentOwner", fields: [userId], references: [id])
 }
 
 model Notification {

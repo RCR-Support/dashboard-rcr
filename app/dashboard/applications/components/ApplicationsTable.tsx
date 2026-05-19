@@ -3,7 +3,8 @@
 import { formatRun } from '@/lib/validations';
 import { Chip } from '@heroui/chip';
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
-import { Eye, Pencil, Trash2, Calendar, FileText, Activity, Filter, Search, CheckCircle2, Clock, AlertCircle, XCircle, Printer } from 'lucide-react';
+import { Eye, Pencil, Trash2, Calendar, FileText, Activity, Filter, Search, CheckCircle2, Clock, AlertCircle, XCircle, Printer, Circle } from 'lucide-react';
+import { getNearestExpiry, getExpiryStatus } from '@/lib/expiry-utils';
 import { Button } from '@heroui/button';
 import { Tooltip } from '@heroui/tooltip';
 import { Input } from '@heroui/input';
@@ -47,6 +48,7 @@ interface Application {
     url: string;
     type: string;
     documentationId: string | null;
+    expiresAt?: Date | string | null;
   }>;
 }
 
@@ -111,6 +113,7 @@ const getOverallStatus = (stateAc: string, stateSheq: string) => {
 export function ApplicationsTable({ applications, userRole, canEdit = false, canDelete = false }: ApplicationsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [expiryFilter, setExpiryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
   const router = useRouter();
 
@@ -127,16 +130,28 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
       const overallStatus = getOverallStatus(app.stateAc, app.stateSheq);
       const matchesStatus = statusFilter === 'all' || overallStatus.label === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const nearest = getNearestExpiry(app.licenseExpiration, app.documentationFiles);
+      const expiry = getExpiryStatus(nearest);
+      const matchesExpiry = expiryFilter === 'all' || expiry.key === expiryFilter;
+
+      return matchesSearch && matchesStatus && matchesExpiry;
     });
 
     return filtered.sort((a, b) => {
       if (sortBy === 'createdAt') {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
+      if (sortBy === 'expiry') {
+        const ea = getNearestExpiry(a.licenseExpiration, a.documentationFiles);
+        const eb = getNearestExpiry(b.licenseExpiration, b.documentationFiles);
+        if (!ea && !eb) return 0;
+        if (!ea) return 1;
+        if (!eb) return -1;
+        return ea.getTime() - eb.getTime();
+      }
       return 0;
     });
-  }, [applications, searchTerm, statusFilter, sortBy]);
+  }, [applications, searchTerm, statusFilter, expiryFilter, sortBy]);
 
   const handleEditClick = async (appId: string) => {
     const result = await Swal.fire({
@@ -217,6 +232,21 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
             <SelectItem key="En proceso">En proceso</SelectItem>
             <SelectItem key="Requiere atención">Requiere atención</SelectItem>
           </Select>
+          <Select
+            placeholder="Vencimiento"
+            selectedKeys={expiryFilter !== 'all' ? [expiryFilter] : []}
+            onSelectionChange={(keys) => {
+              const selected = Array.from(keys)[0] as string;
+              setExpiryFilter(selected || 'all');
+            }}
+            className="sm:max-w-xs"
+          >
+            <SelectItem key="all">Todos los vencimientos</SelectItem>
+            <SelectItem key="vigente">🟢 Vigente (&gt;30d)</SelectItem>
+            <SelectItem key="por_vencer">🟡 Por vencer (≤30d)</SelectItem>
+            <SelectItem key="vencido">🔴 Vencido</SelectItem>
+            <SelectItem key="sin_fecha">Sin fecha</SelectItem>
+          </Select>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <FileText className="h-4 w-4" />
@@ -237,6 +267,7 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
             <TableColumn className="min-w-[140px]">ACTIVIDADES</TableColumn>
             <TableColumn className="min-w-[100px]">DOCUMENTOS</TableColumn>
             <TableColumn className="min-w-[140px]">ESTADO GENERAL</TableColumn>
+            <TableColumn className="min-w-[130px]">VENCIMIENTO</TableColumn>
             <TableColumn className="min-w-[120px]">FECHA CREACIÓN</TableColumn>
             <TableColumn className="min-w-[120px]">ACCIONES</TableColumn>
           </TableHeader>
@@ -245,6 +276,8 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
               const workerFullName = `${app.workerName} ${app.workerPaternal} ${app.workerMaternal}`;
               const overallStatus = getOverallStatus(app.stateAc, app.stateSheq);
               const StatusIcon = overallStatus.icon;
+              const nearestExpiry = getNearestExpiry(app.licenseExpiration, app.documentationFiles);
+              const expiryStatus = getExpiryStatus(nearestExpiry);
               const docCount = app.documentationFiles?.filter(
                 doc => doc.documentationId !== null && !(doc.type === 'IMG' && !doc.documentationId)
               ).length || 0;
@@ -302,6 +335,37 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
                         {overallStatus.label}
                       </Chip>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip
+                      content={
+                        nearestExpiry
+                          ? `Vence: ${new Date(nearestExpiry).toLocaleDateString('es-CL')}`
+                          : 'Sin fecha de vencimiento'
+                      }
+                    >
+                      <div className="flex items-center gap-2">
+                        <Circle
+                          className="h-3 w-3 flex-shrink-0"
+                          fill="currentColor"
+                          stroke="none"
+                          color={
+                            expiryStatus.color === 'success' ? '#22c55e'
+                            : expiryStatus.color === 'warning' ? '#f59e0b'
+                            : expiryStatus.color === 'danger'  ? '#ef4444'
+                            : '#9ca3af'
+                          }
+                        />
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={expiryStatus.color}
+                          className="text-xs"
+                        >
+                          {expiryStatus.label}
+                        </Chip>
+                      </div>
+                    </Tooltip>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 text-sm text-gray-600">

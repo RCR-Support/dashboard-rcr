@@ -33,6 +33,7 @@ export const fetchCompanies = async (onlyWithContracts = false) => {
       name: {
         not: null,
       },
+      status: true,
       ...(onlyWithContracts && {
         Contract: {
           some: {},

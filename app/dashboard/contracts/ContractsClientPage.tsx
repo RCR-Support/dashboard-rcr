@@ -3,25 +3,59 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, Chip, Input, Button } from '@heroui/react';
-import { FileText, Search, Calendar, Building2, User, FileCheck, Link2 } from 'lucide-react';
+import { FileText, Search, Calendar, Building2, User, FileCheck, Link2, ArrowRightLeft, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { Contract } from '@/interfaces/contract.interface';
 import { Tooltip } from '@heroui/react';
 import { SubcontractModal } from '@/components/ui/dashboard/company/subcontract-modal';
+import { ContractModal } from '@/components/ui/dashboard/company/contract-modal';
+import { updateContract } from '@/actions/contract/update-contract';
+import { getAdminContractors } from '@/actions/contract/contract-actions';
+import { AdminContractor } from '@/interfaces/admin-contractor.interface';
+import Swal from 'sweetalert2';
 
 interface Props {
   contracts: Contract[];
   canCreate: boolean;
   isAdmin: boolean;
   canLinkSubcontract?: boolean;
+  canEdit?: boolean;
 }
 
-export default function ContractsClientPage({ contracts, canCreate, isAdmin, canLinkSubcontract }: Props) {
+export default function ContractsClientPage({ contracts, canCreate, isAdmin, canLinkSubcontract, canEdit }: Props) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [subcontractContract, setSubcontractContract] = useState<Contract | null>(null);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const [adminContractors, setAdminContractors] = useState<AdminContractor[]>([]);
+
+  const openEditModal = async (contract: Contract) => {
+    if (adminContractors.length === 0) {
+      const result = await getAdminContractors();
+      if (result.success) setAdminContractors(result.adminContractors ?? []);
+    }
+    setEditingContract(contract);
+  };
+
+  const handleEditSubmit = async (values: any) => {
+    if (!editingContract) return;
+    const result = await updateContract(editingContract.id, {
+      contractNumber: values.contractNumber,
+      contractName: values.contractName,
+      initialDate: values.initialDate,
+      finalDate: values.finalDate,
+      useracId: values.useracId,
+    });
+    if (result.success) {
+      Swal.fire({ icon: 'success', title: 'Contrato actualizado', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+      setEditingContract(null);
+      router.refresh();
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: result.error });
+    }
+  };
 
   const filteredContracts = contracts.filter(contract => 
     contract.contractName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,9 +236,38 @@ export default function ContractsClientPage({ contracts, canCreate, isAdmin, can
                     </div>
 
                     {contract.userAc && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-default-400" />
-                        <span>Admin: {contract.userAc.displayName}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4 text-default-400 shrink-0" />
+                          <span>
+                            Admin:{' '}
+                            <span className={contract.activeReassignment ? 'text-warning font-medium' : ''}>
+                              {contract.userAc.displayName}
+                            </span>
+                          </span>
+                          {contract.activeReassignment && (
+                            <Chip size="sm" variant="flat" color="warning" className="text-xs">
+                              Temporal
+                            </Chip>
+                          )}
+                        </div>
+                        {contract.activeReassignment && (
+                          <div className="ml-6 mt-0.5 rounded-md bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-2 py-1.5 text-xs space-y-0.5">
+                            <p className="flex items-center gap-1 text-warning-700 dark:text-warning-300">
+                              <ArrowRightLeft size={11} />
+                              <span className="font-medium">AC original:</span>{' '}
+                              {contract.activeReassignment.originalAcName}
+                            </p>
+                            {contract.activeReassignment.returnDate ? (
+                              <p className="text-warning-600 dark:text-warning-400">
+                                Retorno estimado:{' '}
+                                {format(new Date(contract.activeReassignment.returnDate), "dd 'de' MMM yyyy", { locale: es })}
+                              </p>
+                            ) : (
+                              <p className="text-warning-500">Sin fecha de retorno pactada</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -249,6 +312,17 @@ export default function ContractsClientPage({ contracts, canCreate, isAdmin, can
                     )}
 
                     <div className="flex gap-2 mt-4">
+                      {canEdit && !contract.deletedAt && (
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="warning"
+                          startContent={<Pencil className="h-3.5 w-3.5" />}
+                          onPress={() => openEditModal(contract)}
+                        >
+                          Editar
+                        </Button>
+                      )}
                       {canLinkSubcontract && !contract.deletedAt && (
                         <Button
                           size="sm"
@@ -306,6 +380,23 @@ export default function ContractsClientPage({ contracts, canCreate, isAdmin, can
           onClose={() => setSubcontractContract(null)}
           contract={subcontractContract}
           onSuccess={() => { setSubcontractContract(null); router.refresh(); }}
+        />
+      )}
+
+      {editingContract && (
+        <ContractModal
+          isOpen={!!editingContract}
+          onClose={() => setEditingContract(null)}
+          companyId={editingContract.companyId || ''}
+          onSubmit={handleEditSubmit}
+          adminContractors={adminContractors}
+          initialData={{
+            contractNumber: editingContract.contractNumber,
+            contractName: editingContract.contractName,
+            initialDate: editingContract.initialDate,
+            finalDate: editingContract.finalDate,
+            useracId: editingContract.useracId || editingContract.userAc?.id || '',
+          }}
         />
       )}
     </div>

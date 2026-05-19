@@ -40,6 +40,7 @@ export default async function ContractsPage() {
   const contracts = result.contracts || [];
 
   const canLinkSubcontract = hasActionPermission('subcontracts:create', userRoles);
+  const canEdit = hasActionPermission('contracts:edit:any', userRoles) || hasActionPermission('contracts:edit:assigned', userRoles);
 
   return (
     <ContractsClientPage 
@@ -47,6 +48,7 @@ export default async function ContractsPage() {
       canCreate={canViewAll}
       isAdmin={canViewAll}
       canLinkSubcontract={canLinkSubcontract}
+      canEdit={canEdit}
     />
   );
 }

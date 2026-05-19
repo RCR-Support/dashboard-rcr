@@ -59,6 +59,25 @@ export const fetchUserData = async () => {
             },
           },
         },
+        previousReassignments: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            mode: true,
+            reason: true,
+            returnDate: true,
+            returnedAt: true,
+            createdAt: true,
+            contractId: true,
+            contract: {
+              select: { contractName: true, contractNumber: true },
+            },
+            newAc: {
+              select: { id: true, displayName: true },
+            },
+          },
+        },
       },
     });
 
@@ -74,10 +93,23 @@ export const fetchUserData = async () => {
           mandanteName: s.contract.Company?.name ?? null,
           status: s.status,
         })),
+        reassignmentLogs: user.previousReassignments.map(l => ({
+          id: l.id,
+          mode: l.mode,
+          reason: l.reason,
+          returnDate: l.returnDate?.toISOString() ?? null,
+          returnedAt: l.returnedAt?.toISOString() ?? null,
+          createdAt: l.createdAt.toISOString(),
+          contractId: l.contractId,
+          contractName: l.contract.contractName,
+          contractNumber: l.contract.contractNumber,
+          newAcId: l.newAc.id,
+          newAcName: l.newAc.displayName,
+        })),
       })),
     };
   } catch (error) {
-    console.error('Error al obtener los datos de usuario:', error);
+    console.error('[fetchUserData] Error al obtener los datos de usuario:', error);
     return {
       ok: false,
       message: 'Error al obtener los datos de usuario',

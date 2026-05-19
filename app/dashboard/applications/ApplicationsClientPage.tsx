@@ -40,6 +40,7 @@ interface Application {
     url: string;
     type: string;
     documentationId: string | null;
+    expiresAt?: Date | string | null;
   }>;
 }
 

@@ -49,5 +49,18 @@ export interface User {
     mandanteName: string | null;
     status: string;
   }[];
+  reassignmentLogs?: {
+    id: string;
+    mode: string;
+    reason: string;
+    returnDate: string | null;
+    returnedAt: string | null;
+    createdAt: string;
+    contractId: string;
+    contractName: string;
+    contractNumber: string;
+    newAcId: string;
+    newAcName: string;
+  }[];
   createdAt?: string | Date;
 }

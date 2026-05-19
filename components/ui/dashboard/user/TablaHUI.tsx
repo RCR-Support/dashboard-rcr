@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Users, Crown, Shield, Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, Link2 } from 'lucide-react';
+import { Users, Crown, Shield, Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, Link2, ArrowRightLeft } from 'lucide-react';
 // Utilidad para actualizar usuario
 async function updateUserField(
   id: string,
@@ -55,6 +55,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import UserModal from './UserModal';
 import { CompanyModal } from '@/components/ui/dashboard/company/company-modal';
+import { ReassignContractsModal } from './ReassignContractsModal';
+import { ReturnContractsModal, PendingReturnLog } from './ReturnContractsModal';
 import { getCompanyUsers } from '@/actions/company/userCompany-actions';
 import { CompanySelect } from '@/interfaces/company.interface';
 interface Props {
@@ -192,6 +194,13 @@ export default function App({ users }: Props) {
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanySelect | null>(null);
   const [loadingCompanyId, setLoadingCompanyId] = useState<string | null>(null);
+
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [reassignTargetUser, setReassignTargetUser] = useState<{ id: string; displayName: string } | null>(null);
+
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnTargetUser, setReturnTargetUser] = useState<{ id: string; displayName: string } | null>(null);
+  const [returnPendingLogs, setReturnPendingLogs] = useState<PendingReturnLog[]>([]);
 
   const openCompanyModal = async (companyId: string, companyName: string) => {
     setLoadingCompanyId(companyId);
@@ -480,27 +489,73 @@ export default function App({ users }: Props) {
             );
           case 'roles':
             return (
-              <div className="flex items-center gap-1 flex-wrap min-w-48">
-                {Array.isArray(user.roles) && user.roles.length > 0 ? (
-                  user.roles.map(r => {
-                    const config = roleConfig[r] || { name: r, icon: Users, color: 'default' };
-                    const IconComponent = config.icon;
-                    return (
-                      <Chip 
-                        key={r} 
-                        size="sm" 
-                        variant="flat" 
-                        color={(config.color as 'danger' | 'primary' | 'secondary' | 'success' | 'default') || 'default'}
-                        startContent={<IconComponent size={12} />}
-                        className="capitalize"
-                      >
-                        {config.name}
-                      </Chip>
-                    );
-                  })
-                ) : (
-                  <span className="text-default-500">N/A</span>
-                )}
+              <div className="flex flex-col gap-1 min-w-48">
+                <div className="flex items-center gap-1 flex-wrap">
+                  {Array.isArray(user.roles) && user.roles.length > 0 ? (
+                    user.roles.map(r => {
+                      const config = roleConfig[r] || { name: r, icon: Users, color: 'default' };
+                      const IconComponent = config.icon;
+                      return (
+                        <Chip 
+                          key={r} 
+                          size="sm" 
+                          variant="flat" 
+                          color={(config.color as 'danger' | 'primary' | 'secondary' | 'success' | 'default') || 'default'}
+                          startContent={<IconComponent size={12} />}
+                          className="capitalize"
+                        >
+                          {config.name}
+                        </Chip>
+                      );
+                    })
+                  ) : (
+                    <span className="text-default-500">N/A</span>
+                  )}
+                </div>
+                {user.roles?.includes('adminContractor') && (() => {
+                  const contractCount = user.contracts?.length ?? 0;
+                  // Detectar si el AC tiene un traspaso temporal activo (el más reciente es temporal)
+                  const lastLog = user.reassignmentLogs?.[0];
+                  const isAbsent = lastLog?.mode === 'temporal';
+                  const returnDate = lastLog?.returnDate
+                    ? new Date(lastLog.returnDate)
+                    : null;
+                  const returnPassed = returnDate && returnDate < new Date();
+
+                  return (
+                    <div className="flex flex-col gap-1 mt-0.5">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <Chip
+                          size="sm"
+                          variant="dot"
+                          color={contractCount === 0 ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {contractCount} contrato{contractCount !== 1 ? 's' : ''}
+                        </Chip>
+                        {!user.isActive && (
+                          <Chip size="sm" variant="flat" color="danger" className="text-xs">
+                            Sin responsable activo
+                          </Chip>
+                        )}
+                      </div>
+                      {isAbsent && (
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={returnPassed ? 'warning' : 'warning'}
+                          className="text-xs"
+                        >
+                          {returnDate
+                            ? returnPassed
+                              ? `Retorno: ${returnDate.toLocaleDateString('es-CL')} (pendiente)`
+                              : `Ausente hasta ${returnDate.toLocaleDateString('es-CL')}`
+                            : 'Ausente (sin fecha de retorno)'}
+                        </Chip>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           case 'companyName':
@@ -685,6 +740,38 @@ export default function App({ users }: Props) {
                         Eliminar definitivo
                       </DropdownItem>
                     ) : null}
+                    {user.roles?.some(r => r === 'adminContractor') ? (
+                      <DropdownItem
+                        key="reassign"
+                        startContent={<ArrowRightLeft size={16} className="text-secondary" />}
+                        onPress={() => {
+                          setReassignTargetUser({ id: user.id, displayName: user.displayName });
+                          setReassignModalOpen(true);
+                        }}
+                      >
+                        Traspasar contratos
+                      </DropdownItem>
+                    ) : null}
+                    {(() => {
+                      if (!user.roles?.some(r => r === 'adminContractor')) return null;
+                      const pendingLogs = (user.reassignmentLogs ?? []).filter(
+                        l => l.mode === 'temporal' && !l.returnedAt
+                      ) as PendingReturnLog[];
+                      if (pendingLogs.length === 0) return null;
+                      return (
+                        <DropdownItem
+                          key="returnContracts"
+                          startContent={<ArrowRightLeft size={16} className="text-success" />}
+                          onPress={() => {
+                            setReturnTargetUser({ id: user.id, displayName: user.displayName });
+                            setReturnPendingLogs(pendingLogs);
+                            setReturnModalOpen(true);
+                          }}
+                        >
+                          Devolver contratos ({pendingLogs.length})
+                        </DropdownItem>
+                      );
+                    })()}
                   </DropdownMenu>
                 </Dropdown>
               </div>
@@ -985,6 +1072,23 @@ export default function App({ users }: Props) {
         onClose={() => { setCompanyModalOpen(false); setSelectedCompany(null); }}
         company={selectedCompany}
       />
+      {reassignTargetUser && (
+        <ReassignContractsModal
+          isOpen={reassignModalOpen}
+          onClose={() => { setReassignModalOpen(false); setReassignTargetUser(null); }}
+          user={reassignTargetUser}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+      {returnTargetUser && (
+        <ReturnContractsModal
+          isOpen={returnModalOpen}
+          onClose={() => { setReturnModalOpen(false); setReturnTargetUser(null); setReturnPendingLogs([]); }}
+          user={returnTargetUser}
+          pendingLogs={returnPendingLogs}
+          onSuccess={() => router.refresh()}
+        />
+      )}
     </div>
   );
 }
