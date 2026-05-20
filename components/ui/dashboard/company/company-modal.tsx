@@ -121,6 +121,7 @@ export const CompanyModal = ({
               }
 
               if (value) {
+                const isUrl = info.includes('🌐');
                 return (
                   <p
                     key={index}
@@ -128,9 +129,20 @@ export const CompanyModal = ({
                   >
                     {icon}
                     <span className="font-semibold">{label}</span>
-                    <span className="truncate text-ellipsis max-w-[360px]">
-                      {value}
-                    </span>
+                    {isUrl ? (
+                      <a
+                        href={/^https?:\/\//i.test(value) ? value : `https://${value}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-ellipsis max-w-[360px] text-cyan-500 hover:underline"
+                      >
+                        {value}
+                      </a>
+                    ) : (
+                      <span className="truncate text-ellipsis max-w-[360px]">
+                        {value}
+                      </span>
+                    )}
                   </p>
                 );
               }
@@ -288,26 +300,7 @@ export const CompanyModal = ({
             </div>
           )}
           <div className="flex justify-between items-center w-full">
-            <Button
-              color="default"
-              className="self-start text-left text-default-500 hover:bg-default-100 dark:hover:bg-default-800 dark:hover:text-neutral-800"
-              variant="flat"
-              onPress={onClose}
-              startContent={<IoClose className="h-4 w-4" />}
-            >
-              Cerrar
-            </Button>
             <div className="flex gap-4">
-              {canEditThisCompany && (
-                <Button
-                  color="success"
-                  variant="flat"
-                  onPress={handleEdit}
-                  startContent={<Pencil className="h-4 w-4" />}
-                >
-                  Editar
-                </Button>
-              )}
               {canDelete && (
                 <Button
                   color="danger"
@@ -317,6 +310,27 @@ export const CompanyModal = ({
                   startContent={!isDeleting ? <Trash className="h-4 w-4" /> : undefined}
                 >
                   Eliminar
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-4">
+              <Button
+                color="default"
+                className="text-default-500 hover:bg-default-100 dark:hover:bg-default-800 dark:hover:text-neutral-800"
+                variant="flat"
+                onPress={onClose}
+                startContent={<IoClose className="h-4 w-4" />}
+              >
+                Cerrar
+              </Button>
+              {canEditThisCompany && (
+                <Button
+                  color="success"
+                  variant="flat"
+                  onPress={handleEdit}
+                  startContent={<Pencil className="h-4 w-4" />}
+                >
+                  Editar
                 </Button>
               )}
             </div>

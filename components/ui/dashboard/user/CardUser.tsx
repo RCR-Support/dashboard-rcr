@@ -74,8 +74,11 @@ export const CardUser = ({ users }: Props) => {
     }
   };
   function stringAvatar(displayName: string) {
+    const parts = displayName.trim().split(' ');
+    const first = parts[0]?.[0] ?? '';
+    const second = parts[1]?.[0] ?? '';
     return {
-      children: `${displayName.split(' ')[0][0]}${displayName.split(' ')[1][0]}`,
+      children: `${first}${second}`,
     };
   }
   const normalizeText = (text: string) =>

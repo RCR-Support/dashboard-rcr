@@ -45,7 +45,7 @@ const uploadLogoToCloudinary = async (file: File, companyId?: string) => {
             : `company-logo-${Date.now()}`,
           overwrite: true,
           transformation: [
-            { width: 400, height: 200, crop: 'fit', quality: 'auto:best', fetch_format: 'auto' },
+            { width: 400, height: 120, crop: 'fit', quality: 'auto:best', fetch_format: 'auto' },
           ],
         },
         (error, result) => {

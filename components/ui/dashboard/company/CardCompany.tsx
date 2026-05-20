@@ -135,12 +135,13 @@ export const CompaniesGrid = ({ companies }: Props) => {
                   <div className="font-semibold line-clamp-2 break-words max-w-36 xl:max-w-44">
                     {company.label.split(' (')[0]}
                   </div>
-                  <div className="hidden md:flex items-center gap-3 truncate text-ellipsis max-w-36 2xl:max-w-44">
-                    <Phone className="text-cyan-500 dark:text-cyan-300 text-lg" />
-                    {/* Removemos el emoji del teléfono del texto */}
-                    {formatPhoneNumber(
-                      company.description.split(' | ')[0].replace('📞', '').trim()
-                    )}
+                  <div className="hidden md:flex items-center gap-2 max-w-36 2xl:max-w-44">
+                    <Phone className="text-cyan-500 dark:text-cyan-300 flex-shrink-0" size={14} />
+                    <span className="truncate text-ellipsis text-sm">
+                      {formatPhoneNumber(
+                        company.description.split(' | ')[0].replace('📞', '').trim()
+                      )}
+                    </span>
                   </div>
                 </div>
                 <TfiPlus className="hidden md:block text-2xl text-[#03c9d7] dark:text-[#327f84]" />
