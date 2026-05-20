@@ -90,7 +90,9 @@ export async function approveApplicationSHEQ(
     // Enviar email al usuario (no bloquea el flujo)
     try {
       await sendApplicationApprovedBySHEQEmail(applicationId, session.user.email ?? undefined);
-    } catch { /* non-critical */ }
+    } catch (err) {
+      console.error('[EMAIL ERROR] approve-reject-sheq aprobación:', err);
+    }
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud aprobada correctamente' };
@@ -168,7 +170,9 @@ export async function rejectApplicationSHEQ(
     // Enviar email al usuario (no bloquea el flujo)
     try {
       await sendApplicationRejectedBySHEQEmail(applicationId, observations, rejectedDocNames, session.user.email ?? undefined);
-    } catch { /* non-critical */ }
+    } catch (err) {
+      console.error('[EMAIL ERROR] approve-reject-sheq rechazo:', err);
+    }
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud rechazada correctamente' };

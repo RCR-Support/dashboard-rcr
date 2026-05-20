@@ -105,7 +105,9 @@ export async function approveApplicationAC(
     // Enviar email al usuario (fuera de la transacción, no bloquea)
     try {
       await sendApplicationApprovedByACEmail(applicationId, session.user.email ?? undefined);
-    } catch { /* non-critical */ }
+    } catch (err) {
+      console.error('[EMAIL ERROR] approve-reject-ac aprobación:', err);
+    }
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud aprobada correctamente' };
@@ -182,7 +184,9 @@ export async function rejectApplicationAC(
     // Enviar email al usuario (fuera de la transacción, no bloquea)
     try {
       await sendApplicationRejectedByACEmail(applicationId, observations, rejectedDocNames, session.user.email ?? undefined);
-    } catch { /* non-critical */ }
+    } catch (err) {
+      console.error('[EMAIL ERROR] approve-reject-ac rechazo:', err);
+    }
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud rechazada correctamente' };

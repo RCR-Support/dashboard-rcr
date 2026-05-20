@@ -7,6 +7,17 @@ const APP_URL = process.env.APP_URL || '';
 
 const client = POSTMARK_API_TOKEN ? new ServerClient(POSTMARK_API_TOKEN) : null;
 
+// Advertencia al iniciar si faltan variables de entorno críticas
+if (!POSTMARK_API_TOKEN) {
+  console.error('[EMAIL] ⚠️  POSTMARK_API_TOKEN no está configurado — los emails no se enviarán');
+}
+if (!process.env.EMAIL_FROM) {
+  console.warn('[EMAIL] ⚠️  EMAIL_FROM no está configurado — usando no-reply@example.com');
+}
+if (!process.env.APP_URL) {
+  console.warn('[EMAIL] ⚠️  APP_URL no está configurado — los links en emails estarán rotos');
+}
+
 // ============================================
 // HELPERS
 // ============================================
@@ -31,12 +42,20 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ M
     return { MessageID: 'local-simulated' };
   }
 
-  return client.sendEmail({
-    From: EMAIL_FROM,
-    To: to,
-    Subject: subject,
-    HtmlBody: html,
-  });
+  try {
+    const result = await client.sendEmail({
+      From: EMAIL_FROM,
+      To: to,
+      Subject: subject,
+      HtmlBody: html,
+      MessageStream: 'outbound',
+    });
+    console.log(`[EMAIL] ✓ Enviado a ${to} | MessageID: ${result.MessageID}`);
+    return result;
+  } catch (err) {
+    console.error(`[EMAIL] ✗ Error al enviar a ${to} | Subject: ${subject}`, err);
+    throw err;
+  }
 }
 
 /** Bloque de cabecera reutilizable */
@@ -79,7 +98,12 @@ async function getUserEmail(userId: string | null | undefined): Promise<string |
 /** Envía a múltiples destinatarios en paralelo, ignorando los que fallen */
 async function sendToMany(emails: (string | null)[], subject: string, html: string) {
   const valid = Array.from(new Set(emails.filter((e): e is string => !!e)));
-  await Promise.allSettled(valid.map(to => sendEmail(to, subject, html)));
+  const results = await Promise.allSettled(valid.map(to => sendEmail(to, subject, html)));
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      console.error(`[EMAIL] ✗ sendToMany falló para ${valid[i]}:`, r.reason);
+    }
+  });
 }
 
 // ============================================
