@@ -142,7 +142,7 @@ export default function EditApplicationPage() {
               id: doc.id,
               name: doc.documentation?.name || 'Documento',
               url: doc.url,
-              expiresAt: doc.expiresAt,
+              expiresAt: doc.expiresAt ? new Date(doc.expiresAt) : null,
               acceptedFileType: 'PDF',
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               approvalStatus: (doc as any).approvalStatus || 'pending',
@@ -235,7 +235,7 @@ export default function EditApplicationPage() {
           activityId: doc.activityId,
           url: doc.url,
           type: doc.acceptedFileType === 'IMAGE' ? 'IMG' : 'PDF',
-          expiresAt: doc.expiresAt,
+          expiresAt: doc.expiresAt ? new Date(doc.expiresAt) : null,
         }));
 
       let result;

@@ -265,7 +265,7 @@ export function DocumentsStep({
 
     // Validar que todos los documentos (excepto foto de credencial) tengan fecha
     const docsWithoutDate = documents.filter(
-      doc => doc.id !== 'credential-photo' && doc.file && !doc.expiresAt
+      doc => doc.id !== 'credential-photo' && doc.url && !doc.expiresAt
     );
     if (docsWithoutDate.length > 0) {
       Swal.fire({

@@ -111,7 +111,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
 
       input.documents.forEach((doc) => {
         if (doc.expiresAt) {
-          dates.push(new Date(doc.expiresAt));
+          dates.push(new Date(doc.expiresAt)); // coerce string|Date → Date
         }
       });
 
@@ -170,7 +170,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
             documentationId: doc.documentationId!,
             url: doc.url,
             type: doc.type,
-            expiresAt: doc.expiresAt,
+            expiresAt: doc.expiresAt ? new Date(doc.expiresAt) : null,
             approvalStatus: 'pending', // Reiniciar estado para nueva revisión
           })),
       ];

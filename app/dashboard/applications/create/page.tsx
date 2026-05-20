@@ -100,7 +100,7 @@ export default function CreateApplicationPage() {
           activityId: doc.activityId,
           url: doc.url,
           type: doc.acceptedFileType === 'IMAGE' ? 'IMG' : 'PDF',
-          expiresAt: doc.expiresAt, // Incluir fecha de expiración
+          expiresAt: doc.expiresAt ? new Date(doc.expiresAt) : null, // Incluir fecha de expiración
         }));
 
       // 3. Crear la solicitud
