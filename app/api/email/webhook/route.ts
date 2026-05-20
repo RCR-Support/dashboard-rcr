@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { z } from 'zod';
-import { db } from '../../../../lib/db';
 
 const LOG_DIR = path.resolve(process.cwd(), 'tmp');
 const LOG_FILE = path.join(LOG_DIR, 'postmark-webhooks.log');

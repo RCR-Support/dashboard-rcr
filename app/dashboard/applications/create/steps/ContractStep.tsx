@@ -85,8 +85,10 @@ export function ContractStep({
     const companyResp = await getCompanyById(companyId);
     if (companyResp.error) {
       // Si no se pudo obtener la empresa, caer de vuelta a valores mínimos
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       useApplicationFormStore.getState().setCompany({ id: companyId, name: companyId } as any);
     } else if (companyResp.success && companyResp.company) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = companyResp.company as any;
       const email = comp.users && comp.users.length > 0 ? comp.users[0].email : undefined;
       useApplicationFormStore.getState().setCompany({

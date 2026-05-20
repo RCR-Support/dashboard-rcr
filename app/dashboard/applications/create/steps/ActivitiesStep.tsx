@@ -19,7 +19,6 @@ interface ActivitiesStepProps {
 const ActivitiesStep = ({ contract, onNext, onBack }: ActivitiesStepProps) => {
   const availableActivities = useApplicationFormStore(state => state.availableActivities);
   const selectedActivitiesFromStore = useApplicationFormStore(state => state.selectedActivities);
-  const isLoadingActivities = useApplicationFormStore(state => state.isLoadingActivities);
   
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
     null

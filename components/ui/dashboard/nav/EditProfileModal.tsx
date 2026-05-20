@@ -36,17 +36,17 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
   // Cargar teléfono desde DB al abrir
   useEffect(() => {
     if (!isOpen || !session?.user?.id) return;
-    getProfileUserData(session.user.id).then(res => {
+    getProfileUserData(session.user.id).then(_res => {
       // phoneNumber no está en el response pero sí en la DB — lo leemos de la session si existe
       // La modal usará la sesión extendida o vacío
     });
     // Tomar de la sesión extendida si está disponible
-    const sessionPhone = (session.user as any).phoneNumber ?? '';
+    const sessionPhone = (session.user as { phoneNumber?: string }).phoneNumber ?? '';
     setPhone(sessionPhone);
     setInitialPhone(sessionPhone);
     setImagePreview(session.user.image ?? null);
     setSelectedFile(null);
-  }, [isOpen, session?.user?.id]);
+  }, [isOpen, session?.user]);
 
   const hasChanges =
     phone !== initialPhone ||

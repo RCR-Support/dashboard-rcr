@@ -150,27 +150,24 @@ export const preRegisterAction = async (values: unknown) => {
       }
     }
     // Validar usuario único (siempre)
-    const generatedUserName = `${data.userName.charAt(0).toLowerCase()}${data.userLastName.toLowerCase()}`;
     const userExists = await db.user.findFirst({
       where: {
         OR: [
           { email: data.userEmail },
           { run: data.userRun },
-          { userName: generatedUserName },
         ],
       },
-      select: { email: true, run: true, userName: true },
+      select: { email: true, run: true },
     });
     if (userExists) {
       if (userExists.email === data.userEmail)
         return { error: 'El email ya está registrado en el sistema.' };
       if (userExists.run === data.userRun)
         return { error: 'El RUN ya está registrado en el sistema.' };
-      return {
-        error:
-          'Ya existe un usuario con un nombre de usuario similar. Por favor contacte al administrador.',
-      };
     }
+    // Generar userName único usando RUN como sufijo
+    const runDigits = data.userRun.replace(/[^0-9]/g, '').slice(-4);
+    const generatedUserName = `${data.userName.charAt(0).toLowerCase()}${data.userLastName.toLowerCase()}${runDigits}`;
     // Validar contrato único (solo si NO es sub-contratista)
     if (!isSubcontract) {
       const contractExists = await db.contract.findFirst({

@@ -6,11 +6,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, FieldValues } from 'react-hook-form';
 import { LucideIcon } from 'lucide-react';
 
 interface FormInputProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<FieldValues>;
   name: string;
   label: string;
   placeholder?: string;

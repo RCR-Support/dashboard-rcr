@@ -1,6 +1,5 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { hasActionPermission } from '@/config/action-permissions';
 import RolesPermissionsClient from './RolesPermissionsClient';
 
 export default async function RolesPermissionsPage() {

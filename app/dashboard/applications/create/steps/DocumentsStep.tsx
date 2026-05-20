@@ -6,7 +6,7 @@ import { useApplicationFormStore } from '@/store/application-form-store';
 import { DocumentData } from '../types';
 import Swal from 'sweetalert2';
 import { Progress } from '@heroui/progress';
-import { FileText, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { FileText, CheckCircle2, Clock } from 'lucide-react';
 import { Chip } from '@heroui/chip';
 
 interface DocumentsStepProps {
@@ -126,6 +126,7 @@ export function DocumentsStep({
                 doc.status = 'approved'; // Bloqueado, no editable
               } else if (existingDoc.approvalStatus === 'rejected') {
                 doc.status = 'rejected'; // Rechazado, editable con motivo
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (doc as any).rejectionReason = existingDoc.rejectionReason;
               } else {
                 doc.status = 'completed'; // Pendiente, mantener como completado

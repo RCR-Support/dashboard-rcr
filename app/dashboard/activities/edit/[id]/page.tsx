@@ -1,5 +1,4 @@
 import { listActivities } from '@/actions/activities/list-activities';
-import EditActivityForm from '../../editActivityForm';
 import { notFound } from 'next/navigation';
 import EditActivityClient from '../EditActivityClient';
 
@@ -9,12 +8,14 @@ export default async function EditActivityPage({
   params: { id: string };
 }) {
   const activities = await listActivities();
-  const activity = activities.find((a: any) => a.id === params.id);
+  const activity = activities.find((a: { id: string }) => a.id === params.id);
   if (!activity) return notFound();
 
   // Map requiredDocumentations to include documentationId expected by the form
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mappedActivity = {
     ...activity,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     requiredDocumentations: activity.requiredDocumentations?.map((rd: any) => ({
       ...rd,
       documentationId: rd.documentation?.id ?? rd.id,

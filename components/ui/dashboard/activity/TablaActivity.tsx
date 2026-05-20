@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Input } from '@heroui/react';
 import { CiSearch } from 'react-icons/ci';
 import { TbSortAscending2, TbSortDescending2 } from 'react-icons/tb';

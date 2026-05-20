@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Button, Input, Tooltip, Chip } from '@heroui/react';
 import { cn } from '@/lib/utils';
@@ -52,13 +52,13 @@ export default function ActivityMatrixPage() {
   const [filterType, setFilterType] = useState<'all' | 'global' | 'specific'>('all');
 
   // Helper para determinar si un documento es global o específico
-  const isDocumentGlobal = (docId: string): boolean => {
+  const isDocumentGlobal = useCallback((docId: string): boolean => {
     return activities.some((activity) =>
       activity.requiredDocumentations.some(
         (rel) => rel.documentationId === docId && rel.isSpecific === false
       )
     );
-  };
+  }, [activities]);
 
   // Estadísticas
   const stats = useMemo(() => {
@@ -75,7 +75,7 @@ export default function ActivityMatrixPage() {
       totalActivities: activities.length,
       totalRelations,
     };
-  }, [documentations, activities]);
+  }, [documentations, activities, isDocumentGlobal]);
 
   // Filtrar documentaciones
   const filteredDocs = useMemo(() => {
@@ -88,7 +88,7 @@ export default function ActivityMatrixPage() {
         (filterType === 'specific' && !isGlobal);
       return matchesSearch && matchesFilter;
     });
-  }, [documentations, searchDoc, filterType, activities]);
+  }, [documentations, searchDoc, filterType, isDocumentGlobal]);
 
   // Filtrar actividades
   const filteredActivities = useMemo(() => {

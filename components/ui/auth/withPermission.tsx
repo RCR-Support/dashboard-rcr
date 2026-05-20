@@ -4,14 +4,12 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { ComponentType } from 'react';
 import { useRoleStore } from '@/store/ui/roleStore';
 import { useRoleModal } from '@/context/role-modal-context';
-import { usePathname } from 'next/navigation';
 
 export function withPermission<P extends object>(
   WrappedComponent: ComponentType<P>,
   requiredPath: string
 ): ComponentType<P> {
   return function ProtectedComponent(props: P) {
-    const pathname = usePathname();
     const { hasPermission } = usePermissions();
     const { selectedRole } = useRoleStore();
     const { showRoleModal } = useRoleModal();

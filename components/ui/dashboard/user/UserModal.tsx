@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Avatar from '@mui/material/Avatar';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/react';
 import { IoClose } from 'react-icons/io5';
@@ -22,12 +21,6 @@ interface Props {
 
 export const UserModal = ({ user, isOpen, onClose, onEdit, onDelete, onPermanentDelete }: Props) => {
   if (!user) return null;
-
-  function stringAvatar(displayName: string) {
-    return {
-      children: `${displayName.split(' ')[0][0]}${displayName.split(' ')[1] ? displayName.split(' ')[1][0] : ''}`,
-    };
-  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" backdrop="blur">

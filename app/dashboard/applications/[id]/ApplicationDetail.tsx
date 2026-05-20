@@ -5,7 +5,6 @@ import { Chip } from '@heroui/chip';
 import { Button } from '@heroui/button';
 import { Divider } from '@heroui/divider';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { Select, SelectItem } from '@heroui/select';
 import { Textarea } from '@heroui/input';
 import Image from 'next/image';
 import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit, ArrowRightLeft } from 'lucide-react';
@@ -156,9 +155,9 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
   );
 
   // Verificar estado de revisión de documentos
-  const docsApproved = documents.filter(d => (d as any).approvalStatus === 'approved').length;
-  const docsRejected = documents.filter(d => (d as any).approvalStatus === 'rejected').length;
-  const docsPending = documents.filter(d => !((d as any).approvalStatus) || (d as any).approvalStatus === 'pending').length;
+  const docsApproved = documents.filter(d => d.approvalStatus === 'approved').length;
+  const docsRejected = documents.filter(d => d.approvalStatus === 'rejected').length;
+  const docsPending = documents.filter(d => !d.approvalStatus || d.approvalStatus === 'pending').length;
   const allDocsReviewed = docsPending === 0; // Todos revisados (aprobados o rechazados)
   const allDocsApproved = docsApproved === documents.length && documents.length > 0; // Todos aprobados
 
@@ -246,7 +245,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
 
     // Si no hay observaciones adicionales, usar resumen de documentos rechazados
     const finalObservations = observations.trim() || 
-      `Documentos rechazados: ${documents.filter(d => (d as any).approvalStatus === 'rejected').map(d => d.documentation?.name).join(', ')}`;
+      `Documentos rechazados: ${documents.filter(d => d.approvalStatus === 'rejected').map(d => d.documentation?.name).join(', ')}`;
 
     setIsLoading(true);
     const result = await rejectApplicationAC(application.id, userId, finalObservations);
@@ -303,7 +302,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
 
     // Si no hay observaciones adicionales, usar resumen de documentos rechazados
     const finalObservations = observations.trim() || 
-      `Documentos rechazados: ${documents.filter(d => (d as any).approvalStatus === 'rejected').map(d => d.documentation?.name).join(', ')}`;
+      `Documentos rechazados: ${documents.filter(d => d.approvalStatus === 'rejected').map(d => d.documentation?.name).join(', ')}`;
 
     setIsLoading(true);
     const result = await rejectApplicationSHEQ(application.id, userId, finalObservations);
@@ -692,7 +691,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
               {documents.length > 0 ? (
                 <div className="space-y-3">
                   {documents.map((doc) => {
-                  const approvalStatus = (doc as any).approvalStatus || 'pending';
+                  const approvalStatus = doc.approvalStatus || 'pending';
                   
                   return (
                     <div 
@@ -725,9 +724,9 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                               Vence: {new Date(doc.expiresAt).toLocaleDateString('es-CL')}
                             </p>
                           )}
-                          {(doc as any).rejectionReason && (
+                          {doc.rejectionReason && (
                             <p className="text-sm text-danger mt-1">
-                              Motivo: {(doc as any).rejectionReason}
+                              Motivo: {doc.rejectionReason}
                             </p>
                           )}
                         </div>
@@ -1007,10 +1006,10 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                 <p className="text-sm font-semibold text-danger mb-2">Documentos rechazados:</p>
                 <ul className="text-sm space-y-1">
                   {documents
-                    .filter(d => (d as any).approvalStatus === 'rejected')
+                    .filter(d => d.approvalStatus === 'rejected')
                     .map((doc, idx) => (
                       <li key={idx} className="text-default-600">
-                        • <strong>{doc.documentation?.name}</strong>: {(doc as any).rejectionReason}
+                        • <strong>{doc.documentation?.name}</strong>: {doc.rejectionReason}
                       </li>
                     ))}
                 </ul>

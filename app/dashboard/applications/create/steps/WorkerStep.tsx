@@ -20,7 +20,6 @@ import { ImageEditorModal } from '@/components/ui/ImageEditorModal';
 import { useState } from 'react';
 import Image from 'next/image';
 import { Tooltip } from '@heroui/tooltip';
-import { Card, CardBody } from '@heroui/card';
 
 // Schema de validación para los datos del trabajador
 const workerSchema = z.object({

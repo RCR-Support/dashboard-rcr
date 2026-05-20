@@ -41,7 +41,6 @@ import {
   Chip,
   Pagination,
   Selection,
-  ChipProps,
   SortDescriptor,
 } from '@heroui/react';
 import { Avatar } from '@mui/material';
@@ -125,12 +124,6 @@ const stringAvatar = (name: string) => {
   };
 };
 
-const statusColorMap: Record<string, ChipProps['color']> = {
-  active: 'success',
-  paused: 'danger',
-  vacation: 'warning',
-};
-
 const INITIAL_VISIBLE_COLUMNS = [
   'name',
   'run', 
@@ -172,18 +165,6 @@ function getRelativeTime(date: string | Date | undefined) {
   if (diffInDays < 365) return `Hace ${Math.floor(diffInDays / 30)} mes${Math.floor(diffInDays / 30) > 1 ? 'es' : ''}`;
   return `Hace ${Math.floor(diffInDays / 365)} año${Math.floor(diffInDays / 365) > 1 ? 's' : ''}`;
 }
-
-interface RoleMapping {
-  [key: string]: string;
-}
-
-const roleMapping: RoleMapping = {
-  admin: 'Administrador',
-  sheq: 'Sheq',
-  adminContractor: 'Administrador de Contrato', 
-  user: 'Usuario',
-  credential: 'Credenciales',
-};
 
 export default function App({ users }: Props) {
   const router = useRouter();
@@ -240,9 +221,13 @@ export default function App({ users }: Props) {
 
   const [filterValue, setFilterValue] = useState('');
   const [companyFilter, setCompanyFilter] = useState<'all' | string>('all');
-  const [visibleColumns, setVisibleColumns] = useState<Selection>(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
+  const [visibleColumns, setVisibleColumns] = useState<Selection>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('tablaHUI_visibleColumns');
+      if (saved) return new Set(JSON.parse(saved));
+    }
+    return new Set(INITIAL_VISIBLE_COLUMNS);
+  });
   const [statusFilter, setStatusFilter] = useState<Selection>('all');
 
   const [isActiveFilter, setIsActiveFilter] = useState<Selection>('all');
@@ -252,6 +237,18 @@ export default function App({ users }: Props) {
     direction: 'ascending',
   });
   const [page, setPage] = useState(1);
+
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [localUsers, setLocalUsers] = useState<User[]>(users);
+  const [loadingField] = useState<{
+    id: string;
+    field: string;
+  } | null>(null);
+
+  // Sincroniza localUsers si cambia la prop users
+  React.useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
 
   const pages = Math.ceil(users.length / rowsPerPage);
 
@@ -274,7 +271,7 @@ export default function App({ users }: Props) {
   }, [users]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...users];
+    let filteredUsers = [...localUsers];
     const normalizeText = (text: string) =>
       text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Elimina tildes
 
@@ -312,7 +309,7 @@ export default function App({ users }: Props) {
     }
 
     return filteredUsers;
-  }, [users, filterValue, statusFilter, isActiveFilter, hasSearchFilter, companyFilter]);
+  }, [localUsers, filterValue, statusFilter, isActiveFilter, hasSearchFilter, companyFilter]);
 
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -344,18 +341,6 @@ export default function App({ users }: Props) {
       return sortDescriptor.direction === 'descending' ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
-
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [localUsers, setLocalUsers] = useState<User[]>(users);
-  const [loadingField, setLoadingField] = useState<{
-    id: string;
-    field: string;
-  } | null>(null);
-
-  // Sincroniza localUsers si cambia la prop users
-  React.useEffect(() => {
-    setLocalUsers(users);
-  }, [users]);
 
   const handleChangeField = async (
     user: User,
@@ -788,7 +773,7 @@ export default function App({ users }: Props) {
             }
         }
       },
-      [router, loadingField, updatingId]
+      [loadingField, updatingId, loadingCompanyId]
     );
 
   const onRowsPerPageChange = useCallback(
@@ -914,7 +899,12 @@ export default function App({ users }: Props) {
                   closeOnSelect={false}
                   selectedKeys={visibleColumns}
                   selectionMode="multiple"
-                  onSelectionChange={setVisibleColumns}
+                  onSelectionChange={(keys) => {
+                    setVisibleColumns(keys);
+                    if (keys !== 'all') {
+                      localStorage.setItem('tablaHUI_visibleColumns', JSON.stringify(Array.from(keys)));
+                    }
+                  }}
                 >
                   {columns.map(column => (
                     <DropdownItem key={column.uid} className="capitalize">
@@ -1043,9 +1033,7 @@ export default function App({ users }: Props) {
         </TableHeader>
         <TableBody
           emptyContent={'NO SE ENCONTRARON RESULTADOS'}
-          items={sortedItems.map(
-            u => localUsers.find(lu => lu.id === u.id) || u
-          )}
+          items={sortedItems}
         >
           {item => (
             <TableRow key={item.id}>

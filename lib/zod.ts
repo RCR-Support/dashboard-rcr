@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { formatRun, validateRun } from './validations';
+import { validateRun } from './validations';
 
 export const loginSchema = z.object({
   email: z

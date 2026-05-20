@@ -8,6 +8,7 @@ import RoleCapturer from '@/components/ui/dashboard/RoleCapturer';
 import { SidebarDashboard } from '@/components/ui/dashboard/sidebar/SidebarDashboard';
 import { NavDashboard } from '@/components/ui/dashboard/nav/NavDashboard';
 import { RoleModalContext } from '@/context/role-modal-context';
+import { RoleEnum } from '@prisma/client';
 
 export default function DashboardLayout({
   children,
@@ -29,7 +30,7 @@ export default function DashboardLayout({
     if (status !== 'authenticated' || !session?.user?.roles) return;
 
     // Safety: si el rol guardado no pertenece al usuario actual (sesión cruzada), limpiarlo
-    if (selectedRole && !session.user.roles.includes(selectedRole as any)) {
+    if (selectedRole && !session.user.roles.includes(selectedRole as RoleEnum)) {
       resetRole();
       return;
     }

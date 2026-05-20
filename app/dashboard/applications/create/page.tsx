@@ -55,6 +55,7 @@ export default function CreateApplicationPage() {
   };
 
   // Función para manejar el envío de la solicitud
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleComplete = async (data: any) => {
     if (isSubmitting) return;
     
@@ -91,7 +92,9 @@ export default function CreateApplicationPage() {
 
       // 2. Preparar documentos con sus URLs
       const documents = data.documents
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((doc: any) => doc.url) // Solo documentos que tienen URL (fueron subidos)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((doc: any) => ({
           documentationId: doc.documentationId,
           activityId: doc.activityId,
@@ -114,6 +117,7 @@ export default function CreateApplicationPage() {
         workerPaternal: data.workerData.workerPaternal,
         workerMaternal: data.workerData.workerMaternal,
         workerRun: data.workerData.workerRun,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         activityIds: data.activities.map((a: any) => a.id),
         documents,
         credentialPhotoUrl,

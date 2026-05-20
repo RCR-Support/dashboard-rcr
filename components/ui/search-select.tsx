@@ -63,7 +63,7 @@ export const SearchSelect = React.forwardRef<
     {
       options,
       onValueChange,
-      variant,
+      variant: _variant,
       defaultValue = '',
       placeholder = 'Seleccione una opción',
       modalPopover = false,

@@ -3,18 +3,15 @@ import { useState, useTransition } from 'react';
 import type { User } from '@/interfaces';
 import Avatar from '@mui/material/Avatar';
 import UserModal from './UserModal';
-import { TfiPlus } from 'react-icons/tfi';
-import { Button, Input } from '@heroui/react';
+import { Input } from '@heroui/react';
 import { CiSearch } from 'react-icons/ci';
-import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { formatRun } from '../../../../lib/validations';
 import { BlockDeleteModal } from '@/components/ui/block-delete-modal';
 import { checkAssignedUsers } from '@/actions/user/get-checkAsignedUser';
 import { AssignedUser } from '@/interfaces/admin.interface';
 import { useRouter } from 'next/navigation';
-import { RoleEnum } from '@prisma/client';
 import { TbSortAscending2, TbSortDescending2 } from 'react-icons/tb';
-import { Users, Crown, Shield, Building2, Calendar, Activity, UserCheck, UserX, Clock } from 'lucide-react';
+import { Users, Crown, Shield, Building2, Activity, UserCheck, Clock } from 'lucide-react';
 import { Tooltip } from '@heroui/tooltip';
 
 async function softDeleteUser(id: string, deletedLogic: boolean) {
@@ -41,15 +38,14 @@ interface Props {
 }
 export const CardUser = ({ users }: Props) => {
   const router = useRouter();
-  
-  // Calcular estadísticas
+  const [localUsers, setLocalUsers] = useState<User[]>(users);
   const stats = {
-    total: users.length,
-    active: users.filter(u => u.isActive && !u.deletedLogic).length,
-    inactive: users.filter(u => !u.isActive || u.deletedLogic).length,
-    admins: users.filter(u => u.roles?.includes('admin') || u.roles?.includes('adminContractor')).length,
-    companies: new Set(users.filter(u => u.company?.id).map(u => u.company!.id)).size,
-    recentUsers: users.filter(u => {
+    total: localUsers.length,
+    active: localUsers.filter(u => u.isActive && !u.deletedLogic).length,
+    inactive: localUsers.filter(u => !u.isActive || u.deletedLogic).length,
+    admins: localUsers.filter(u => u.roles?.includes('admin') || u.roles?.includes('adminContractor')).length,
+    companies: new Set(localUsers.filter(u => u.company?.id).map(u => u.company!.id)).size,
+    recentUsers: localUsers.filter(u => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       return u.createdAt ? new Date(u.createdAt) > oneWeekAgo : false;
@@ -84,7 +80,7 @@ export const CardUser = ({ users }: Props) => {
   const normalizeText = (text: string) =>
     text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Elimina tildes y diéresis
   const normalizedFilter = normalizeText(searchTerm.toLowerCase());
-  const filteredUsers = users.filter(
+  const filteredUsers = localUsers.filter(
     user =>
       normalizeText(`${user.name} ${user.lastName} ${user.secondLastName}`)
         .toLowerCase()
@@ -94,7 +90,7 @@ export const CardUser = ({ users }: Props) => {
 
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Función para obtener el rol principal del usuario
   const getPrimaryRole = (roles: string[] | undefined) => {
@@ -124,8 +120,8 @@ export const CardUser = ({ users }: Props) => {
     if (input !== 'ELIMINAR') return;
     try {
       await permanentDeleteUser(selectedUser.id);
+      setLocalUsers(prev => prev.filter(u => u.id !== selectedUser.id));
       closeModal();
-      router.refresh();
     } catch (err: unknown) {
       const errData = err as { error?: string; blockers?: string[] };
       const msg = errData?.blockers?.length

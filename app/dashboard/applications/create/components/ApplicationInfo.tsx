@@ -4,9 +4,8 @@ import { Contract } from '@/interfaces/contract.interface';
 import { useApplicationFormStore } from '@/store/application-form-store';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { Edit, CheckCircle2, XCircle, Clock, FileText, Save, AlertCircle, Users } from 'lucide-react';
+import { Edit, CheckCircle2, XCircle, Clock, FileText, Save, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Badge } from '@heroui/badge';
 import { Chip } from '@heroui/chip';
 
 const Tooltip = dynamic(

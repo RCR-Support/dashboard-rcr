@@ -17,7 +17,7 @@ import { GiMineTruck } from 'react-icons/gi';
 import { MdEdit } from 'react-icons/md';
 export const SidebarDashboardMenu = () => {
   const closeMenu = useUIStore(state => state.closeSideMenu);
-  const { data: session } = useSession();
+  useSession();
   const { width } = useWindowSize();
   const router = usePathname() ?? '';
 

@@ -144,7 +144,9 @@ export default function EditApplicationPage() {
               url: doc.url,
               expiresAt: doc.expiresAt,
               acceptedFileType: 'PDF',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               approvalStatus: (doc as any).approvalStatus || 'pending',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               rejectionReason: (doc as any).rejectionReason || null,
               activityId: doc.activityId,
               activityName: doc.activity?.name,
@@ -155,6 +157,7 @@ export default function EditApplicationPage() {
         store.setExistingDocuments(existingDocumentsMap);
 
         // Generar el array de documentos para que ApplicationInfo pueda mostrarlos
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const documentsArray = Array.from(existingDocumentsMap.values()).map((doc: any) => {
           const status: 'approved' | 'rejected' | 'completed' = 
             doc.approvalStatus === 'approved' ? 'approved' : 
@@ -216,6 +219,7 @@ export default function EditApplicationPage() {
   }, [applicationId, router]);
 
   // Función para manejar el envío de la actualización
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleComplete = async (data: any) => {
     if (isSubmitting) return;
 
@@ -223,7 +227,9 @@ export default function EditApplicationPage() {
 
     try {
       const documents = data.documents
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((doc: any) => doc.url)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((doc: any) => ({
           documentationId: doc.documentationId,
           activityId: doc.activityId,
@@ -245,6 +251,7 @@ export default function EditApplicationPage() {
           workerRun: data.workerData.workerRun,
           workerPhoto: useApplicationFormStore.getState().credentialPhoto || '',
           license: null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           activities: data.activities.map((a: any) => a.id),
           zones: [],
           documents,
@@ -261,6 +268,7 @@ export default function EditApplicationPage() {
           workerRun: data.workerData.workerRun,
           workerPhoto: useApplicationFormStore.getState().credentialPhoto || '',
           license: null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           activities: data.activities.map((a: any) => a.id),
           zones: [],
           documents,

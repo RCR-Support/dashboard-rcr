@@ -3,8 +3,7 @@ import { useEffect, useState, useTransition, useRef } from 'react';
 import { FormInput } from '@/components/ui/form/FormInput';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod';
+import { useForm, Controller, UseFormReturn, type FieldValues } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -20,7 +19,6 @@ import {
   Mail,
   Lock,
   Phone,
-  User,
   Fingerprint,
   ArrowLeft,
   Image as ImageIcon,
@@ -35,11 +33,9 @@ import { UserEdit } from '@/interfaces/user.interfaceEdit';
 import { AdminOption } from '@/interfaces/admin.interface';
 import {
   RegisterActionInput,
-  EditActionInput,
 } from '@/interfaces/action.interface';
 import { FormValues, registerSchema, editSchema } from '@/lib/zod';
 import Image from 'next/image';
-import { DebugForm } from '@/components/ui/debug-form';
 import { getCldImageUrl } from 'next-cloudinary';
 
 // Definimos la interfaz para las opciones
@@ -76,9 +72,6 @@ const FormRegister = ({
   const [hasAttempted, setHasAttempted] = useState(false);
   const [imageChanged, setImageChanged] = useState(false); // Nuevo estado para rastrear cambios en la imagen
   const router = useRouter();
-
-  // Actualizar cómo obtenemos el adminId inicial
-  const initialAdminId = initialData?.adminContractorId || undefined;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(isEditing ? editSchema : registerSchema),
@@ -337,7 +330,7 @@ const FormRegister = ({
     });
   };
 
-  const [admins, setAdmins] = useState<AdminOption[]>([]);
+  const [, setAdmins] = useState<AdminOption[]>([]);
   const watchedRoles = form.watch('roles');
   const previousRolesRef = useRef<string[] | null>(null);
 
@@ -394,21 +387,6 @@ const FormRegister = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Función auxiliar para encontrar la imagen del usuario
-  const findUserImage = (userData?: UserEdit): string | null | undefined => {
-    if (!userData) return null;
-
-    // Intentar todas las posibles ubicaciones donde podría estar la URL de la imagen
-    // Eliminamos imageUrl que no existe en el tipo UserEdit
-    return (
-      userData.image ||
-      userData.images ||
-      (typeof userData === 'object' && 'image' in userData
-        ? (userData as any).image
-        : null)
-    );
-  };
 
   // Cargar la imagen existente cuando estamos en modo edición
   useEffect(() => {
@@ -493,15 +471,15 @@ const FormRegister = ({
           className="grid grid-cols-12 col-span-12 gap-x-6"
         >
           {/* Campos de formulario existentes */}
-          {FormInputs.map((field, index) => (
-            <FormInput key={field.name} {...field} form={form} />
+          {FormInputs.map((field, _index) => (
+            <FormInput key={field.name} {...field} form={form as unknown as UseFormReturn<FieldValues>} />
           ))}
 
           {/* Campo de roles */}
           <FormField
             name="roles"
             control={form.control}
-            render={({ field }) => (
+            render={({ field: _field }) => (
               <FormItem className="col-span-12 md:col-span-6">
                 <FormLabel>Distintos roles del sistema</FormLabel>
                 <FormControl>
@@ -578,7 +556,7 @@ const FormRegister = ({
           <FormField
             name="companyId"
             control={form.control}
-            render={({ field }) => {
+            render={({ field: _field }) => {
               const isAdminSelected = Array.isArray(watchedRoles)
                 ? watchedRoles.includes('admin')
                 : false;
@@ -634,7 +612,7 @@ const FormRegister = ({
           <FormField
             name="image"
             control={form.control}
-            render={({ field }) => (
+            render={({ field: _field }) => (
               <FormItem className="col-span-12 md:col-span-6">
                 <FormLabel>Imagen de perfil</FormLabel>
                 <FormControl>

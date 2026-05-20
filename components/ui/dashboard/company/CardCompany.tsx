@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { CompanySelect } from '@/interfaces/company.interface';
 import { TfiPlus } from 'react-icons/tfi';
-import { Button, Input } from '@heroui/react';
+import { Input } from '@heroui/react';
 import { CiSearch } from 'react-icons/ci';
-import { Building2, Globe, MapPin, Phone } from 'lucide-react';
+import { Building2, Phone } from 'lucide-react';
 import { getCompanyUsers } from '@/actions/company/userCompany-actions';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
 import { CompanyModal } from './company-modal';
@@ -20,26 +20,7 @@ export const CompaniesGrid = ({ companies }: Props) => {
   const [selectedCompany, setSelectedCompany] = useState<CompanySelect | null>(
     null
   );
-  const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const loadCompanyData = async (companyId: string) => {
-    try {
-      const response = await getCompanyUsers(companyId);
-      if (response.success) {
-        return {
-          users: response.users,
-          contracts: response.contracts,
-          summary: response.summary,
-        };
-      }
-      console.error('Error:', response.error);
-      return null;
-    } catch (error) {
-      console.error('Error cargando datos:', error);
-      return null;
-    }
-  };
 
   const openModal = async (company: CompanySelect) => {
     try {
@@ -65,19 +46,9 @@ export const CompaniesGrid = ({ companies }: Props) => {
     }
   };
 
-  const closeModal = () => {
-    setIsOpen(false);
-    setSelectedCompany(null);
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
   const handleClose = () => {
     setIsOpen(false);
     setSelectedCompany(null);
-    setIsEditing(false);
   };
 
   const normalizeText = (text: string) =>

@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, FieldValues } from 'react-hook-form';
 
 interface DebugFormProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<FieldValues>;
   enabled?: boolean;
 }
 

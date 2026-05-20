@@ -19,10 +19,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Contract } from '@/interfaces/contract.interface';
 import { Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/date-picker';
-import { SearchSelect } from '@/components/ui/search-select';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { AdminContractor } from '@/interfaces/admin-contractor.interface';

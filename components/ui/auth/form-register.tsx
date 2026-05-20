@@ -1,6 +1,5 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { registerSchema } from '@/lib/zod';
@@ -18,7 +17,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { registerAction } from '@/actions/register-action';
-import { addToast, ToastProvider } from '@heroui/toast';
+import { addToast } from '@heroui/toast';
 
 const FormRegister = () => {
   const [error, setError] = useState<string | null>(null);

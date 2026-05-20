@@ -1,5 +1,6 @@
 import { FormPreRegister } from '@/components/ui/auth/form-preregister';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const PreRegisterPage = () => {
   return (
@@ -8,14 +9,18 @@ const PreRegisterPage = () => {
         {/* Header con logo y links */}
         <div className="flex items-center justify-between">
           <div>
-            <img
+            <Image
               src="/images/logoInv.svg"
               alt="RCR Support"
+              width={120}
+              height={36}
               className="logo-light h-9 w-auto"
             />
-            <img
+            <Image
               src="/images/logo.svg"
               alt="RCR Support"
+              width={120}
+              height={36}
               className="logo-dark h-9 w-auto"
             />
           </div>

@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import { deleteActivityServer, getActivityById } from './actions';
 import { Tooltip } from '@heroui/tooltip';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@heroui/react';
 import { useState, useEffect } from 'react';
 import { DeleteConfirmModal } from '@/components/ui/dashboard/activity/DeleteConfirmModal';
 import { ActivityDetailModal } from '@/components/ui/dashboard/activity/ActivityDetailModal';

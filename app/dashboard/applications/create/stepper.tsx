@@ -14,7 +14,7 @@ import { Contract } from '@/interfaces/contract.interface';
 import { Tooltip } from '@heroui/tooltip';
 import { Spinner } from '@heroui/spinner';
 import { Progress } from '@heroui/progress';
-import { CheckCircle2, AlertCircle, Clock, FileText, Info } from 'lucide-react';
+import { CheckCircle2, Clock, FileText } from 'lucide-react';
 
 // Tipos de datos específicos
 type WorkerData = {
@@ -143,7 +143,6 @@ export function ApplicationStepper({ onComplete, onCancel, isSubmitting = false,
   const currentStep = useApplicationFormStore(state => state.currentStep);
   const availableContracts = useApplicationFormStore(state => state.availableContracts);
   const documents = useApplicationFormStore(state => state.documents);
-  const selectedActivities = useApplicationFormStore(state => state.selectedActivities);
 
   // Estados locales para UX mejorada
   const [highestStepReached, setHighestStepReached] = useState(isEditMode ? steps.length - 1 : 0);

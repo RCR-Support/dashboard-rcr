@@ -14,7 +14,7 @@ export default function ActivitiesView({ activities }: ViewProps) {
   const router = useRouter();
 
   // Usar el hook para manejar la actividad expandida
-  const { expandedActivityId } = useExpandedActivity();
+  useExpandedActivity();
 
   const toggleView = (newView: ViewType) => {
     const params = new URLSearchParams(searchParams?.toString() || '');

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, Chip, Input, Button } from '@heroui/react';
 import { FileText, Search, Calendar, Building2, User, FileCheck, Link2, ArrowRightLeft, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { Contract } from '@/interfaces/contract.interface';
+import { Contract, ContractFormValues } from '@/interfaces/contract.interface';
 import { Tooltip } from '@heroui/react';
 import { SubcontractModal } from '@/components/ui/dashboard/company/subcontract-modal';
 import { ContractModal } from '@/components/ui/dashboard/company/contract-modal';
+import { QuickCreateContractModal } from '@/components/ui/dashboard/company/quick-create-contract-modal';
 import { updateContract } from '@/actions/contract/update-contract';
 import { getAdminContractors } from '@/actions/contract/contract-actions';
 import { AdminContractor } from '@/interfaces/admin-contractor.interface';
@@ -22,14 +23,20 @@ interface Props {
   isAdmin: boolean;
   canLinkSubcontract?: boolean;
   canEdit?: boolean;
+  openCreateModal?: boolean;
 }
 
-export default function ContractsClientPage({ contracts, canCreate, isAdmin, canLinkSubcontract, canEdit }: Props) {
+export default function ContractsClientPage({ contracts, canCreate, isAdmin, canLinkSubcontract, canEdit, openCreateModal }: Props) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [subcontractContract, setSubcontractContract] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [adminContractors, setAdminContractors] = useState<AdminContractor[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (openCreateModal && canCreate) setIsCreateModalOpen(true);
+  }, [openCreateModal, canCreate]);
 
   const openEditModal = async (contract: Contract) => {
     if (adminContractors.length === 0) {
@@ -39,7 +46,7 @@ export default function ContractsClientPage({ contracts, canCreate, isAdmin, can
     setEditingContract(contract);
   };
 
-  const handleEditSubmit = async (values: any) => {
+  const handleEditSubmit = async (values: ContractFormValues) => {
     if (!editingContract) return;
     const result = await updateContract(editingContract.id, {
       contractNumber: values.contractNumber,
@@ -105,12 +112,10 @@ export default function ContractsClientPage({ contracts, canCreate, isAdmin, can
           </div>
           {canCreate && (
             <Button
-              as={Link}
-              href="/dashboard/companies"
               color="primary"
-              variant="flat"
+              onPress={() => setIsCreateModalOpen(true)}
             >
-              Gestionar desde Empresas
+              Nuevo Contrato
             </Button>
           )}
         </div>
@@ -373,6 +378,14 @@ export default function ContractsClientPage({ contracts, canCreate, isAdmin, can
           </div>
         )}
       </div>
+
+      {isCreateModalOpen && (
+        <QuickCreateContractModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => { setIsCreateModalOpen(false); router.refresh(); }}
+        />
+      )}
 
       {subcontractContract && (
         <SubcontractModal

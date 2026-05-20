@@ -188,7 +188,7 @@ export function DocumentList({ documents, onFileSelect, onDateChange, onDocument
     setSelectedImage(null);
   };
   
-  const handleRemoveFile = (documentId: string) => {
+  const handleRemoveFile = (_documentId: string) => {
     Swal.fire({
       title: '¿Eliminar archivo?',
       text: 'Tendrás que volver a subir el archivo',
@@ -198,7 +198,7 @@ export function DocumentList({ documents, onFileSelect, onDateChange, onDocument
       cancelButtonText: 'Cancelar',
     }).then((result) => {
       if (result.isConfirmed) {
-        // Pasar null para eliminar el archivo        onFileSelect(documentId, null);
+        // Pasar null para eliminar el archivo        onFileSelect(_documentId, null);
       }
     });
   };

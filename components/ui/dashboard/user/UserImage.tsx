@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import { User } from '../../../../interfaces/user.interface';
 
 interface Props {
   src?: string;

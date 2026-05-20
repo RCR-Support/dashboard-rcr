@@ -4,7 +4,7 @@ import { Contract } from '@/interfaces/contract.interface';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit2, PlusCircle, User, Building2 } from 'lucide-react';
+import { Edit2, User, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ContractListProps {
@@ -17,7 +17,7 @@ interface ContractListProps {
 export const ContractList = ({
   contracts = [],
   onEditContract,
-  onAddContract,
+  onAddContract: _onAddContract,
   isEditing = false,
 }: ContractListProps) => {
   if (contracts.length === 0) {

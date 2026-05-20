@@ -5,7 +5,7 @@ import { listContracts } from '@/actions/contract/list-contracts';
 import ContractsClientPage from './ContractsClientPage';
 import { ReloadButton } from '@/components/ui/ReloadButton';
 
-export default async function ContractsPage() {
+export default async function ContractsPage({ searchParams }: { searchParams: { create?: string } }) {
   const session = await auth();
   
   if (!session?.user) {
@@ -49,6 +49,7 @@ export default async function ContractsPage() {
       isAdmin={canViewAll}
       canLinkSubcontract={canLinkSubcontract}
       canEdit={canEdit}
+      openCreateModal={searchParams.create === '1'}
     />
   );
 }

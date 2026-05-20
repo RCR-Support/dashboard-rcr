@@ -5,7 +5,7 @@ import { FormInput } from '@/components/ui/form/FormInput';
 import { useRouter } from 'next/navigation';
 import { companySchema } from '@/lib/validation-company';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, UseFormReturn, type FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -368,7 +368,7 @@ const CompanyForm = ({ initialData, isEditing = false, isLimitedEdit = false }: 
           className="grid grid-cols-12 col-span-12 gap-x-6"
         >
           {FormInputs.map(field => (
-            <FormInput key={field.name} {...field} form={form} />
+            <FormInput key={field.name} {...field} form={form as unknown as UseFormReturn<FieldValues>} />
           ))}
 
           {/* Logo de la empresa */}

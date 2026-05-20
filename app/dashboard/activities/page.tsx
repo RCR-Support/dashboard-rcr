@@ -3,7 +3,6 @@ import dynamic from 'next/dynamic';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 
-const ActivityForm = dynamic(() => import('./ActivityForm'), { ssr: false });
 const ActivitiesClientPage = dynamic(() => import('./ActivitiesClientPage'), {
   ssr: false,
 });

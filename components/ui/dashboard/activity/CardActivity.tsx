@@ -6,8 +6,6 @@ import { Button, Input } from '@heroui/react';
 import { TbSortAscending2, TbSortDescending2 } from 'react-icons/tb';
 import { FileText, Users, Shield, TrendingUp, Activity as ActivityIcon } from 'lucide-react';
 import { Card, CardBody } from '@heroui/card';
-import { Chip } from '@heroui/chip';
-import { Tooltip } from '@heroui/tooltip';
 import ActivityActions from '@/app/dashboard/activities/ActivityActions';
 
 // Interfaz Activity enriquecida con métricas

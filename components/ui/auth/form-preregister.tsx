@@ -1,6 +1,5 @@
 'use client';
 
-import { addToast } from '@heroui/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -135,7 +134,7 @@ type PreRegisterFormValues = z.infer<typeof preRegisterFormSchema>;
 export const FormPreRegister = () => {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [, setSuccess] = useState<string | null>(null);
   const [empresaOptions, setEmpresaOptions] = useState<
     { label: string; value: string }[]
   >([]);

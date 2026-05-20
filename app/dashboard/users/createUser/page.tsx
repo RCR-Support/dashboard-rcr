@@ -2,7 +2,6 @@
 
 import FormRegister from '@/components/ui/dashboard/user/form-register';
 import { withPermission } from '@/components/ui/auth/withPermission';
-import { Button } from '@heroui/button';
 import Link from 'next/link';
 import { Info } from 'lucide-react';
 

@@ -3,7 +3,7 @@
 import { formatRun } from '@/lib/validations';
 import { Chip } from '@heroui/chip';
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
-import { Eye, Pencil, Trash2, Calendar, FileText, Activity, Filter, Search, CheckCircle2, Clock, AlertCircle, XCircle, Printer, Circle } from 'lucide-react';
+import { Eye, Pencil, Trash2, Calendar, FileText, Activity, Search, CheckCircle2, Clock, AlertCircle, Printer, Circle } from 'lucide-react';
 import { getNearestExpiry, getExpiryStatus } from '@/lib/expiry-utils';
 import { Button } from '@heroui/button';
 import { Tooltip } from '@heroui/tooltip';
@@ -59,44 +59,6 @@ interface ApplicationsTableProps {
   canDelete?: boolean;
 }
 
-const statusColorMap: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
-  PENDING: 'warning',
-  APPROVED: 'success',
-  REJECTED: 'danger',
-  IN_REVIEW: 'default',
-};
-
-const statusLabelMap: Record<string, string> = {
-  PENDING: 'Pendiente',
-  APPROVED: 'Aprobada',
-  REJECTED: 'Rechazada',
-  IN_REVIEW: 'En Revisión',
-};
-
-const stateAcColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
-  aprobado: 'success',
-  pendiente: 'warning',
-  adjuntar: 'danger',
-};
-
-const stateAcLabelMap: Record<string, string> = {
-  aprobado: 'Aprobado',
-  pendiente: 'Pendiente',
-  adjuntar: 'Rechazado',
-};
-
-const stateSheqColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
-  aprobado: 'success',
-  pendiente: 'warning',
-  rechazado: 'danger',
-};
-
-const stateSheqLabelMap: Record<string, string> = {
-  aprobado: 'Aprobado',
-  pendiente: 'Pendiente',
-  rechazado: 'Rechazado',
-};
-
 const getOverallStatus = (stateAc: string, stateSheq: string) => {
   if (stateAc === 'aprobado' && stateSheq === 'aprobado') {
     return { label: 'Completado', color: 'success' as const, icon: CheckCircle2 };
@@ -114,7 +76,7 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expiryFilter, setExpiryFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortBy] = useState('createdAt');
   const router = useRouter();
 
   const filteredAndSortedApplications = useMemo(() => {
