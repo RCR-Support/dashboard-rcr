@@ -55,3 +55,27 @@ export async function markAllNotificationsAsRead() {
     return { ok: false, error: 'Error al marcar notificaciones como leídas' };
   }
 }
+
+export async function deleteNotification(notificationId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { ok: false, error: 'No autenticado' };
+    }
+
+    const notification = await db.notification.findFirst({
+      where: { id: notificationId, userId: session.user.id },
+    });
+
+    if (!notification) {
+      return { ok: false, error: 'Notificación no encontrada' };
+    }
+
+    await db.notification.delete({ where: { id: notificationId } });
+
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Error al eliminar la notificación' };
+  }
+}

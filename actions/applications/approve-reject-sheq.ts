@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { notifyCredentialOnApproval } from '@/actions/notifications/create-notification';
+import { notifyUserOnApproval, notifyUserOnRejection } from '@/actions/notifications/create-notification';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
 import { RoleEnum } from '@prisma/client';
@@ -86,6 +87,11 @@ export async function approveApplicationSHEQ(
 
     // Notificar a usuarios credential que hay una nueva credencial lista para imprimir
     await notifyCredentialOnApproval(applicationId);
+
+    // Notificar al usuario dueño que su solicitud fue aprobada
+    notifyUserOnApproval(applicationId, 'sheq').catch(err =>
+      console.error('[NOTIFY ERROR] approveSHEQ notifyUser:', err)
+    );
 
     // Enviar email al usuario (no bloquea el flujo)
     try {
@@ -173,6 +179,11 @@ export async function rejectApplicationSHEQ(
     } catch (err) {
       console.error('[EMAIL ERROR] approve-reject-sheq rechazo:', err);
     }
+
+    // Notificar al usuario dueño que su solicitud fue rechazada
+    notifyUserOnRejection(applicationId, observations, 'sheq').catch(err =>
+      console.error('[NOTIFY ERROR] rejectSHEQ notifyUser:', err)
+    );
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud rechazada correctamente' };

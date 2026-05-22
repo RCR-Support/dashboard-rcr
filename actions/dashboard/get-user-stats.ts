@@ -39,7 +39,7 @@ export async function getUserStats(userId: string, companyId: string) {
       // Información de la empresa
       db.company.findUnique({
         where: { id: user.companyId },
-        select: { id: true, name: true, rut: true, phone: true, status: true },
+        select: { id: true, name: true, rut: true, phone: true, status: true, logoUrl: true },
       }),
 
       // Total de contratos de la empresa

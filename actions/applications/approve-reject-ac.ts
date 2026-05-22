@@ -9,6 +9,11 @@ import {
   sendApplicationApprovedByACEmail,
   sendApplicationRejectedByACEmail,
 } from '@/lib/email/postmark';
+import {
+  notifyUserOnApproval,
+  notifyUserOnRejection,
+  notifySheqOnAcApproval,
+} from '@/actions/notifications/create-notification';
 
 export async function approveApplicationAC(
   applicationId: string,
@@ -109,6 +114,14 @@ export async function approveApplicationAC(
       console.error('[EMAIL ERROR] approve-reject-ac aprobación:', err);
     }
 
+    // Notificar al usuario dueño y al SHEQ asignado
+    notifyUserOnApproval(applicationId, 'ac').catch(err =>
+      console.error('[NOTIFY ERROR] approveAC notifyUser:', err)
+    );
+    notifySheqOnAcApproval(applicationId, sheqUserId).catch(err =>
+      console.error('[NOTIFY ERROR] approveAC notifySheq:', err)
+    );
+
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud aprobada correctamente' };
   } catch {
@@ -187,6 +200,11 @@ export async function rejectApplicationAC(
     } catch (err) {
       console.error('[EMAIL ERROR] approve-reject-ac rechazo:', err);
     }
+
+    // Notificar al usuario dueño
+    notifyUserOnRejection(applicationId, observations, 'ac').catch(err =>
+      console.error('[NOTIFY ERROR] rejectAC notifyUser:', err)
+    );
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud rechazada correctamente' };

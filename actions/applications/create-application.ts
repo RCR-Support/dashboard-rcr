@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { StateAc, StateSheq, ProcessStatus, RoleEnum } from '@prisma/client';
 import { hasActionPermission } from '@/config/action-permissions';
 import { sendApplicationConfirmationEmail } from '@/lib/email/postmark';
+import { notifyAcOnNewApplication } from '@/actions/notifications/create-notification';
 
 export interface CreateApplicationInput {
   // Datos del contrato
@@ -196,6 +197,11 @@ export async function createApplication(
     } catch (err) {
       console.error('[EMAIL ERROR] create-application:', err);
     }
+
+    // 6. Notificar al AC asignado (no bloquea el flujo)
+    notifyAcOnNewApplication(application.id).catch(err =>
+      console.error('[NOTIFY ERROR] create-application notifyAc:', err)
+    );
 
     return {
       success: true,

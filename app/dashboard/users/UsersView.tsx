@@ -13,7 +13,7 @@ interface Props {
 }
 export default function UsersView({ users }: Props) {
   const searchParams = useSearchParams();
-  const view = searchParams?.get('view') || 'cards'; // cards por defecto - usamos ?. para manejar el caso null
+  const view = searchParams?.get('view') || 'table'; // table por defecto
   const router = useRouter();
 
   const toggleView = (newView: 'cards' | 'table') => {

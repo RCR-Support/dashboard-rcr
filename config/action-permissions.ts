@@ -203,8 +203,8 @@ export const actionPermissions: Record<string, ActionPermission> = {
   // EMPRESAS
   // ========================================
   'companies:view:all': {
-    roles: [RoleEnum.admin],
-    description: 'Ver todas las empresas del sistema (solo admin)',
+    roles: [RoleEnum.admin, RoleEnum.sheq, RoleEnum.adminContractor],
+    description: 'Ver todas las empresas del sistema',
   },
   'companies:view:own': {
     roles: [RoleEnum.user],

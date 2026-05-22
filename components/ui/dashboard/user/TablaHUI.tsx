@@ -233,8 +233,8 @@ export default function App({ users }: Props) {
   const [isActiveFilter, setIsActiveFilter] = useState<Selection>('all');
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: 'run',
-    direction: 'ascending',
+    column: 'lastActivity',
+    direction: 'descending',
   });
   const [page, setPage] = useState(1);
 
@@ -323,8 +323,8 @@ export default function App({ users }: Props) {
       const first = a[sortDescriptor.column as keyof User];
       const second = b[sortDescriptor.column as keyof User];
 
-      // Ordenar por fecha real si la columna es createdAt
-      if (sortDescriptor.column === 'createdAt') {
+      // Ordenar por fecha real si la columna es createdAt o lastActivity
+      if (sortDescriptor.column === 'createdAt' || sortDescriptor.column === 'lastActivity') {
         const dateA = first ? new Date(first as string) : new Date(0);
         const dateB = second ? new Date(second as string) : new Date(0);
         const cmp = dateA.getTime() - dateB.getTime();

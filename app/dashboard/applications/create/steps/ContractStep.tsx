@@ -63,7 +63,7 @@ export function ContractStep({
 
     const loadCompanies = async () => {
       setLoadingCompanies(true);
-      const res = await fetchCompanies(true);
+      const res = await fetchCompanies({ onlyWithContracts: true });
       if (res.ok && res.companies) {
         setCompaniesOptions(res.companies);
       }

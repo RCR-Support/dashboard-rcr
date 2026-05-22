@@ -18,7 +18,7 @@ export async function getUserNotifications() {
       orderBy: {
         createdAt: 'desc',
       },
-      take: 20, // Últimas 20 notificaciones
+      take: 50, // Últimas 50 notificaciones
     });
 
     const unreadCount = await db.notification.count({

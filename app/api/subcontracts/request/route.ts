@@ -74,15 +74,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Crear notificación para admin
-    await db.notification.create({
-      data: {
-        type: 'SUBCONTRACT_REQUEST',
-        title: `Nueva solicitud de sub-empresa: ${companyName}`,
-        message: `La empresa ${contract.Company.name ?? contract.Company.rut} solicitó incorporar a ${companyName} (${companyRut}) en el contrato ${contract.contractNumber} - ${contract.contractName}. Representante: ${repEmail}.`,
-        userId: user.id,
-      },
+    // Notificar a todos los admins (no al solicitante)
+    const adminRoles = await db.userRole.findMany({
+      where: { role: { name: 'admin' } },
+      select: { userId: true },
     });
+    if (adminRoles.length > 0) {
+      await db.notification.createMany({
+        data: adminRoles.map(({ userId }) => ({
+          type: 'SUBCONTRACT_REQUEST',
+          title: `Nueva solicitud de sub-empresa: ${companyName}`,
+          message: `La empresa ${contract.Company.name ?? contract.Company.rut} solicitó incorporar a ${companyName} (${companyRut}) en el contrato ${contract.contractNumber} - ${contract.contractName}. Representante: ${repEmail}.`,
+          userId,
+        })),
+      });
+    }
 
     // Enviar emails (awaited para garantizar envío en entorno serverless)
     await sendSubcontractRequestEmails({

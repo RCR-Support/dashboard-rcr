@@ -49,7 +49,7 @@ export const permissions: PermissionsMapping = {
     description: 'Editar datos no críticos de la empresa propia',
   },
   '/dashboard/companies': {
-    roles: [RoleEnum.admin],
+    roles: [RoleEnum.admin, RoleEnum.adminContractor, RoleEnum.sheq],
     description: 'Gestión de empresas',
   },
   '/dashboard/companies/createCompany': {

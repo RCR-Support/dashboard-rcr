@@ -44,7 +44,25 @@ const preRegisterSchema = z
       .or(z.literal('')),
     companyPhone: z.string().optional().or(z.literal('')),
     companyCity: z.string().optional().or(z.literal('')),
-    companyUrl: z.string().url('URL inválida').optional().or(z.literal('')),
+    companyUrl: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .refine(
+        val => {
+          if (!val || !val.trim()) return true;
+          const candidate = /^https?:\/\//i.test(val.trim())
+            ? val.trim()
+            : `https://${val.trim()}`;
+          try {
+            const parsed = new URL(candidate);
+            return Boolean(parsed.hostname);
+          } catch {
+            return false;
+          }
+        },
+        { message: 'URL inválida' }
+      ),
 
     // Datos del Usuario
     userEmail: z.string().email('Email inválido'),
@@ -81,18 +99,7 @@ const preRegisterSchema = z
           message: 'El RUT de la empresa debe tener al menos 8 caracteres',
         });
       }
-      // Solo validar URL si está presente
-      if (
-        data.companyUrl &&
-        data.companyUrl !== '' &&
-        !/^https?:\/\//.test(data.companyUrl)
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['companyUrl'],
-          message: 'URL inválida',
-        });
-      }
+      // La validación de URL ya se hace en el campo con .refine()
     }
     // Si NO es sub-contratista, los datos de contrato son obligatorios
     if (!data.isSubcontract) {

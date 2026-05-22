@@ -5,7 +5,12 @@ import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { hasActionPermission } from '@/config/action-permissions';
 
-export const fetchCompanies = async (onlyWithContracts = false) => {
+export const fetchCompanies = async (options?: {
+  onlyWithContracts?: boolean;
+  filterMode?: 'all' | 'mine';
+}) => {
+  const { onlyWithContracts = false, filterMode = 'all' } = options ?? {};
+
   const session = await auth();
 
   if (!session?.user) {
@@ -18,7 +23,7 @@ export const fetchCompanies = async (onlyWithContracts = false) => {
   const user = session.user;
   const userRoles = user.roles || [];
 
-  // Verificar permisos - Solo admin puede ver empresas
+  // Verificar permisos
   const canViewAll = hasActionPermission('companies:view:all', userRoles);
 
   if (!canViewAll) {
@@ -29,7 +34,7 @@ export const fetchCompanies = async (onlyWithContracts = false) => {
   }
 
   try {
-    const whereClause: Prisma.CompanyWhereInput = {
+    let whereClause: Prisma.CompanyWhereInput = {
       name: {
         not: null,
       },
@@ -40,6 +45,21 @@ export const fetchCompanies = async (onlyWithContracts = false) => {
         },
       }),
     };
+
+    // Para AC con filtro "mine": mostrar solo las empresas de sus contratos asignados
+    const isAC = userRoles.includes('adminContractor');
+    if (isAC && filterMode === 'mine') {
+      const acContracts = await db.contract.findMany({
+        where: { useracId: user.id },
+        select: { companyId: true },
+      });
+      const acCompanyIds = Array.from(new Set(acContracts.map(c => c.companyId)));
+      whereClause = {
+        id: { in: acCompanyIds },
+        name: { not: null },
+        status: true,
+      };
+    }
 
     const formatCompany = (company: {
       id: string;

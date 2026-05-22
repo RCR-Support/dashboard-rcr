@@ -5,6 +5,7 @@ import QuickActions from '../_components/QuickActions';
 import RecentActivity from '../_components/RecentActivity';
 import { FileText, Clock, CheckCircle, XCircle, Plus, Eye, Link2, Building2, User } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '@heroui/react';
+import Image from 'next/image';
 
 interface UserStatsData {
   totalApplications: number;
@@ -17,6 +18,7 @@ interface UserStatsData {
     rut: string;
     phone?: string | null;
     status?: boolean;
+    logoUrl?: string | null;
   } | null;
   contractsCount?: number;
   contractsExpiringSoon?: number;
@@ -85,6 +87,17 @@ export default function DashboardUser({ stats, userName }: DashboardUserProps) {
           <CardBody>
             {stats.company ? (
               <div className="space-y-1">
+                {stats.company.logoUrl && (
+                  <div className="bg-white rounded-md flex items-center justify-center p-2 mb-3">
+                    <Image
+                      src={stats.company.logoUrl}
+                      alt={`Logo ${stats.company.name || 'empresa'}`}
+                      width={160}
+                      height={60}
+                      className="object-contain max-h-14 w-auto"
+                    />
+                  </div>
+                )}
                 <p className="font-semibold text-lg truncate">{stats.company.name || 'Sin nombre'}</p>
                 <p className="text-sm text-default-500">RUT: {stats.company.rut}</p>
                 {stats.company.phone && <p className="text-sm text-default-500">Tel: {stats.company.phone}</p>}
