@@ -1,89 +1,5 @@
-import { ServerClient } from 'postmark';
 import { db } from '../db';
-
-const POSTMARK_API_TOKEN = process.env.POSTMARK_API_TOKEN;
-const EMAIL_FROM = process.env.EMAIL_FROM || 'no-reply@example.com';
-const APP_URL = process.env.APP_URL || '';
-
-const client = POSTMARK_API_TOKEN ? new ServerClient(POSTMARK_API_TOKEN) : null;
-
-// Advertencia al iniciar si faltan variables de entorno críticas
-if (!POSTMARK_API_TOKEN) {
-  console.error('[EMAIL] ⚠️  POSTMARK_API_TOKEN no está configurado — los emails no se enviarán');
-}
-if (!process.env.EMAIL_FROM) {
-  console.warn('[EMAIL] ⚠️  EMAIL_FROM no está configurado — usando no-reply@example.com');
-}
-if (!process.env.APP_URL) {
-  console.warn('[EMAIL] ⚠️  APP_URL no está configurado — los links en emails estarán rotos');
-}
-
-// ============================================
-// HELPERS
-// ============================================
-
-/** Escapa caracteres HTML para prevenir inyección en emails */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function getAppUrl(path: string): string {
-  return `${APP_URL.replace(/\/$/, '')}${path}`;
-}
-
-async function sendEmail(to: string, subject: string, html: string): Promise<{ MessageID: string }> {
-  if (!client) {
-    console.log(`[EMAIL SIMULADO] To: ${to} | Subject: ${subject}`);
-    return { MessageID: 'local-simulated' };
-  }
-
-  try {
-    const result = await client.sendEmail({
-      From: EMAIL_FROM,
-      To: to,
-      Subject: subject,
-      HtmlBody: html,
-      MessageStream: 'outbound',
-    });
-    console.log(`[EMAIL] ✓ Enviado a ${to} | MessageID: ${result.MessageID}`);
-    return result;
-  } catch (err) {
-    console.error(`[EMAIL] ✗ Error al enviar a ${to} | Subject: ${subject}`, err);
-    throw err;
-  }
-}
-
-/** Bloque de cabecera reutilizable */
-function emailWrapper(content: string): string {
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-      <div style="background: #2563eb; padding: 20px 24px; border-radius: 8px 8px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 20px;">RCR Support</h1>
-      </div>
-      <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
-        ${content}
-        <p style="color: #9ca3af; font-size: 11px; margin-top: 32px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
-          Este correo fue generado automáticamente por RCR Support. Por favor no respondas a este mensaje.
-        </p>
-      </div>
-    </div>
-  `;
-}
-
-function actionButton(url: string, label: string): string {
-  return `
-    <p style="text-align: center; margin: 24px 0;">
-      <a href="${url}" style="background: #2563eb; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-        ${label}
-      </a>
-    </p>
-  `;
-}
+import { actionButton, emailWrapper, escapeHtml, getAppUrl, sendEmail, sendToMany } from './email-client';
 
 // ============================================
 // HELPER: obtener email de cualquier usuario por ID
@@ -93,17 +9,6 @@ async function getUserEmail(userId: string | null | undefined): Promise<string |
   if (!userId) return null;
   const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
   return user?.email ?? null;
-}
-
-/** Envía a múltiples destinatarios en paralelo, ignorando los que fallen */
-async function sendToMany(emails: (string | null)[], subject: string, html: string) {
-  const valid = Array.from(new Set(emails.filter((e): e is string => !!e)));
-  const results = await Promise.allSettled(valid.map(to => sendEmail(to, subject, html)));
-  results.forEach((r, i) => {
-    if (r.status === 'rejected') {
-      console.error(`[EMAIL] ✗ sendToMany falló para ${valid[i]}:`, r.reason);
-    }
-  });
 }
 
 // ============================================
