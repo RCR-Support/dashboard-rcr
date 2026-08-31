@@ -16,11 +16,10 @@ import {
   Globe,
   Tag,
   ChevronRight,
-  Pencil,
-  Trash2
 } from 'lucide-react';
 import { Button } from '@heroui/react';
 import Link from 'next/link';
+import { DocumentationActions } from '@/components/ui/dashboard/documentation/DocumentationActions';
 
 interface DocumentationWithRelations {
   id: string;
@@ -373,31 +372,14 @@ export default function DocumentationsPage() {
                 </span>
               </div>
               {(canEdit || canDelete) && (
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
-                  {canEdit && (
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      color="default"
-                      startContent={<Pencil className="h-3.5 w-3.5" />}
-                      onClick={() => openEditModal(doc)}
-                      className="flex-1"
-                    >
-                      Editar
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      startContent={<Trash2 className="h-3.5 w-3.5" />}
-                      onClick={() => handleDelete(doc)}
-                      className="flex-1"
-                    >
-                      Eliminar
-                    </Button>
-                  )}
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <DocumentationActions
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    fullWidth
+                    onEdit={() => openEditModal(doc)}
+                    onDelete={() => handleDelete(doc)}
+                  />
                 </div>
               )}
             </div>
@@ -456,30 +438,12 @@ export default function DocumentationsPage() {
                   </td>
                   {(canEdit || canDelete) && (
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        {canEdit && (
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="default"
-                            startContent={<Pencil className="h-3.5 w-3.5" />}
-                            onClick={() => openEditModal(doc)}
-                          >
-                            Editar
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="danger"
-                            startContent={<Trash2 className="h-3.5 w-3.5" />}
-                            onClick={() => handleDelete(doc)}
-                          >
-                            Eliminar
-                          </Button>
-                        )}
-                      </div>
+                      <DocumentationActions
+                        canEdit={canEdit}
+                        canDelete={canDelete}
+                        onEdit={() => openEditModal(doc)}
+                        onDelete={() => handleDelete(doc)}
+                      />
                     </td>
                   )}
                 </tr>
