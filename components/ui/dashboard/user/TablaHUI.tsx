@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, Link2, ArrowRightLeft } from 'lucide-react';
+import { Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, ArrowRightLeft } from 'lucide-react';
 // Utilidad para actualizar usuario
 async function updateUserField(
   id: string,
@@ -58,6 +58,7 @@ import { CompanySelect } from '@/interfaces/company.interface';
 import { UserTableToolbar } from './UserTableToolbar';
 import { UserTableActions } from './UserTableActions';
 import { UserRolesCell } from './UserRolesCell';
+import { UserCompanyCell } from './UserCompanyCell';
 interface Props {
   users: User[];
 }
@@ -469,41 +470,11 @@ export default function App({ users }: Props) {
             return <UserRolesCell user={user} />;
           case 'companyName':
             return (
-              <div className="flex flex-col min-w-32 max-w-56">
-                <div className="flex items-center gap-1">
-                  <Building2 size={12} className="text-gray-400" />
-                  <p className="text-bold text-small capitalize truncate text-ellipsis max-w-52">
-                    {user?.company?.id ? (
-                      <button
-                        onClick={() => openCompanyModal(user.company!.id, user.company!.name ?? '')}
-                        disabled={loadingCompanyId === user.company.id}
-                        className="text-primary hover:underline disabled:opacity-50 disabled:cursor-wait"
-                      >
-                        {loadingCompanyId === user.company.id ? 'Cargando...' : user.company.name}
-                      </button>
-                    ) : (
-                      user?.company?.name || 'Sin empresa'
-                    )}
-                  </p>
-                </div>
-                <p className="text-bold text-tiny capitalize text-default-500">
-                  {user?.company?.rut ? formatRun(user.company.rut) : 'N/A'}
-                </p>
-                {user?.asSubcontractor && user.asSubcontractor.length > 0 && (
-                  <div className="mt-1 flex flex-col gap-0.5">
-                    {user.asSubcontractor.map((sc, i) => (
-                      <span
-                        key={i}
-                        title={`Representante subcontrato — Sub de: ${sc.mandanteName ?? 'Empresa mandante'} — Contrato: ${sc.contractName}`}
-                        className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 font-medium truncate max-w-full"
-                      >
-                        <Link2 size={9} className="shrink-0" />
-                        Rep. Sub de: {sc.mandanteName ?? '—'}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <UserCompanyCell
+                user={user}
+                isLoading={loadingCompanyId === user.company?.id}
+                onOpenCompany={openCompanyModal}
+              />
             );
           case 'lastActivity':
             return (
