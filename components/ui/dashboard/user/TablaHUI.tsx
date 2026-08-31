@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Users, Crown, Shield, Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, Link2, ArrowRightLeft } from 'lucide-react';
+import { Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, Link2, ArrowRightLeft } from 'lucide-react';
 // Utilidad para actualizar usuario
 async function updateUserField(
   id: string,
@@ -57,6 +57,7 @@ import { getCompanyUsers } from '@/actions/company/userCompany-actions';
 import { CompanySelect } from '@/interfaces/company.interface';
 import { UserTableToolbar } from './UserTableToolbar';
 import { UserTableActions } from './UserTableActions';
+import { UserRolesCell } from './UserRolesCell';
 interface Props {
   users: User[];
 }
@@ -87,15 +88,6 @@ export const isActiveOptions = [
 export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
 }
-
-// Configuración mejorada de roles con iconos
-const roleConfig = {
-  admin: { name: 'Administrador', icon: Crown, color: 'danger' },
-  sheq: { name: 'SHEQ', icon: Shield, color: 'primary' },
-  adminContractor: { name: 'Admin Contrato', icon: Building2, color: 'secondary' },
-  credential: { name: 'Credencial', icon: UserCheck, color: 'success' },
-  user: { name: 'Usuario', icon: Users, color: 'default' },
-};
 
 const stringToColor = (string: string) => {
   let hash = 0;
@@ -474,76 +466,7 @@ export default function App({ users }: Props) {
               </div>
             );
           case 'roles':
-            return (
-              <div className="flex flex-col gap-1 min-w-48">
-                <div className="flex items-center gap-1 flex-wrap">
-                  {Array.isArray(user.roles) && user.roles.length > 0 ? (
-                    user.roles.map(r => {
-                      const config = roleConfig[r] || { name: r, icon: Users, color: 'default' };
-                      const IconComponent = config.icon;
-                      return (
-                        <Chip 
-                          key={r} 
-                          size="sm" 
-                          variant="flat" 
-                          color={(config.color as 'danger' | 'primary' | 'secondary' | 'success' | 'default') || 'default'}
-                          startContent={<IconComponent size={12} />}
-                          className="capitalize"
-                        >
-                          {config.name}
-                        </Chip>
-                      );
-                    })
-                  ) : (
-                    <span className="text-default-500">N/A</span>
-                  )}
-                </div>
-                {user.roles?.includes('adminContractor') && (() => {
-                  const contractCount = user.contracts?.length ?? 0;
-                  // Detectar si el AC tiene un traspaso temporal activo (el más reciente es temporal)
-                  const lastLog = user.reassignmentLogs?.[0];
-                  const isAbsent = lastLog?.mode === 'temporal';
-                  const returnDate = lastLog?.returnDate
-                    ? new Date(lastLog.returnDate)
-                    : null;
-                  const returnPassed = returnDate && returnDate < new Date();
-
-                  return (
-                    <div className="flex flex-col gap-1 mt-0.5">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <Chip
-                          size="sm"
-                          variant="dot"
-                          color={contractCount === 0 ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {contractCount} contrato{contractCount !== 1 ? 's' : ''}
-                        </Chip>
-                        {!user.isActive && (
-                          <Chip size="sm" variant="flat" color="danger" className="text-xs">
-                            Sin responsable activo
-                          </Chip>
-                        )}
-                      </div>
-                      {isAbsent && (
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          color={returnPassed ? 'warning' : 'warning'}
-                          className="text-xs"
-                        >
-                          {returnDate
-                            ? returnPassed
-                              ? `Retorno: ${returnDate.toLocaleDateString('es-CL')} (pendiente)`
-                              : `Ausente hasta ${returnDate.toLocaleDateString('es-CL')}`
-                            : 'Ausente (sin fecha de retorno)'}
-                        </Chip>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            );
+            return <UserRolesCell user={user} />;
           case 'companyName':
             return (
               <div className="flex flex-col min-w-32 max-w-56">
