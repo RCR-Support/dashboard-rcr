@@ -56,6 +56,7 @@ import { ReturnContractsModal, PendingReturnLog } from './ReturnContractsModal';
 import { getCompanyUsers } from '@/actions/company/userCompany-actions';
 import { CompanySelect } from '@/interfaces/company.interface';
 import { UserTableToolbar } from './UserTableToolbar';
+import { UserTableActions } from './UserTableActions';
 interface Props {
   users: User[];
 }
@@ -683,99 +684,21 @@ export default function App({ users }: Props) {
           }
           case 'actions':
             return (
-              <div className="relative flex justify-end items-center gap-2">
-                <Dropdown className="bg-default-100 border-1 border-default-200 w-[90px]">
-                  <DropdownTrigger>
-                    <Button isIconOnly radius="full" size="sm" variant="light">
-                      <HiDotsVertical size={16} className="text-default-400" />
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu className="flex gap-6 text-slate-500 dark:text-slate-300">
-                    <DropdownItem
-                      key="view"
-                      startContent={
-                        <Users size={16} className="text-primary" />
-                      }
-                      onPress={() => openModal(user)}
-                    >
-                      Ver más
-                    </DropdownItem>
-                    <DropdownItem
-                      key="edit"
-                      startContent={
-                        <Edit3 size={16} className="text-primary" />
-                      }
-                    >
-                      <Link href={`/dashboard/users/edit/${user.id}`} className="block w-full h-full">Editar</Link>
-                    </DropdownItem>
-                    <DropdownItem
-                      key="toggleActive"
-                      startContent={
-                        user.isActive ? 
-                          <ToggleRight size={16} className="text-warning" /> : 
-                          <ToggleLeft size={16} className="text-success" />
-                      }
-                      onPress={() => handleChangeField(user, 'isActive')}
-                    >
-                      {user.isActive ? 'Deshabilitar' : 'Habilitar'}
-                    </DropdownItem>
-                    <DropdownItem
-                      key="toggleDeleted"
-                      startContent={
-                        user.deletedLogic ? 
-                          <UserCheck size={16} className="text-success" /> : 
-                          <UserX size={16} className="text-danger" />
-                      }
-                      onPress={() => handleChangeField(user, 'deletedLogic')}
-                    >
-                      {user.deletedLogic ? 'Restaurar' : 'Eliminar'}
-                    </DropdownItem>
-                    {user.deletedLogic ? (
-                      <DropdownItem
-                        key="permanentDelete"
-                        startContent={<Trash2 size={16} className="text-danger" />}
-                        className="text-danger"
-                        color="danger"
-                        onPress={() => handlePermanentDelete(user)}
-                      >
-                        Eliminar definitivo
-                      </DropdownItem>
-                    ) : null}
-                    {user.roles?.some(r => r === 'adminContractor') ? (
-                      <DropdownItem
-                        key="reassign"
-                        startContent={<ArrowRightLeft size={16} className="text-secondary" />}
-                        onPress={() => {
-                          setReassignTargetUser({ id: user.id, displayName: user.displayName });
-                          setReassignModalOpen(true);
-                        }}
-                      >
-                        Traspasar contratos
-                      </DropdownItem>
-                    ) : null}
-                    {(() => {
-                      if (!user.roles?.some(r => r === 'adminContractor')) return null;
-                      const pendingLogs = (user.reassignmentLogs ?? []).filter(
-                        l => l.mode === 'temporal' && !l.returnedAt
-                      ) as PendingReturnLog[];
-                      if (pendingLogs.length === 0) return null;
-                      return (
-                        <DropdownItem
-                          key="returnContracts"
-                          startContent={<ArrowRightLeft size={16} className="text-success" />}
-                          onPress={() => {
-                            setReturnTargetUser({ id: user.id, displayName: user.displayName });
-                            setReturnPendingLogs(pendingLogs);
-                            setReturnModalOpen(true);
-                          }}
-                        >
-                          Devolver contratos ({pendingLogs.length})
-                        </DropdownItem>
-                      );
-                    })()}
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
+              <UserTableActions
+                user={user}
+                onView={openModal}
+                onChangeField={handleChangeField}
+                onPermanentDelete={handlePermanentDelete}
+                onReassign={(targetUser) => {
+                  setReassignTargetUser({ id: targetUser.id, displayName: targetUser.displayName });
+                  setReassignModalOpen(true);
+                }}
+                onReturnContracts={(targetUser, pendingLogs) => {
+                  setReturnTargetUser({ id: targetUser.id, displayName: targetUser.displayName });
+                  setReturnPendingLogs(pendingLogs);
+                  setReturnModalOpen(true);
+                }}
+              />
             );
           default:
             if (
