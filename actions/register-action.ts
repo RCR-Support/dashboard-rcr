@@ -11,6 +11,9 @@ import {
 } from '@/interfaces/action.interface';
 import { v2 as cloudinary } from 'cloudinary';
 import { sendWelcomeEmail } from '@/lib/email/postmark';
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
+import { createPasswordSetupUrl } from '@/lib/security/password-setup';
 
 // Configurar Cloudinary con las credenciales del .env
 cloudinary.config({
@@ -24,6 +27,15 @@ export const registerAction = async (
   formData: FormData
 ) => {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return { error: 'No autenticado' };
+    }
+
+    if (!hasActionPermission('users:create', session.user.roles as RoleEnum[])) {
+      return { error: 'No tienes permiso para crear usuarios' };
+    }
+
     const values = inputData;
 
     // Validación del schema
@@ -165,8 +177,7 @@ export const registerAction = async (
         toEmail: newUser.email!,
         displayName: newUser.displayName || `${newUser.name} ${newUser.lastName}`,
         userName: newUser.userName!,
-        password: data.password, // texto plano antes de hashear
-        isTemporaryPassword: false,
+        passwordSetupUrl: await createPasswordSetupUrl(newUser.email!),
       });
     } catch (emailError) {
       console.error('[registerAction] Error enviando correo de bienvenida:', emailError);

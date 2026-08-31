@@ -63,4 +63,5 @@ export interface User {
     newAcName: string;
   }[];
   createdAt?: string | Date;
+  lastActive?: string | Date | null;
 }

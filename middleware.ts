@@ -6,7 +6,7 @@ import { matchDynamicRoute } from '@/lib/permissions-helpers';
 
 const { auth: middleware } = NextAuth(authConfig);
 
-const publicRoutes = ['/', '/login', '/register', '/pre-register'];
+const publicRoutes = ['/', '/login', '/register', '/pre-register', '/set-password'];
 const publicPrefixes = ['/applications/status/'];
 
 export default middleware(req => {

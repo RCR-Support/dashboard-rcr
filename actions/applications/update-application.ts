@@ -36,7 +36,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
     if (!session?.user) {
       return { 
         success: false, 
-        error: 'No autenticado. Por favor inicia sesión.' 
+        message: 'No autenticado. Por favor inicia sesión.'
       };
     }
 
@@ -47,7 +47,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
     if (!canEditAny && !canEditOwn) {
       return { 
         success: false, 
-        error: 'No tienes permiso para editar solicitudes.' 
+        message: 'No tienes permiso para editar solicitudes.'
       };
     }
 
@@ -62,7 +62,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
     if (!application) {
       return { 
         success: false, 
-        error: 'Solicitud no encontrada.' 
+        message: 'Solicitud no encontrada.'
       };
     }
 
@@ -78,15 +78,17 @@ export async function updateApplication(input: UpdateApplicationInput) {
       if (!isOwner) {
         return { 
           success: false, 
-          error: 'No puedes editar solicitudes de otra empresa.' 
+          message: 'No puedes editar solicitudes de otra empresa.'
         };
       }
 
       // ✅ VALIDACIÓN 5: Estado (solo puede editar si está rechazada)
-      if (application.processStatus !== 'rechazado') {
+      // Acepta processStatus='rechazado' (solicitudes nuevas) O stateAc='adjuntar' (solicitudes antiguas)
+      const isRejected = application.processStatus === 'rechazado' || application.stateAc === 'adjuntar';
+      if (!isRejected) {
         return { 
           success: false, 
-          error: 'Solo puedes editar solicitudes que han sido rechazadas.' 
+          message: 'Solo puedes editar solicitudes que han sido rechazadas.'
         };
       }
     }
@@ -139,6 +141,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
           licenseExpiration,
           stateAc: 'pendiente', // Reiniciar estado para nueva revisión
           stateSheq: 'pendiente',
+          processStatus: 'pendiente',
           userAcId: contract.useracId,
           activities: {
             set: input.activities.map((id) => ({ id })),

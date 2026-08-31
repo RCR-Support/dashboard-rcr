@@ -7,7 +7,7 @@ import { Divider } from '@heroui/divider';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Textarea } from '@heroui/input';
 import Image from 'next/image';
-import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit, ArrowRightLeft } from 'lucide-react';
+import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit, ArrowRightLeft, RotateCcw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ import { approveApplicationAC, rejectApplicationAC } from '@/actions/application
 import { approveApplicationSHEQ, rejectApplicationSHEQ } from '@/actions/applications/approve-reject-sheq';
 import { approveDocument } from '@/actions/applications/approve-document';
 import { rejectDocument } from '@/actions/applications/reject-document';
+import { resetApplicationStatus } from '@/actions/applications/reset-application-status';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface SheqUser {
@@ -108,10 +109,22 @@ const stateAcColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
   adjuntar: 'danger',
 };
 
+const stateAcLabelMap: Record<string, string> = {
+  aprobado: 'Aprobado',
+  pendiente: 'En revisión',
+  adjuntar: 'Rechazado',
+};
+
 const stateSheqColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
   aprobado: 'success',
   pendiente: 'warning',
   rechazado: 'danger',
+};
+
+const stateSheqLabelMap: Record<string, string> = {
+  aprobado: 'Aprobado',
+  pendiente: 'En revisión',
+  rechazado: 'Rechazado',
 };
 
 const actionLabels: Record<string, string> = {
@@ -136,7 +149,9 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
   const [isLoading, setIsLoading] = useState(false);
   const [rejectDocModalOpen, setRejectDocModalOpen] = useState(false);
   const [selectedDocId, setSelectedDocId] = useState<string>('');
-  
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetStage, setResetStage] = useState<'ac' | 'sheq'>('ac');
+
   // ✅ Verificar permisos granulares
   const canApproveDocuments = can('documents:approve');
   const canRejectDocuments = can('documents:reject');
@@ -153,6 +168,9 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
   const documents = application.documentationFiles.filter(
     doc => doc.documentationId !== null && !(doc.type === 'IMG' && !doc.documentationId)
   );
+
+  // Revisor actual de documentos pendientes
+  const pendingReviewer = application.stateAc !== 'aprobado' ? 'AC' : 'SHEQ';
 
   // Verificar estado de revisión de documentos
   const docsApproved = documents.filter(d => d.approvalStatus === 'approved').length;
@@ -325,6 +343,20 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
     }
   };
 
+  const handleResetStatus = async () => {
+    setIsLoading(true);
+    const result = await resetApplicationStatus(application.id, resetStage);
+    setIsLoading(false);
+
+    if (result.success) {
+      Swal.fire({ icon: 'success', title: 'Estado reiniciado', text: result.message });
+      setResetModalOpen(false);
+      router.refresh();
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: result.message });
+    }
+  };
+
   const handleApproveDocument = async (documentId: string) => {
     const result = await approveDocument(documentId);
     if (result.success) {
@@ -388,29 +420,74 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Revisión de Solicitud</h1>
-        <p className="text-default-500">ID: {application.id}</p>
+        {isAdmin && (
+          <p className="text-xs text-default-400 font-mono">ID: {application.id}</p>
+        )}
       </div>
 
       {/* Estados y Acciones */}
       <Card className="mb-6">
         <CardBody>
           <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex gap-3 items-center">
-              <div>
-                <p className="text-sm text-default-500 mb-1">Admin. Contrato</p>
-                <Chip color={stateAcColorMap[application.stateAc]} variant="flat">
-                  {application.stateAc.toUpperCase()}
+            <div className="flex gap-4 items-center flex-wrap">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-default-400 uppercase tracking-wide">Revisión AC</p>
+                <Chip
+                  color={stateAcColorMap[application.stateAc]}
+                  variant="flat"
+                  startContent={
+                    application.stateAc === 'aprobado'
+                      ? <CheckCircle className="w-3.5 h-3.5" />
+                      : application.stateAc === 'adjuntar'
+                      ? <XCircle className="w-3.5 h-3.5" />
+                      : <Clock className="w-3.5 h-3.5" />
+                  }
+                >
+                  {stateAcLabelMap[application.stateAc] ?? application.stateAc}
                 </Chip>
               </div>
-              <div>
-                <p className="text-sm text-default-500 mb-1">SHEQ</p>
-                <Chip color={stateSheqColorMap[application.stateSheq]} variant="flat">
-                  {application.stateSheq.toUpperCase()}
+
+              <div className="text-default-300 self-center">→</div>
+
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-default-400 uppercase tracking-wide">Revisión SHEQ</p>
+                <Chip
+                  color={stateSheqColorMap[application.stateSheq]}
+                  variant="flat"
+                  isDisabled={application.stateAc !== 'aprobado'}
+                  startContent={
+                    application.stateSheq === 'aprobado'
+                      ? <CheckCircle className="w-3.5 h-3.5" />
+                      : application.stateSheq === 'rechazado'
+                      ? <XCircle className="w-3.5 h-3.5" />
+                      : <Clock className="w-3.5 h-3.5" />
+                  }
+                >
+                  {stateSheqLabelMap[application.stateSheq] ?? application.stateSheq}
                 </Chip>
               </div>
             </div>
 
             {/* Botones de acción según rol */}
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  color="warning"
+                  startContent={<RotateCcw className="w-4 h-4" />}
+                  onPress={() => {
+                    setResetStage(
+                      application.stateAc === 'aprobado' ? 'sheq' : 'ac'
+                    );
+                    setResetModalOpen(true);
+                  }}
+                >
+                  Reiniciar estado
+                </Button>
+              </div>
+            )}
+
             {canEdit && (
               <div className="flex gap-2">
                 <Button 
@@ -710,13 +787,15 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{doc.documentation?.name || 'Documento'}</p>
                             {approvalStatus === 'approved' && (
-                              <Chip size="sm" color="success" variant="flat">Aprobado</Chip>
+                              <Chip size="sm" color="success" variant="flat" startContent={<CheckCircle className="w-3 h-3" />}>Aprobado</Chip>
                             )}
                             {approvalStatus === 'rejected' && (
-                              <Chip size="sm" color="danger" variant="flat">Rechazado</Chip>
+                              <Chip size="sm" color="danger" variant="flat" startContent={<XCircle className="w-3 h-3" />}>Rechazado</Chip>
                             )}
                             {approvalStatus === 'pending' && (
-                              <Chip size="sm" color="warning" variant="flat">Pendiente</Chip>
+                              <Chip size="sm" color="warning" variant="flat" startContent={<Clock className="w-3 h-3" />}>
+                                Pendiente · {pendingReviewer}
+                              </Chip>
                             )}
                           </div>
                           {doc.expiresAt && (
@@ -1072,6 +1151,80 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modal Reiniciar Estado (solo Admin) */}
+      {isAdmin && (
+        <Modal isOpen={resetModalOpen} onClose={() => setResetModalOpen(false)} size="lg" isDismissable={false}>
+          <ModalContent>
+            <ModalHeader className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-warning" />
+              Reiniciar estado de la solicitud
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-default-600 mb-4">
+                Selecciona en qué etapa quieres reiniciar la solicitud. Todos los documentos volverán a estado <strong>Pendiente</strong> y el revisor correspondiente deberá revisarlos nuevamente.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => setResetStage('ac')}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                    resetStage === 'ac'
+                      ? 'border-warning bg-warning-50 dark:bg-warning-900/20'
+                      : 'border-default-200 hover:border-default-400'
+                  }`}
+                >
+                  <p className="font-semibold">Como Admin Contractor</p>
+                  <p className="text-sm text-default-500 mt-1">
+                    Reinicia todo el ciclo desde el inicio. El AC deberá revisar y aprobar nuevamente todos los documentos antes de pasar a SHEQ.
+                  </p>
+                  <p className="text-xs text-warning mt-2">
+                    stateAc → PENDIENTE · stateSheq → PENDIENTE · todos los docs → PENDIENTE
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setResetStage('sheq')}
+                  disabled={application.stateAc !== 'aprobado'}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                    application.stateAc !== 'aprobado'
+                      ? 'border-default-100 opacity-40 cursor-not-allowed'
+                      : resetStage === 'sheq'
+                      ? 'border-warning bg-warning-50 dark:bg-warning-900/20'
+                      : 'border-default-200 hover:border-default-400'
+                  }`}
+                >
+                  <p className="font-semibold">Como SHEQ</p>
+                  <p className="text-sm text-default-500 mt-1">
+                    Mantiene la aprobación del AC. Solo reinicia la etapa SHEQ. Requiere que el AC ya haya aprobado.
+                  </p>
+                  <p className="text-xs text-warning mt-2">
+                    stateAc → APROBADO (sin cambios) · stateSheq → PENDIENTE · todos los docs → PENDIENTE
+                  </p>
+                  {application.stateAc !== 'aprobado' && (
+                    <p className="text-xs text-danger mt-1">El AC todavía no ha aprobado esta solicitud</p>
+                  )}
+                </button>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="flat" onPress={() => setResetModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                color="warning"
+                startContent={<RotateCcw className="w-4 h-4" />}
+                onPress={handleResetStatus}
+                isLoading={isLoading}
+              >
+                Reiniciar como {resetStage === 'ac' ? 'Admin Contractor' : 'SHEQ'}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
     </div>
   );
 }

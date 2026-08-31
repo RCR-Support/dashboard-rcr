@@ -618,10 +618,9 @@ export async function sendWelcomeEmail(params: {
   toEmail: string;
   displayName: string;
   userName: string;
-  password: string; // texto plano (antes de hashear, o temporal)
-  isTemporaryPassword?: boolean;
+  passwordSetupUrl: string;
 }) {
-  const { toEmail, displayName, userName, password, isTemporaryPassword = false } = params;
+  const { toEmail, displayName, userName, passwordSetupUrl } = params;
   const loginUrl = getAppUrl('/login');
 
   const credentialsBox = `
@@ -633,10 +632,6 @@ export async function sendWelcomeEmail(params: {
           <td style="padding: 6px 0; font-weight: 700; color: #1e293b; font-family: monospace; font-size: 15px;">${escapeHtml(userName)}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #64748b;">Contraseña</td>
-          <td style="padding: 6px 0; font-weight: 700; color: #1e293b; font-family: monospace; font-size: 15px;">${escapeHtml(password)}</td>
-        </tr>
-        <tr>
           <td style="padding: 6px 0; color: #64748b;">Email</td>
           <td style="padding: 6px 0; font-weight: 700; color: #1e293b;">${escapeHtml(toEmail)}</td>
         </tr>
@@ -644,11 +639,9 @@ export async function sendWelcomeEmail(params: {
     </div>
   `;
 
-  const tempPasswordNote = isTemporaryPassword
-    ? `<div style="background: #fefce8; border-left: 4px solid #ca8a04; padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; font-size: 13px; color: #713f12;">
-        <strong>Contraseña temporal:</strong> Te recomendamos cambiarla en tu primer ingreso desde tu perfil de usuario.
-      </div>`
-    : '';
+  const passwordSetupNote = `<div style="background: #fefce8; border-left: 4px solid #ca8a04; padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; font-size: 13px; color: #713f12;">
+      <strong>Configura tu contraseña:</strong> usa el enlace seguro antes de 24 horas para activar tu acceso.
+    </div>`;
 
   const stepsHtml = `
     <p style="margin: 20px 0 12px; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">Primeros pasos</p>
@@ -706,7 +699,8 @@ export async function sendWelcomeEmail(params: {
     <p style="font-size: 13px; color: #6b7280; margin-top: -8px;">Sistema de acreditación de licencias internas — Minera Manto Verde</p>
     <p>Tu cuenta fue creada y ya está activa. A partir de ahora puedes ingresar al sistema para gestionar las solicitudes de acreditación de tus trabajadores.</p>
     ${credentialsBox}
-    ${tempPasswordNote}
+    ${passwordSetupNote}
+    ${actionButton(passwordSetupUrl, 'Configurar contraseña')}
     ${stepsHtml}
     ${actionButton(loginUrl, 'Acceder al sistema')}
     <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 8px;">

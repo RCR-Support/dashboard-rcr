@@ -68,7 +68,8 @@ export const columns = [
   { name: 'CONTACTO', uid: 'contact', sortable: false },
   { name: 'ROLES', uid: 'roles', sortable: false },
   { name: 'EMPRESA', uid: 'companyName', sortable: true },
-  { name: 'Última ACTIVIDAD', uid: 'lastActivity', sortable: true },
+  { name: 'REGISTRADO', uid: 'lastActivity', sortable: true },
+  { name: 'ÚLTIMA ACTIVIDAD', uid: 'lastActive', sortable: true },
   { name: 'ESTADO', uid: 'status' },
   { name: 'ACTIVO', uid: 'isActiveStatus' },
   { name: 'ACCIONES', uid: 'actions' },
@@ -126,11 +127,12 @@ const stringAvatar = (name: string) => {
 
 const INITIAL_VISIBLE_COLUMNS = [
   'name',
-  'run', 
+  'run',
   'contact',
   'roles',
   'companyName',
   'lastActivity',
+  'lastActive',
   'status',
   'isActiveStatus',
   'actions',
@@ -323,8 +325,8 @@ export default function App({ users }: Props) {
       const first = a[sortDescriptor.column as keyof User];
       const second = b[sortDescriptor.column as keyof User];
 
-      // Ordenar por fecha real si la columna es createdAt o lastActivity
-      if (sortDescriptor.column === 'createdAt' || sortDescriptor.column === 'lastActivity') {
+      // Ordenar por fecha real si la columna es createdAt, lastActivity o lastActive
+      if (sortDescriptor.column === 'createdAt' || sortDescriptor.column === 'lastActivity' || sortDescriptor.column === 'lastActive') {
         const dateA = first ? new Date(first as string) : new Date(0);
         const dateB = second ? new Date(second as string) : new Date(0);
         const cmp = dateA.getTime() - dateB.getTime();
@@ -593,6 +595,22 @@ export default function App({ users }: Props) {
                 <p className="text-xs text-default-500">
                   {formatShortDate(user.createdAt)}
                 </p>
+              </div>
+            );
+          case 'lastActive':
+            return (
+              <div className="flex flex-col min-w-32">
+                <div className="flex items-center gap-1">
+                  <UserCheck size={12} className={user.lastActive ? 'text-green-500' : 'text-gray-300'} />
+                  <p className="text-bold text-small">
+                    {user.lastActive ? getRelativeTime(user.lastActive) : 'Sin actividad'}
+                  </p>
+                </div>
+                {user.lastActive && (
+                  <p className="text-xs text-default-500">
+                    {formatShortDate(user.lastActive)}
+                  </p>
+                )}
               </div>
             );
           case 'phoneNumber':

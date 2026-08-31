@@ -21,18 +21,45 @@ export async function approveDocument(documentId: string) {
   }
 
   try {
-    // ✅ VALIDACIÓN 3: Verificar que el documento existe y está en estado pendiente
+    // ✅ VALIDACIÓN 3: Verificar que el documento pertenece a una etapa revisable
     const document = await db.documentationFile.findUnique({
       where: { id: documentId },
-      select: { approvalStatus: true },
+      select: {
+        approvalStatus: true,
+        application: {
+          select: {
+            stateAc: true,
+            stateSheq: true,
+            userAcId: true,
+            userSheqId: true,
+          },
+        },
+      },
     });
 
-    if (!document) {
+    if (!document?.application) {
       return { success: false, error: 'Documento no encontrado.' };
     }
 
-    if (document.approvalStatus === 'approved') {
-      return { success: false, error: 'El documento ya está aprobado.' };
+    if (document.approvalStatus !== null && document.approvalStatus !== 'pending') {
+      return { success: false, error: 'El documento ya fue revisado.' };
+    }
+
+    const userRoles = session.user.roles as RoleEnum[];
+    const isAdmin = userRoles.includes(RoleEnum.admin);
+    const isAcStage = document.application.stateAc === 'pendiente';
+    const isSheqStage = document.application.stateAc === 'aprobado' && document.application.stateSheq === 'pendiente';
+
+    if (!isAcStage && !isSheqStage) {
+      return { success: false, error: 'La solicitud no está en una etapa revisable.' };
+    }
+
+    if (!isAdmin) {
+      const assignedAc = isAcStage && userRoles.includes(RoleEnum.adminContractor) && document.application.userAcId === session.user.id;
+      const assignedSheq = isSheqStage && userRoles.includes(RoleEnum.sheq) && document.application.userSheqId === session.user.id;
+      if (!assignedAc && !assignedSheq) {
+        return { success: false, error: 'No tienes asignado este documento para revisión.' };
+      }
     }
 
     // ✅ Proceder con la aprobación

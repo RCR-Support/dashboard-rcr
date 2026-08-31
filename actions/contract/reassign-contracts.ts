@@ -31,7 +31,9 @@ export async function reassignContracts(input: ReassignContractsInput): Promise<
 
     const { fromUserId, toUserId, contractIds, reason, mode, returnDate, deactivateUser } = input;
 
-    if (!contractIds.length) {
+    const uniqueContractIds = Array.from(new Set(contractIds));
+
+    if (!uniqueContractIds.length) {
       return { ok: false, error: 'Debes seleccionar al menos un contrato' };
     }
 
@@ -39,25 +41,56 @@ export async function reassignContracts(input: ReassignContractsInput): Promise<
       return { ok: false, error: 'El AC receptor debe ser distinto al AC ausente' };
     }
 
+    if (mode !== 'temporal' && mode !== 'permanente') {
+      return { ok: false, error: 'El modo de traspaso no es válido' };
+    }
+
+    if (reason.trim().length < 5) {
+      return { ok: false, error: 'Debes indicar un motivo de al menos 5 caracteres' };
+    }
+
+    const recipient = await db.user.findFirst({
+      where: {
+        id: toUserId,
+        isActive: true,
+        deletedLogic: false,
+        roles: { some: { role: { name: RoleEnum.adminContractor } } },
+      },
+      select: { id: true },
+    });
+
+    if (!recipient) {
+      return { ok: false, error: 'El AC receptor no existe, está inactivo o no tiene el rol requerido' };
+    }
+
     // Validar que todos los contractIds pertenecen al AC ausente
     const validContracts = await db.contract.findMany({
       where: {
-        id: { in: contractIds },
+        id: { in: uniqueContractIds },
         useracId: fromUserId,
         deletedAt: null,
       },
       select: { id: true },
     });
 
-    if (validContracts.length !== contractIds.length) {
+    if (validContracts.length !== uniqueContractIds.length) {
       return { ok: false, error: 'Uno o más contratos no pertenecen a este administrador de contrato' };
+    }
+
+    if (mode === 'permanente') {
+      const activeContractsCount = await db.contract.count({
+        where: { useracId: fromUserId, deletedAt: null },
+      });
+      if (uniqueContractIds.length !== activeContractsCount) {
+        return { ok: false, error: 'El traspaso permanente requiere seleccionar todos los contratos activos del AC' };
+      }
     }
 
     const reasonPrefix = mode === 'permanente' ? '[PERMANENTE]' : '[TEMPORAL]';
     const fullReason = `${reasonPrefix} ${reason}`;
 
     await db.$transaction(async (tx) => {
-      for (const contractId of contractIds) {
+      for (const contractId of uniqueContractIds) {
         // 1. Actualizar el AC del contrato
         await tx.contract.update({
           where: { id: contractId },
@@ -107,7 +140,7 @@ export async function reassignContracts(input: ReassignContractsInput): Promise<
       }
     });
 
-    return { ok: true, reassigned: contractIds.length };
+    return { ok: true, reassigned: uniqueContractIds.length };
   } catch (error) {
     console.error('[reassignContracts]', error);
     return { ok: false, error: 'Error al ejecutar el traspaso de contratos' };

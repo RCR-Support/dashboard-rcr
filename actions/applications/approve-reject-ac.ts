@@ -14,6 +14,7 @@ import {
   notifyUserOnRejection,
   notifySheqOnAcApproval,
 } from '@/actions/notifications/create-notification';
+import { getReviewAccessError } from '@/lib/applications/review-access';
 
 export async function approveApplicationAC(
   applicationId: string,
@@ -26,6 +27,7 @@ export async function approveApplicationAC(
     if (!hasActionPermission('documents:approve', session.user.roles)) {
       return { success: false, message: 'No tienes permiso para aprobar solicitudes' };
     }
+    const userRoles = session.user.roles as RoleEnum[];
     // Verificar que TODOS los documentos estén aprobados
     const application = await db.application.findUnique({
       where: { id: applicationId },
@@ -43,6 +45,16 @@ export async function approveApplicationAC(
 
     if (!application) {
       return { success: false, message: 'Solicitud no encontrada' };
+    }
+
+    const accessError = getReviewAccessError({
+      application,
+      roles: userRoles,
+      userId: session.user.id,
+      stage: 'ac',
+    });
+    if (accessError) {
+      return { success: false, message: accessError };
     }
 
     // Contar documentos por estado
@@ -67,7 +79,6 @@ export async function approveApplicationAC(
       };
     }
 
-    const userRoles = session.user.roles as RoleEnum[];
     const isAdminActing = userRoles.includes(RoleEnum.admin) && !userRoles.includes(RoleEnum.adminContractor);
 
     await db.$transaction(async (tx) => {
@@ -140,12 +151,34 @@ export async function rejectApplicationAC(
     if (!hasActionPermission('documents:reject', session.user.roles)) {
       return { success: false, message: 'No tienes permiso para rechazar solicitudes' };
     }
+    const userRoles = session.user.roles as RoleEnum[];
+
+    const application = await db.application.findUnique({
+      where: { id: applicationId },
+      select: { stateAc: true, userAcId: true },
+    });
+
+    if (!application) {
+      return { success: false, message: 'Solicitud no encontrada' };
+    }
+
+    const accessError = getReviewAccessError({
+      application: { ...application, stateSheq: 'pendiente', userSheqId: null },
+      roles: userRoles,
+      userId: session.user.id,
+      stage: 'ac',
+    });
+    if (accessError) {
+      return { success: false, message: accessError };
+    }
+
     await db.$transaction(async (tx) => {
       // Actualizar estado de la aplicación
       await tx.application.update({
         where: { id: applicationId },
         data: {
           stateAc: 'adjuntar',
+          processStatus: 'rechazado',
         },
       });
 
@@ -166,7 +199,6 @@ export async function rejectApplicationAC(
       // });
 
       // Registrar en auditoría
-      const userRoles = session.user.roles as RoleEnum[];
       const isAdminActing = userRoles.includes(RoleEnum.admin) && !userRoles.includes(RoleEnum.adminContractor);
       await tx.applicationAudit.create({
         data: {
