@@ -1,11 +1,7 @@
 import { listActivities } from '@/actions/activities/list-activities';
-import dynamic from 'next/dynamic';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-
-const ActivitiesClientPage = dynamic(() => import('./ActivitiesClientPage'), {
-  ssr: false,
-});
+import ActivitiesClientPage from './ActivitiesClientPage';
 
 export default async function ActivitiesPage() {
   const session = await auth();
