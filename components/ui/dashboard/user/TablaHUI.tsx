@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Building2, Mail, Phone, Clock, UserCheck, UserX, Edit3, ToggleLeft, ToggleRight, Trash2, ArrowRightLeft } from 'lucide-react';
+import { UserX, Edit3, ToggleLeft, ToggleRight, Trash2, ArrowRightLeft } from 'lucide-react';
 // Utilidad para actualizar usuario
 async function updateUserField(
   id: string,
@@ -59,6 +59,8 @@ import { UserTableToolbar } from './UserTableToolbar';
 import { UserTableActions } from './UserTableActions';
 import { UserRolesCell } from './UserRolesCell';
 import { UserCompanyCell } from './UserCompanyCell';
+import { UserContactCell } from './UserContactCell';
+import { UserActivityCell, formatShortDate } from './UserActivityCell';
 interface Props {
   users: User[];
 }
@@ -129,36 +131,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   'isActiveStatus',
   'actions',
 ];
-
-function formatShortDate(dateString: string | Date | undefined) {
-  if (!dateString) return '-';
-  const date =
-    typeof dateString === 'string' ? new Date(dateString) : dateString;
-  if (isNaN(date.getTime())) return '-';
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = String(date.getFullYear()).slice(-2);
-  return `${day}-${month}-${year}`;
-}
-
-// Función para calcular tiempo relativo
-function getRelativeTime(date: string | Date | undefined) {
-  if (!date) return 'Sin fecha';
-  
-  const now = new Date();
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  
-  if (isNaN(targetDate.getTime())) return 'Fecha inválida';
-  
-  const diffInDays = Math.floor((now.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (diffInDays === 0) return 'Hoy';
-  if (diffInDays === 1) return 'Ayer';
-  if (diffInDays < 7) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
-  if (diffInDays < 30) return `Hace ${Math.floor(diffInDays / 7)} semana${Math.floor(diffInDays / 7) > 1 ? 's' : ''}`;
-  if (diffInDays < 365) return `Hace ${Math.floor(diffInDays / 30)} mes${Math.floor(diffInDays / 30) > 1 ? 'es' : ''}`;
-  return `Hace ${Math.floor(diffInDays / 365)} año${Math.floor(diffInDays / 365) > 1 ? 's' : ''}`;
-}
 
 export default function App({ users }: Props) {
   const router = useRouter();
@@ -450,22 +422,7 @@ export default function App({ users }: Props) {
               </div>
             );
           case 'contact':
-            return (
-              <div className="flex flex-col min-w-36 gap-1">
-                <div className="flex items-center gap-1">
-                  <Mail size={12} className="text-gray-400" />
-                  <p className="text-bold text-small truncate">
-                    {user.email || 'N/A'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Phone size={12} className="text-gray-400" />
-                  <p className="text-xs text-default-500">
-                    {user.phoneNumber ? formatPhoneNumber(user.phoneNumber) : '-'}
-                  </p>
-                </div>
-              </div>
-            );
+            return <UserContactCell user={user} />;
           case 'roles':
             return <UserRolesCell user={user} />;
           case 'companyName':
@@ -477,35 +434,9 @@ export default function App({ users }: Props) {
               />
             );
           case 'lastActivity':
-            return (
-              <div className="flex flex-col min-w-32">
-                <div className="flex items-center gap-1">
-                  <Clock size={12} className="text-gray-400" />
-                  <p className="text-bold text-small">
-                    {getRelativeTime(user.createdAt)}
-                  </p>
-                </div>
-                <p className="text-xs text-default-500">
-                  {formatShortDate(user.createdAt)}
-                </p>
-              </div>
-            );
+            return <UserActivityCell user={user} type="created" />;
           case 'lastActive':
-            return (
-              <div className="flex flex-col min-w-32">
-                <div className="flex items-center gap-1">
-                  <UserCheck size={12} className={user.lastActive ? 'text-green-500' : 'text-gray-300'} />
-                  <p className="text-bold text-small">
-                    {user.lastActive ? getRelativeTime(user.lastActive) : 'Sin actividad'}
-                  </p>
-                </div>
-                {user.lastActive && (
-                  <p className="text-xs text-default-500">
-                    {formatShortDate(user.lastActive)}
-                  </p>
-                )}
-              </div>
-            );
+            return <UserActivityCell user={user} type="lastActive" />;
           case 'phoneNumber':
             return (
               <div className="flex flex-col min-w-32">
