@@ -21,6 +21,7 @@ import { ApplicationDocuments } from './ApplicationDocuments';
 import { ApplicationDocumentViewer } from './ApplicationDocumentViewer';
 import { RejectApplicationDocumentModal } from './RejectApplicationDocumentModal';
 import { ApplicationHistory } from './ApplicationHistory';
+import { ApproveApplicationAcModal } from './ApproveApplicationAcModal';
 
 interface SheqUser {
   id: string;
@@ -657,44 +658,17 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
         onClose={() => setViewerOpen(false)}
       />
 
-      {/* Modal Aprobar AC */}
-      {(canApproveAC) && (
-        <Modal isOpen={approveModalOpen} onClose={() => setApproveModalOpen(false)} size="lg" isDismissable={false}>
-          <ModalContent>
-            <ModalHeader>Aprobar Solicitud</ModalHeader>
-            <ModalBody>
-              <p className="mb-4">Selecciona el revisor SHEQ que continuará con la revisión:</p>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">Revisor SHEQ</label>
-                <select
-                  value={selectedSheq}
-                  onChange={(e) => setSelectedSheq(e.target.value)}
-                  className="w-full rounded-lg border border-default-300 bg-default-100 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-success"
-                >
-                  <option value="">Selecciona un revisor</option>
-                  {sheqUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.displayName} - {user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="flat" onPress={() => setApproveModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                color="success"
-                onPress={handleApproveAC}
-                isLoading={isLoading}
-                isDisabled={!selectedSheq || !allDocsApproved}
-              >
-                Aprobar
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+      {canApproveAC && (
+        <ApproveApplicationAcModal
+          isOpen={approveModalOpen}
+          selectedSheq={selectedSheq}
+          sheqUsers={sheqUsers}
+          isLoading={isLoading}
+          canApprove={allDocsApproved}
+          onClose={() => setApproveModalOpen(false)}
+          onSelectedSheqChange={setSelectedSheq}
+          onConfirm={handleApproveAC}
+        />
       )}
 
       {/* Modal Rechazar */}
