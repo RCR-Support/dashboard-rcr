@@ -19,6 +19,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { ApplicationSidebar } from './ApplicationSidebar';
 import { ApplicationDocuments } from './ApplicationDocuments';
 import { ApplicationDocumentViewer } from './ApplicationDocumentViewer';
+import { RejectApplicationDocumentModal } from './RejectApplicationDocumentModal';
 
 interface SheqUser {
   id: string;
@@ -875,31 +876,13 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
         </ModalContent>
       </Modal>
 
-      {/* Modal Rechazar Documento Individual */}
-      <Modal isOpen={rejectDocModalOpen} onClose={() => setRejectDocModalOpen(false)} size="lg" isDismissable={false}>
-        <ModalContent>
-          <ModalHeader>Rechazar Documento</ModalHeader>
-          <ModalBody>
-            <p className="mb-4">Indica por qué este documento no es válido:</p>
-            <Textarea
-              label="Motivo del rechazo"
-              placeholder="Ej: Documento vencido, información ilegible, falta firma..."
-              value={docRejectionReason}
-              onValueChange={setDocRejectionReason}
-              minRows={3}
-              isRequired
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={() => setRejectDocModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button color="danger" onPress={handleConfirmRejectDocument}>
-              Rechazar Documento
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <RejectApplicationDocumentModal
+        isOpen={rejectDocModalOpen}
+        rejectionReason={docRejectionReason}
+        onClose={() => setRejectDocModalOpen(false)}
+        onRejectionReasonChange={setDocRejectionReason}
+        onConfirm={handleConfirmRejectDocument}
+      />
 
       {/* Modal Reiniciar Estado (solo Admin) */}
       {isAdmin && (
