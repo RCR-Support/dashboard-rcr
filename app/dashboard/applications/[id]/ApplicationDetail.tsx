@@ -17,6 +17,7 @@ import { approveDocument } from '@/actions/applications/approve-document';
 import { rejectDocument } from '@/actions/applications/reject-document';
 import { resetApplicationStatus } from '@/actions/applications/reset-application-status';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ApplicationSidebar } from './ApplicationSidebar';
 
 interface SheqUser {
   id: string;
@@ -193,6 +194,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                          application.userSheq?.id &&
                          userId === application.userSheq.id) ||
                          (isAdmin && application.stateAc === 'aprobado' && application.stateSheq === 'pendiente');
+  const canReviewCurrentStage = canApproveAC || canApproveSHEQ;
 
   // Indica si el admin está actuando en representación
   const adminActingAsAC = isAdmin && !userRoles.includes('adminContractor') && canApproveAC;
@@ -608,132 +610,12 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda: Foto y Datos del Trabajador */}
-        <div className="space-y-6">
-          {/* Foto */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Fotografía
-              </h2>
-            </CardHeader>
-            <CardBody>
-              <div className="relative w-full max-w-[120px] mx-auto aspect-[3/4] rounded-lg overflow-hidden bg-gray-100">
-                {workerPhoto ? (
-                  <Image
-                    src={workerPhoto}
-                    alt={workerFullName}
-                    fill
-                    className="object-cover"
-                    sizes="120px"
-                    quality={90}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <User className="w-16 h-16 text-gray-400" />
-                  </div>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Datos del Trabajador */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold">Información Personal</h2>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <div>
-                <p className="text-sm text-default-500">Nombre Completo</p>
-                <p className="font-medium">{workerFullName}</p>
-              </div>
-              <Divider />
-              <div>
-                <p className="text-sm text-default-500">RUN</p>
-                <p className="font-medium">{application.workerRun}</p>
-              </div>
-              {application.licenseExpiration && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Vencimiento de Acreditación
-                    </p>
-                    <p className="font-medium text-orange-600">
-                      {new Date(application.licenseExpiration).toLocaleDateString('es-CL')}
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
-
-          {/* Información del Contrato */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Contrato y Empresa
-              </h2>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <div>
-                <p className="text-sm text-default-500">Empresa</p>
-                <p className="font-medium">{application.company?.name}</p>
-              </div>
-              <Divider />
-              <div>
-                <p className="text-sm text-default-500">Contrato</p>
-                <p className="font-medium">{application.contract?.contractName}</p>
-                <p className="text-sm text-default-400">N° {application.contract?.contractNumber}</p>
-              </div>
-              {application.contract && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500">Vigencia del Contrato</p>
-                    <p className="text-sm">
-                      {new Date(application.contract.initialDate).toLocaleDateString('es-CL')} - 
-                      {new Date(application.contract.finalDate).toLocaleDateString('es-CL')}
-                    </p>
-                  </div>
-                </>
-              )}
-              {application.userAc && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500">Administrador de Contrato</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium">{application.userAc.displayName}</p>
-                      {activeReassignment && (
-                        <Chip size="sm" variant="flat" color="warning">Cobertura temporal</Chip>
-                      )}
-                    </div>
-                    <p className="text-sm text-default-400">{application.userAc.email}</p>
-                    {activeReassignment && (
-                      <div className="mt-2 rounded-md bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-3 py-2 text-xs space-y-1">
-                        <p className="flex items-center gap-1 text-warning-700 dark:text-warning-300 font-medium">
-                          <ArrowRightLeft size={12} />
-                          AC original ausente: {activeReassignment.originalAcName}
-                        </p>
-                        {activeReassignment.returnDate ? (
-                          <p className="text-warning-600 dark:text-warning-400">
-                            Retorno estimado:{' '}
-                            {new Date(activeReassignment.returnDate).toLocaleDateString('es-CL')}
-                          </p>
-                        ) : (
-                          <p className="text-warning-500">Sin fecha de retorno pactada</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
-        </div>
+        <ApplicationSidebar
+          workerFullName={workerFullName}
+          workerPhoto={workerPhoto}
+          application={application}
+          activeReassignment={activeReassignment}
+        />
 
         <div className="lg:col-span-2 space-y-6">
           {/* Actividades */}
@@ -833,9 +715,8 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                           <Download className="w-4 h-4" />
                         </Button>
                         
-                        {/* Botones de aprobación/rechazo solo para revisores */}
-                        {/* Aprobar: se muestra si no está ya aprobado (permite cambiar desde rechazado) */}
-                        {canApproveDocuments && approvalStatus !== 'approved' && (
+                        {/* Botones de aprobación/rechazo solo para el revisor asignado en la etapa actual */}
+                        {canReviewCurrentStage && canApproveDocuments && approvalStatus === 'pending' && (
                           <Button
                             size="sm"
                             variant="flat"
@@ -847,8 +728,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                             <CheckCircle className="w-4 h-4" />
                           </Button>
                         )}
-                        {/* Rechazar: se muestra si no está ya rechazado (permite cambiar desde aprobado) */}
-                        {canRejectDocuments && approvalStatus !== 'rejected' && (
+                        {canReviewCurrentStage && canRejectDocuments && approvalStatus === 'pending' && (
                           <Button
                             size="sm"
                             variant="flat"
