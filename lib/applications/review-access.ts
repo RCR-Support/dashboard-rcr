@@ -1,10 +1,10 @@
-import { RoleEnum } from '@prisma/client';
+import { RoleEnum, StateAc, StateSheq } from '@prisma/client';
 
 export type ReviewStage = 'ac' | 'sheq';
 
 interface ReviewableApplication {
-  stateAc: string;
-  stateSheq: string;
+  stateAc: StateAc;
+  stateSheq: StateSheq;
   userAcId: string | null;
   userSheqId: string | null;
 }

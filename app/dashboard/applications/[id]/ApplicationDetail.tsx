@@ -5,6 +5,7 @@ import { Chip } from '@heroui/chip';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Textarea } from '@heroui/input';
+import { ProcessStatus, StateAc, StateSheq } from '@prisma/client';
 import { CheckCircle, XCircle, Clock, Edit, RotateCcw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useState } from 'react';
@@ -37,9 +38,9 @@ interface ApplicationDetailProps {
     license: string | null;
     licenseExpiration: Date | null;
     status: string;
-    processStatus: string;
-    stateAc: string;
-    stateSheq: string;
+    processStatus: ProcessStatus;
+    stateAc: StateAc;
+    stateSheq: StateSheq;
     createdAt: Date;
     company: {
       name: string | null;
@@ -90,7 +91,7 @@ interface ApplicationDetailProps {
     versions?: Array<{
       id: string;
       isActive: boolean;
-      processStatus: string;
+      processStatus: ProcessStatus;
     }>;
   };
   userRoles: string[];

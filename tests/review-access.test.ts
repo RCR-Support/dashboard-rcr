@@ -1,17 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { RoleEnum } from '@prisma/client';
+import { RoleEnum, StateAc, StateSheq } from '@prisma/client';
 import { getReviewAccessError } from '../lib/applications/review-access';
 
-const acPendingApplication = {
-  stateAc: 'pendiente',
-  stateSheq: 'pendiente',
+const acPendingApplication: {
+  stateAc: StateAc;
+  stateSheq: StateSheq;
+  userAcId: string;
+  userSheqId: string | null;
+} = {
+  stateAc: StateAc.pendiente,
+  stateSheq: StateSheq.pendiente,
   userAcId: 'ac-1',
   userSheqId: null,
 };
 
-const sheqPendingApplication = {
-  stateAc: 'aprobado',
-  stateSheq: 'pendiente',
+const sheqPendingApplication: {
+  stateAc: StateAc;
+  stateSheq: StateSheq;
+  userAcId: string;
+  userSheqId: string | null;
+} = {
+  stateAc: StateAc.aprobado,
+  stateSheq: StateSheq.pendiente,
   userAcId: 'ac-1',
   userSheqId: 'sheq-1',
 };

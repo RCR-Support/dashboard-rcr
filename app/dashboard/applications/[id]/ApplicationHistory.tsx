@@ -1,6 +1,7 @@
 import { Card, CardBody, CardHeader } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
+import { ProcessStatus } from '@prisma/client';
 import { AlertCircle, ArrowRightLeft, CheckCircle, Clock } from 'lucide-react';
 
 interface ApplicationHistoryProps {
@@ -18,7 +19,7 @@ interface ApplicationHistoryProps {
     versions?: Array<{
       id: string;
       isActive: boolean;
-      processStatus: string;
+      processStatus: ProcessStatus;
     }>;
   };
   versioningAvailable: boolean;
