@@ -4,25 +4,22 @@ import { NextResponse } from 'next/server';
 import { permissions } from '@/config/permissions';
 import { matchDynamicRoute } from '@/lib/permissions-helpers';
 
-const { auth: middleware } = NextAuth(authConfig);
+const { auth: proxy } = NextAuth(authConfig);
 
 const publicRoutes = ['/', '/login', '/register', '/pre-register', '/set-password'];
 const publicPrefixes = ['/applications/status/'];
 
-export default middleware(req => {
+export default proxy(req => {
   const { nextUrl, auth } = req;
   const isLoggedIn = !!auth?.user;
   const path = nextUrl.pathname;
 
-  // Verificar si auth.user.roles existe y es un array
   const userRoles = auth?.user?.roles || [];
 
-  // Rutas públicas por prefijo (ej: /applications/status/[token])
   if (publicPrefixes.some(prefix => path.startsWith(prefix))) {
     return NextResponse.next();
   }
 
-  // Manejo de rutas públicas
   if (publicRoutes.includes(path)) {
     if (isLoggedIn && path !== '/') {
       return NextResponse.redirect(new URL('/dashboard', nextUrl));
@@ -30,17 +27,13 @@ export default middleware(req => {
     return NextResponse.next();
   }
 
-  // Verificar autenticación
   if (!isLoggedIn) {
     const loginUrl = new URL('/login', nextUrl);
     loginUrl.searchParams.set('callbackUrl', path);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verificar permisos de ruta
   let routePermission = permissions[path];
-
-  // ✅ Manejar rutas dinámicas usando helper centralizado
   if (!routePermission) {
     const matchedKey = matchDynamicRoute(path);
     if (matchedKey) {
@@ -48,7 +41,6 @@ export default middleware(req => {
     }
   }
 
-  // Utilizar userRoles para verificar los permisos
   if (
     routePermission &&
     !routePermission.roles.some(role => userRoles.includes(role))
