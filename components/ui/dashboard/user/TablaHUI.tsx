@@ -61,6 +61,7 @@ import { UserRolesCell } from './UserRolesCell';
 import { UserCompanyCell } from './UserCompanyCell';
 import { UserContactCell } from './UserContactCell';
 import { UserActivityCell, formatShortDate } from './UserActivityCell';
+import { UserStatusCell } from './UserStatusCell';
 interface Props {
   users: User[];
 }
@@ -450,61 +451,33 @@ export default function App({ users }: Props) {
           case 'createdAt':
             return <span>{formatShortDate(user.createdAt)}</span>;
           case 'status': {
-            const statusText = user.deletedLogic ? 'Eliminado' : 'Activo';
-            const chipColor = user.deletedLogic ? 'danger' : 'success';
-            const statusEmoji = user.deletedLogic ? '❌' : '✅';
             const isLoading =
               loadingField &&
               loadingField.id === user.id &&
               loadingField.field === 'deletedLogic';
             return (
-              <button
-                className="focus:outline-none"
-                disabled={updatingId === user.id}
-                onClick={() => handleChangeField(user, 'deletedLogic')}
-              >
-                <Chip
-                  className={`capitalize cursor-pointer flex items-center gap-1`}
-                  color={chipColor}
-                  size="sm"
-                  variant="flat"
-                >
-                  <span className="mr-1">{statusEmoji}</span>
-                  {statusText}
-                  {isLoading && (
-                    <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />
-                  )}
-                </Chip>
-              </button>
+              <UserStatusCell
+                user={user}
+                field="deletedLogic"
+                isLoading={Boolean(isLoading)}
+                isUpdating={updatingId === user.id}
+                onChange={handleChangeField}
+              />
             );
           }
           case 'isActiveStatus': {
-            const isActiveText = user.isActive ? 'Habilitado' : 'Pendiente';
-            const isActiveColor = user.isActive ? 'success' : 'warning';
-            const activeEmoji = user.isActive ? '✅' : '⚠️';
             const isLoading =
               loadingField &&
               loadingField.id === user.id &&
               loadingField.field === 'isActive';
             return (
-              <button
-                className="focus:outline-none"
-                disabled={updatingId === user.id}
-                onClick={() => handleChangeField(user, 'isActive')}
-              >
-                <Chip
-                  className={`capitalize cursor-pointer flex items-center gap-1`}
-                  color={isActiveColor}
-                  size="sm"
-                  variant="flat"
-                >
-                  <span className="mr-1">{activeEmoji}</span>
-                  {isActiveText}
-                  {isLoading && (
-                    <span className="loader w-3 h-3 border-2 border-t-2 border-t-transparent rounded-full animate-spin inline-block" />
-                  )}
-                </Chip>
-              </button>
+              <UserStatusCell
+                user={user}
+                field="isActive"
+                isLoading={Boolean(isLoading)}
+                isUpdating={updatingId === user.id}
+                onChange={handleChangeField}
+              />
             );
           }
           case 'actions':
