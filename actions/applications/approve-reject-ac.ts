@@ -15,6 +15,7 @@ import {
   notifySheqOnAcApproval,
 } from '@/actions/notifications/create-notification';
 import { getReviewAccessError } from '@/lib/applications/review-access';
+import { getApplicationApprovalError } from '@/lib/applications/document-review';
 
 export async function approveApplicationAC(
   applicationId: string,
@@ -57,26 +58,9 @@ export async function approveApplicationAC(
       return { success: false, message: accessError };
     }
 
-    // Contar documentos por estado
-    const pendingDocs = application.documentationFiles.filter(doc => 
-      !doc.approvalStatus || doc.approvalStatus === 'pending'
-    );
-    const rejectedDocs = application.documentationFiles.filter(doc => 
-      doc.approvalStatus === 'rejected'
-    );
-
-    if (pendingDocs.length > 0) {
-      return { 
-        success: false, 
-        message: `Aún hay ${pendingDocs.length} documento(s) sin revisar. Debes aprobar o rechazar todos los documentos antes de aprobar la solicitud.` 
-      };
-    }
-
-    if (rejectedDocs.length > 0) {
-      return { 
-        success: false, 
-        message: `Hay ${rejectedDocs.length} documento(s) rechazado(s). No puedes aprobar una solicitud con documentos rechazados.` 
-      };
+    const approvalError = getApplicationApprovalError(application.documentationFiles);
+    if (approvalError) {
+      return { success: false, message: approvalError };
     }
 
     const isAdminActing = userRoles.includes(RoleEnum.admin) && !userRoles.includes(RoleEnum.adminContractor);

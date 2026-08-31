@@ -53,6 +53,36 @@ describe('getReviewAccessError', () => {
     })).toBe('Solo un revisor SHEQ puede revisar esta etapa');
   });
 
+  it('rechaza una revisión AC cuando esa etapa ya fue resuelta', () => {
+    expect(getReviewAccessError({
+      application: sheqPendingApplication,
+      roles: [RoleEnum.adminContractor],
+      userId: 'ac-1',
+      stage: 'ac',
+    })).toBe('La solicitud no está pendiente de revisión AC');
+  });
+
+  it('rechaza una revisión SHEQ antes de la aprobación AC', () => {
+    expect(getReviewAccessError({
+      application: acPendingApplication,
+      roles: [RoleEnum.sheq],
+      userId: 'sheq-1',
+      stage: 'sheq',
+    })).toBe('La solicitud no está pendiente de revisión SHEQ');
+  });
+
+  it('no permite al administrador ignorar una transición inválida', () => {
+    expect(getReviewAccessError({
+      application: {
+        ...sheqPendingApplication,
+        stateSheq: 'aprobado',
+      },
+      roles: [RoleEnum.admin],
+      userId: 'admin-1',
+      stage: 'sheq',
+    })).toBe('La solicitud no está pendiente de revisión SHEQ');
+  });
+
   it('permite al administrador revisar cualquier solicitud en una etapa válida', () => {
     expect(getReviewAccessError({
       application: sheqPendingApplication,

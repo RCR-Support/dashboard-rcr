@@ -12,6 +12,7 @@ import {
   sendApplicationRejectedBySHEQEmail,
 } from '@/lib/email/postmark';
 import { getReviewAccessError } from '@/lib/applications/review-access';
+import { getApplicationApprovalError } from '@/lib/applications/document-review';
 
 export async function approveApplicationSHEQ(
   applicationId: string,
@@ -50,26 +51,9 @@ export async function approveApplicationSHEQ(
       return { success: false, message: accessError };
     }
 
-    // Contar documentos por estado
-    const pendingDocs = application.documentationFiles.filter(doc => 
-      !doc.approvalStatus || doc.approvalStatus === 'pending'
-    );
-    const rejectedDocs = application.documentationFiles.filter(doc => 
-      doc.approvalStatus === 'rejected'
-    );
-
-    if (pendingDocs.length > 0) {
-      return { 
-        success: false, 
-        message: `Aún hay ${pendingDocs.length} documento(s) sin revisar. Debes aprobar o rechazar todos los documentos antes de aprobar la solicitud.` 
-      };
-    }
-
-    if (rejectedDocs.length > 0) {
-      return { 
-        success: false, 
-        message: `Hay ${rejectedDocs.length} documento(s) rechazado(s). No puedes aprobar una solicitud con documentos rechazados.` 
-      };
+    const approvalError = getApplicationApprovalError(application.documentationFiles);
+    if (approvalError) {
+      return { success: false, message: approvalError };
     }
 
     await db.$transaction(async (tx) => {
