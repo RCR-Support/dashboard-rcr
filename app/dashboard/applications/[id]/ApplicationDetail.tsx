@@ -22,6 +22,7 @@ import { ApplicationDocumentViewer } from './ApplicationDocumentViewer';
 import { RejectApplicationDocumentModal } from './RejectApplicationDocumentModal';
 import { ApplicationHistory } from './ApplicationHistory';
 import { ApproveApplicationAcModal } from './ApproveApplicationAcModal';
+import { RejectApplicationModal } from './RejectApplicationModal';
 
 interface SheqUser {
   id: string;
@@ -671,63 +672,23 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
         />
       )}
 
-      {/* Modal Rechazar */}
-      <Modal isOpen={rejectModalOpen} onClose={() => setRejectModalOpen(false)} size="lg" isDismissable={false}>
-        <ModalContent>
-          <ModalHeader>Rechazar Solicitud</ModalHeader>
-          <ModalBody>
-            <p className="mb-4 text-sm text-default-500">
-              {(canApproveAC && !canApproveSHEQ)
-                ? 'La solicitud será devuelta al usuario para que adjunte nuevamente los documentos.'
-                : 'La solicitud será devuelta al Admin Contractor para revisión.'}
-            </p>
-            
-            {/* Mostrar documentos rechazados si existen */}
-            {docsRejected > 0 && (
-              <div className="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg">
-                <p className="text-sm font-semibold text-danger mb-2">Documentos rechazados:</p>
-                <ul className="text-sm space-y-1">
-                  {documents
-                    .filter(d => d.approvalStatus === 'rejected')
-                    .map((doc, idx) => (
-                      <li key={idx} className="text-default-600">
-                        • <strong>{doc.documentation?.name}</strong>: {doc.rejectionReason}
-                      </li>
-                    ))}
-                </ul>
-                <p className="text-xs text-default-500 mt-2">
-                  {docsRejected === documents.length 
-                    ? 'Puedes dejar las observaciones vacías si solo rechazas por los documentos.' 
-                    : 'Agrega observaciones adicionales si rechazas por otros motivos (foto, datos, etc.)'}
-                </p>
-              </div>
-            )}
-            
-            <Textarea
-              label={docsRejected > 0 ? "Observaciones adicionales (opcional)" : "Observaciones"}
-              placeholder={docsRejected > 0 
-                ? "Agrega observaciones adicionales solo si rechazas por otros motivos (foto, datos personales, contrato, etc.)"
-                : "Ej: Foto no cumple con los requisitos (debe ser de rostro, fondo blanco)\nDatos personales incorrectos\nContrato no corresponde al puesto del trabajador"}
-              value={observations}
-              onValueChange={setObservations}
-              minRows={4}
-              isRequired={docsRejected === 0}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={() => setRejectModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              color="danger" 
-              onPress={(canApproveAC && !canApproveSHEQ) ? handleRejectAC : handleRejectSHEQ} 
-              isLoading={isLoading}
-            >
-              Rechazar
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <RejectApplicationModal
+        isOpen={rejectModalOpen}
+        returnToUser={canApproveAC && !canApproveSHEQ}
+        rejectedDocuments={documents
+          .filter((document) => document.approvalStatus === 'rejected')
+          .map((document) => ({
+            id: document.id,
+            name: document.documentation?.name,
+            rejectionReason: document.rejectionReason,
+          }))}
+        documentCount={documents.length}
+        observations={observations}
+        isLoading={isLoading}
+        onClose={() => setRejectModalOpen(false)}
+        onObservationsChange={setObservations}
+        onConfirm={canApproveAC && !canApproveSHEQ ? handleRejectAC : handleRejectSHEQ}
+      />
 
       <RejectApplicationDocumentModal
         isOpen={rejectDocModalOpen}
