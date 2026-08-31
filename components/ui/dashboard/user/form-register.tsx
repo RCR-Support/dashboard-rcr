@@ -25,12 +25,10 @@ import {
 } from 'lucide-react';
 import { SearchSelect } from '../../search-select';
 import { fetchCompanies } from '@/actions';
-import { fetchAdmins } from '@/actions/user/get-admincContractor';
 import { registerAction } from '@/actions/register-action';
 import { cn } from '@/lib/utils';
 import { editAction } from '@/actions/edit-action';
 import { UserEdit } from '@/interfaces/user.interfaceEdit';
-import { AdminOption } from '@/interfaces/admin.interface';
 import {
   RegisterActionInput,
 } from '@/interfaces/action.interface';
@@ -330,7 +328,6 @@ const FormRegister = ({
     });
   };
 
-  const [, setAdmins] = useState<AdminOption[]>([]);
   const watchedRoles = form.watch('roles');
   const previousRolesRef = useRef<string[] | null>(null);
 
@@ -406,17 +403,6 @@ const FormRegister = ({
       setSelectedImage(userImage);
     }
   }, [isEditing, initialData]);
-
-  useEffect(() => {
-    const loadAdmins = async () => {
-      // Cargar los administradores independientemente del rol seleccionado
-      const response = await fetchAdmins();
-      if (response.ok && response.admins) {
-        setAdmins(response.admins);
-      }
-    };
-    loadAdmins();
-  }, []);
 
   // Manejador para la carga de imágenes
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
