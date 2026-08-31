@@ -6,8 +6,7 @@ import { Button } from '@heroui/button';
 import { Divider } from '@heroui/divider';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Textarea } from '@heroui/input';
-import Image from 'next/image';
-import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit, ArrowRightLeft, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertCircle, Edit, ArrowRightLeft, RotateCcw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -19,6 +18,7 @@ import { resetApplicationStatus } from '@/actions/applications/reset-application
 import { usePermissions } from '@/hooks/usePermissions';
 import { ApplicationSidebar } from './ApplicationSidebar';
 import { ApplicationDocuments } from './ApplicationDocuments';
+import { ApplicationDocumentViewer } from './ApplicationDocumentViewer';
 
 interface SheqUser {
   id: string;
@@ -771,36 +771,11 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
         </div>
       </div>
 
-      {/* Modal Visor de Documentos */}
-      <Modal 
-        isOpen={viewerOpen} 
+      <ApplicationDocumentViewer
+        isOpen={viewerOpen}
+        document={viewerDocument}
         onClose={() => setViewerOpen(false)}
-        size="5xl"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          <ModalHeader>{viewerDocument?.name}</ModalHeader>
-          <ModalBody className="p-0">
-            {viewerDocument?.type === 'PDF' ? (
-              <iframe
-                src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewerDocument.url)}&embedded=true`}
-                className="w-full h-[80vh]"
-                title={viewerDocument.name}
-              />
-            ) : (
-              <div className="relative w-full h-[80vh] bg-gray-100">
-                <Image
-                  src={viewerDocument?.url || ''}
-                  alt={viewerDocument?.name || ''}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 80vw"
-                />
-              </div>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      />
 
       {/* Modal Aprobar AC */}
       {(canApproveAC) && (
