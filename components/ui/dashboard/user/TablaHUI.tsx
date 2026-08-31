@@ -32,7 +32,6 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Input,
   Button,
   DropdownTrigger,
   Dropdown,
@@ -45,8 +44,6 @@ import {
 } from '@heroui/react';
 import { Avatar } from '@mui/material';
 import { HiOutlinePlus, HiDotsVertical } from 'react-icons/hi';
-import { CiSearch } from 'react-icons/ci';
-import { HiMiniChevronDown } from 'react-icons/hi2';
 import { User } from '@/interfaces';
 import { formatRun } from '@/lib/validations';
 import { formatPhoneNumber } from '@/lib/formatPhoneNumber';
@@ -58,6 +55,7 @@ import { ReassignContractsModal } from './ReassignContractsModal';
 import { ReturnContractsModal, PendingReturnLog } from './ReturnContractsModal';
 import { getCompanyUsers } from '@/actions/company/userCompany-actions';
 import { CompanySelect } from '@/interfaces/company.interface';
+import { UserTableToolbar } from './UserTableToolbar';
 interface Props {
   users: User[];
 }
@@ -811,162 +809,33 @@ export default function App({ users }: Props) {
     }
   }, []);
 
-  const topContent = useMemo(() => {
-    return (
-      <div className=" w-fullcol-span-12">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between gap-3 items-end">
-            <Input
-              isClearable
-              classNames={{
-                inputWrapper: 'border-1',
-              }}
-              placeholder="Buscar por nombre o RUN..."
-              size="sm"
-              startContent={<CiSearch className="text-default-300" />}
-              value={filterValue}
-              variant="bordered"
-              onClear={() => setFilterValue('')}
-              onValueChange={onSearchChange}
-            />
-            <div className="flex gap-3">
-              <Dropdown>
-                <DropdownTrigger className="hidden sm:flex">
-                  <Button
-                    endContent={<HiMiniChevronDown className="text-small" />}
-                    size="sm"
-                    variant="flat"
-                  >
-                    Status
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  disallowEmptySelection
-                  aria-label="Status"
-                  closeOnSelect={false}
-                  selectedKeys={statusFilter}
-                  selectionMode="multiple"
-                  onSelectionChange={setStatusFilter}
-                >
-                  {deletedLogicOptions.map(status => (
-                    <DropdownItem
-                      key={String(status.uid)}
-                      className="capitalize"
-                    >
-                      {capitalize(status.name)}
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-              <Dropdown>
-                <DropdownTrigger className="hidden sm:flex">
-                  <Button
-                    endContent={<HiMiniChevronDown className="text-small" />}
-                    size="sm"
-                    variant="flat"
-                  >
-                    Activo
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  disallowEmptySelection
-                  aria-label="Activo"
-                  closeOnSelect={false}
-                  selectedKeys={isActiveFilter}
-                  selectionMode="multiple"
-                  onSelectionChange={setIsActiveFilter}
-                >
-                  {isActiveOptions.map(status => (
-                    <DropdownItem
-                      key={String(status.uid)}
-                      className="capitalize"
-                    >
-                      {capitalize(status.name)}
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-              <div className="hidden sm:flex items-center">
-                <label className="text-default-500 mr-2 text-sm">Empresa:</label>
-                <select
-                  value={companyFilter}
-                  onChange={e => setCompanyFilter(e.target.value)}
-                  className="bg-transparent outline-none text-sm"
-                >
-                  <option value="all">Todas</option>
-                  {companyOptions.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Dropdown>
-                <DropdownTrigger className="">
-                  <Button
-                    endContent={<HiMiniChevronDown className="text-small" />}
-                    size="sm"
-                    variant="flat"
-                  >
-                    Columnas
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  disallowEmptySelection
-                  aria-label="Table Columns"
-                  closeOnSelect={false}
-                  selectedKeys={visibleColumns}
-                  selectionMode="multiple"
-                  onSelectionChange={(keys) => {
-                    setVisibleColumns(keys);
-                    if (keys !== 'all') {
-                      localStorage.setItem('tablaHUI_visibleColumns', JSON.stringify(Array.from(keys)));
-                    }
-                  }}
-                >
-                  {columns.map(column => (
-                    <DropdownItem key={column.uid} className="capitalize">
-                      {capitalize(column.name)}
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-              <Button
-                className="bg-foreground text-background hidden sm:flex"
-                endContent={<HiOutlinePlus />}
-                size="sm"
-              >
-                Crear nuevo usuario
-              </Button>
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-default-400 text-small">
-              Total {users.length} {users.length === 1 ? 'usuario' : 'usuarios'}
-            </span>
-            <label className="flex items-center text-default-400 text-small">
-              Filas por página:
-              <select
-                value={rowsPerPage}
-                onChange={onRowsPerPageChange}
-                className="bg-transparent outline-none"
-              >
-                {[5, 15, 30, 40, 50].map(rows => (
-                  <option
-                    key={rows}
-                    value={rows}
-                    className="text-default-400 p-2 "
-                  >
-                    {rows}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-      </div>
-    );
-  }, [
+  const topContent = useMemo(() => (
+    <UserTableToolbar
+      columns={columns}
+      deletedLogicOptions={deletedLogicOptions}
+      isActiveOptions={isActiveOptions}
+      filterValue={filterValue}
+      statusFilter={statusFilter}
+      isActiveFilter={isActiveFilter}
+      visibleColumns={visibleColumns}
+      companyFilter={companyFilter}
+      companyOptions={companyOptions}
+      userCount={users.length}
+      rowsPerPage={rowsPerPage}
+      onFilterValueChange={onSearchChange}
+      onFilterClear={() => setFilterValue('')}
+      onStatusFilterChange={setStatusFilter}
+      onIsActiveFilterChange={setIsActiveFilter}
+      onCompanyFilterChange={setCompanyFilter}
+      onVisibleColumnsChange={(keys) => {
+        setVisibleColumns(keys);
+        if (keys !== 'all') {
+          localStorage.setItem('tablaHUI_visibleColumns', JSON.stringify(Array.from(keys)));
+        }
+      }}
+      onRowsPerPageChange={onRowsPerPageChange}
+    />
+  ), [
     filterValue,
     statusFilter,
     isActiveFilter,
