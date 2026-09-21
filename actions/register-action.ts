@@ -3,14 +3,15 @@
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { registerSchema } from '@/lib/zod';
-import { z } from 'zod';
 import { RoleEnum, Prisma } from '@prisma/client';
 import {
-  EditActionInput,
   RegisterActionInput,
 } from '@/interfaces/action.interface';
 import { v2 as cloudinary } from 'cloudinary';
 import { sendWelcomeEmail } from '@/lib/email/postmark';
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
+import { createPasswordSetupUrl } from '@/lib/security/password-setup';
 
 // Configurar Cloudinary con las credenciales del .env
 cloudinary.config({
@@ -24,6 +25,15 @@ export const registerAction = async (
   formData: FormData
 ) => {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return { error: 'No autenticado' };
+    }
+
+    if (!hasActionPermission('users:create', session.user.roles as RoleEnum[])) {
+      return { error: 'No tienes permiso para crear usuarios' };
+    }
+
     const values = inputData;
 
     // Validación del schema
@@ -118,36 +128,8 @@ export const registerAction = async (
       },
     };
 
-    // Procesar la imagen si existe
-    const imageFile = formData.get('image') as File;
-    if (imageFile && imageFile.size > 0) {
-      const arrayBuffer = await imageFile.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
-
-      const uploadResult = await new Promise((resolve, reject) => {
-        cloudinary.uploader.upload(
-          base64Image,
-          {
-            folder: 'user-profiles',
-            public_id: `user-${Date.now()}`,
-            overwrite: true,
-            transformation: [
-              { width: 400, height: 400, gravity: 'face', crop: 'fill' },
-            ],
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
-      });
-
-      createData.image = (uploadResult as any).secure_url;
-    }
-
     // Crear usuario
-    const newUser = await db.user.create({
+    let newUser = await db.user.create({
       data: createData,
       include: {
         company: true,
@@ -159,14 +141,54 @@ export const registerAction = async (
       },
     });
 
+    // Procesar la imagen si existe, usando el id real del usuario creado
+    const imageFile = formData.get('image') as File;
+    if (imageFile && imageFile.size > 0) {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+
+      const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        cloudinary.uploader.upload(
+          base64Image,
+          {
+            folder: 'user-profiles',
+            public_id: `user-${newUser.id}`,
+            overwrite: true,
+            invalidate: true,
+            transformation: [
+              { quality: 'auto:best', fetch_format: 'auto' },
+            ],
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else if (result) resolve({ secure_url: result.secure_url });
+            else reject(new Error('No result from Cloudinary'));
+          }
+        );
+      });
+
+      newUser = await db.user.update({
+        where: { id: newUser.id },
+        data: { image: uploadResult.secure_url },
+        include: {
+          company: true,
+          roles: {
+            include: {
+              role: true,
+            },
+          },
+        },
+      });
+    }
+
     // Enviar correo de bienvenida con credenciales (sin bloquear si falla)
     try {
       await sendWelcomeEmail({
         toEmail: newUser.email!,
         displayName: newUser.displayName || `${newUser.name} ${newUser.lastName}`,
         userName: newUser.userName!,
-        password: data.password, // texto plano antes de hashear
-        isTemporaryPassword: false,
+        passwordSetupUrl: await createPasswordSetupUrl(newUser.email!),
       });
     } catch (emailError) {
       console.error('[registerAction] Error enviando correo de bienvenida:', emailError);

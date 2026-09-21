@@ -117,7 +117,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (fullUser) {
         user.displayName = fullUser.displayName;
-        
+
+        // Registrar última actividad del usuario
+        await db.user.update({
+          where: { id: user.id! },
+          data: { lastActive: new Date() },
+        });
+
         if (fullUser.company) {
           user.company = {
             id: fullUser.company.id,

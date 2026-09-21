@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
-import bcrypt from 'bcryptjs';
 import { sendWelcomeEmail } from '@/lib/email/postmark';
+import { createPasswordSetupUrl } from '@/lib/security/password-setup';
 
 // 1. Control de errores más detallado
 function logError(error: unknown) {
@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
-    if (!hasActionPermission('companies:view:all', session.user.roles)) {
+    if (!hasActionPermission('users:edit:any', session.user.roles)) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
     }
-    const data: { isActive?: boolean; deletedLogic?: boolean; password?: string } = {};
+    const data: { isActive?: boolean; deletedLogic?: boolean } = {};
     if (typeof isActive === 'boolean') data.isActive = isActive;
     if (typeof deletedLogic === 'boolean') data.deletedLogic = deletedLogic;
     if (Object.keys(data).length === 0) {
@@ -43,20 +43,15 @@ export async function PATCH(req: NextRequest) {
       select: { isActive: true, password: true, email: true, displayName: true, userName: true, name: true, lastName: true },
     });
 
-    // Generar contraseña temporal si se está activando un usuario sin contraseña (pre-registro)
-    let tempPassword: string | null = null;
+    // Un pre-registro activado configura su propia contraseña mediante enlace de un solo uso.
+    let requiresPasswordSetup = false;
     if (
       isActive === true &&
       existingUser &&
       existingUser.isActive === false &&
       !existingUser.password
     ) {
-      // Genera una contraseña tipo "Rcr#XXXXXX" con 6 chars aleatorios
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-      let rand = '';
-      for (let i = 0; i < 6; i++) rand += chars[Math.floor(Math.random() * chars.length)];
-      tempPassword = `Rcr#${rand}`;
-      data.password = await bcrypt.hash(tempPassword, 10);
+      requiresPasswordSetup = true;
     }
 
     const user = await db.user.update({
@@ -65,14 +60,13 @@ export async function PATCH(req: NextRequest) {
     });
 
     // Enviar correo de bienvenida si se activó una cuenta pre-registrada
-    if (tempPassword && existingUser?.email) {
+    if (requiresPasswordSetup && existingUser?.email) {
       try {
         await sendWelcomeEmail({
           toEmail: existingUser.email,
           displayName: existingUser.displayName || `${existingUser.name} ${existingUser.lastName}`,
           userName: existingUser.userName ?? existingUser.email,
-          password: tempPassword,
-          isTemporaryPassword: true,
+          passwordSetupUrl: await createPasswordSetupUrl(existingUser.email),
         });
       } catch (emailError) {
         console.error('[PATCH /api/users] Error enviando correo de bienvenida:', emailError);

@@ -10,8 +10,9 @@ import { RoleEnum } from '@prisma/client';
 export default async function ApplicationPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const session = await auth();
   
   if (!session?.user) {
@@ -25,7 +26,7 @@ export default async function ApplicationPage({
   try {
     application = await db.application.findUnique({
     where: {
-      id: params.id,
+      id,
     },
     select: {
       id: true,

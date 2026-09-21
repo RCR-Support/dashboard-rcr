@@ -37,6 +37,14 @@ interface ImageEditorModalProps {
   originalFile: File;
   onSave: (file: File) => void;
   onCancel: () => void;
+  title?: string;
+  subtitle?: string;
+  aspectRatio?: number;
+  targetWidth?: number;
+  targetHeight?: number;
+  cropShape?: 'rect' | 'round';
+  guideTitle?: string;
+  guideItems?: string[];
 }
 
 export function ImageEditorModal({
@@ -45,6 +53,14 @@ export function ImageEditorModal({
   originalFile,
   onSave,
   onCancel,
+  title = 'Editar Foto de Credencial',
+  subtitle = 'Ajusta la imagen para que muestre el rostro completo',
+  aspectRatio = 3 / 4,
+  targetWidth = 300,
+  targetHeight = 400,
+  cropShape = 'rect',
+  guideTitle = '📷 Guía de foto',
+  guideItems = ['Rostro centrado', 'Fondo uniforme', 'Buena iluminación'],
 }: ImageEditorModalProps) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -71,16 +87,16 @@ export function ImageEditorModal({
         rotation
       );
 
-      // 2. Redimensionar a tamaño de credencial (300x400px)
+      // 2. Redimensionar al tamaño objetivo
       const resizedBlob = await resizeAndCompressImage(
         croppedBlob,
-        300,
-        400,
+        targetWidth,
+        targetHeight,
         0.9 // 90% calidad
       );
 
       // 3. Convertir a File
-      const fileName = `credencial-${originalFile.name.replace(/\.[^/.]+$/, '')}.jpg`;
+      const fileName = `${originalFile.name.replace(/\.[^/.]+$/, '')}-edited.jpg`;
       const finalFile = blobToFile(resizedBlob, fileName);
 
       onSave(finalFile);
@@ -100,9 +116,9 @@ export function ImageEditorModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
           <div>
-            <h2 className="text-xl font-semibold">Editar Foto de Credencial</h2>
+            <h2 className="text-xl font-semibold">{title}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Ajusta la imagen para que muestre el rostro completo
+              {subtitle}
             </p>
           </div>
           <button
@@ -120,25 +136,29 @@ export function ImageEditorModal({
             crop={crop}
             zoom={zoom}
             rotation={rotation}
-            aspect={3 / 4} // Proporción vertical para credencial
+            aspect={aspectRatio}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onRotationChange={setRotation}
             onCropComplete={onCropComplete}
-            cropShape="rect"
+            cropShape={cropShape}
             showGrid={true}
             objectFit="contain"
           />
 
           {/* Guías visuales */}
-          <div className="absolute top-4 left-4 bg-blue-500/90 text-white px-3 py-2 rounded-lg text-sm">
-            <p className="font-medium">📷 Guía de foto</p>
-            <ul className="mt-1 space-y-1 text-xs">
-              <li>✓ Rostro centrado</li>
-              <li>✓ Fondo uniforme</li>
-              <li>✓ Buena iluminación</li>
-            </ul>
-          </div>
+          {guideTitle && (
+            <div className="absolute top-4 left-4 bg-blue-500/90 text-white px-3 py-2 rounded-lg text-sm z-10">
+              <p className="font-medium">{guideTitle}</p>
+              {guideItems && guideItems.length > 0 && (
+                <ul className="mt-1 space-y-1 text-xs">
+                  {guideItems.map((item, idx) => (
+                    <li key={idx}>✓ {item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Controls */}
@@ -188,7 +208,7 @@ export function ImageEditorModal({
           {/* Info */}
           <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 pt-2 border-t dark:border-gray-700">
             <span>Tamaño original: {formatFileSize(originalFile.size)}</span>
-            <span>Formato final: 300x400px (JPEG optimizado)</span>
+            <span>Formato final: {targetWidth}x{targetHeight}px (JPEG optimizado)</span>
           </div>
 
           {/* Actions */}

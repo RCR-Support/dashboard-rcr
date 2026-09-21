@@ -22,6 +22,7 @@ model Documentation {
   id                 String                  @id @default(cuid())
   name               String                  @unique
   isGlobal           Boolean                 @default(false)
+  acceptedFileType   AcceptedFileType        @default(PDF)
   activities         ActivityDocumentation[]
   documentationFiles DocumentationFile[]
 }
@@ -367,6 +368,13 @@ enum FileType {
   IMG
   DOC
   OTHER
+}
+
+enum AcceptedFileType {
+  PDF
+  IMAGE
+  DOCUMENT
+  ANY
 }
 
 enum AuditAction {

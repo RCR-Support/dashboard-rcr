@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Button, Input, Tooltip, Chip } from '@heroui/react';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,8 @@ interface ActivityType {
   }[];
 }
 
+type DocumentationRelation = ActivityType['requiredDocumentations'][number];
+
 export default function ActivityMatrixPage() {
   const [documentations, setDocumentations] = useState<Documentation[]>([]);
   const [activities, setActivities] = useState<ActivityType[]>([]);
@@ -51,18 +53,36 @@ export default function ActivityMatrixPage() {
   const [searchActivity, setSearchActivity] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'global' | 'specific'>('all');
 
-  // Helper para determinar si un documento es global o específico
-  const isDocumentGlobal = useCallback((docId: string): boolean => {
-    return activities.some((activity) =>
-      activity.requiredDocumentations.some(
-        (rel) => rel.documentationId === docId && rel.isSpecific === false
-      )
-    );
+  const { globalDocumentationIds, relationsByActivity } = useMemo(() => {
+    const globalIds = new Set<string>();
+    const relationIndex = new Map<string, Map<string, DocumentationRelation>>();
+
+    activities.forEach(activity => {
+      const activityRelations = new Map<string, DocumentationRelation>();
+
+      activity.requiredDocumentations.forEach(relation => {
+        if (!activityRelations.has(relation.documentationId)) {
+          activityRelations.set(relation.documentationId, relation);
+        }
+        if (!relation.isSpecific) {
+          globalIds.add(relation.documentationId);
+        }
+      });
+
+      relationIndex.set(activity.id, activityRelations);
+    });
+
+    return {
+      globalDocumentationIds: globalIds,
+      relationsByActivity: relationIndex,
+    };
   }, [activities]);
 
   // Estadísticas
   const stats = useMemo(() => {
-    const globalDocs = documentations.filter((d) => isDocumentGlobal(d.id)).length;
+    const globalDocs = documentations.filter(documentation =>
+      globalDocumentationIds.has(documentation.id)
+    ).length;
     const specificDocs = documentations.length - globalDocs;
     const totalRelations = activities.reduce(
       (acc, act) => acc + act.requiredDocumentations.length,
@@ -75,20 +95,20 @@ export default function ActivityMatrixPage() {
       totalActivities: activities.length,
       totalRelations,
     };
-  }, [documentations, activities, isDocumentGlobal]);
+  }, [documentations, activities, globalDocumentationIds]);
 
   // Filtrar documentaciones
   const filteredDocs = useMemo(() => {
     return documentations.filter((doc) => {
       const matchesSearch = doc.name.toLowerCase().includes(searchDoc.toLowerCase());
-      const isGlobal = isDocumentGlobal(doc.id);
+      const isGlobal = globalDocumentationIds.has(doc.id);
       const matchesFilter =
         filterType === 'all' ||
         (filterType === 'global' && isGlobal) ||
         (filterType === 'specific' && !isGlobal);
       return matchesSearch && matchesFilter;
     });
-  }, [documentations, searchDoc, filterType, isDocumentGlobal]);
+  }, [documentations, searchDoc, filterType, globalDocumentationIds]);
 
   // Filtrar actividades
   const filteredActivities = useMemo(() => {
@@ -243,7 +263,7 @@ export default function ActivityMatrixPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {filteredDocs.map((doc) => {
-              const isGlobal = isDocumentGlobal(doc.id);
+              const isGlobal = globalDocumentationIds.has(doc.id);
               return (
                 <div
                   key={doc.id}
@@ -386,7 +406,7 @@ export default function ActivityMatrixPage() {
                       <tr key={doc.id} className={cn(idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50')}>
                         <td className="sticky left-0 z-10 bg-inherit px-4 py-3 text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 min-w-[200px] max-w-[250px]">
                           <div className="flex items-center gap-2 overflow-hidden">
-                            {isDocumentGlobal(doc.id) ? (
+                            {globalDocumentationIds.has(doc.id) ? (
                               <Globe className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                             ) : (
                               <FileStack className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
@@ -395,7 +415,7 @@ export default function ActivityMatrixPage() {
                           </div>
                         </td>
                         {filteredActivities.map((activity) => {
-                          const rel = activity.requiredDocumentations.find((rd) => rd.documentationId === doc.id);
+                          const rel = relationsByActivity.get(activity.id)?.get(doc.id);
                           return (
                             <td key={`${doc.id}-${activity.id}`} className="px-2 py-2 text-center border-r border-gray-100 dark:border-gray-700">
                               {rel ? (
@@ -439,7 +459,7 @@ export default function ActivityMatrixPage() {
                           <span className="truncate block" title={activity.name}>{activity.name}</span>
                         </td>
                         {filteredDocs.map((doc) => {
-                          const rel = activity.requiredDocumentations.find((rd) => rd.documentationId === doc.id);
+                          const rel = relationsByActivity.get(activity.id)?.get(doc.id);
                           return (
                             <td key={`${activity.id}-${doc.id}`} className="px-2 py-2 text-center border-r border-gray-100 dark:border-gray-700">
                               {rel ? (

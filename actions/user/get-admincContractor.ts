@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
+import { hasActionPermission } from '@/config/action-permissions';
 import { RoleEnum } from '@prisma/client';
 import { AdminResponse, AdminOption } from '@/interfaces/admin.interface';
 
@@ -13,6 +14,14 @@ export const fetchAdmins = async (): Promise<AdminResponse> => {
       ok: false,
       admins: [],
       message: 'No estás autenticado',
+    };
+  }
+
+  if (!hasActionPermission('users:edit:any', session.user.roles as RoleEnum[])) {
+    return {
+      ok: false,
+      admins: [],
+      message: 'No tienes permisos para consultar administradores de contrato',
     };
   }
 

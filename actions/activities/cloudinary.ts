@@ -19,9 +19,10 @@ export async function uploadActivityImage(
       base64Image,
       {
         folder: 'activities',
-        public_id: `activity-${activityId}-${Date.now()}`,
+        public_id: `activity-${activityId}`,
         overwrite: true,
-        transformation: [{ width: 400, height: 400, crop: 'fill' }],
+        invalidate: true,
+        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
       },
       (error, result) => {
         if (error) reject(error);
@@ -29,4 +30,14 @@ export async function uploadActivityImage(
       }
     );
   });
+}
+
+export async function deleteActivityImage(activityId: string): Promise<void> {
+  try {
+    await cloudinary.uploader.destroy(`activities/activity-${activityId}`, {
+      invalidate: true,
+    });
+  } catch (error) {
+    console.error('Error al eliminar imagen de Cloudinary:', error);
+  }
 }

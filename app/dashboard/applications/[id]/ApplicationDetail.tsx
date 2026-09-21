@@ -3,11 +3,8 @@
 import { Card, CardBody, CardHeader } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { Button } from '@heroui/button';
-import { Divider } from '@heroui/divider';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { Textarea } from '@heroui/input';
-import Image from 'next/image';
-import { FileText, Download, CheckCircle, XCircle, Clock, User, Building2, FileCheck, Calendar, Eye, AlertCircle, Edit, ArrowRightLeft } from 'lucide-react';
+import { ProcessStatus, StateAc, StateSheq } from '@prisma/client';
+import { CheckCircle, XCircle, Clock, Edit, RotateCcw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -15,7 +12,16 @@ import { approveApplicationAC, rejectApplicationAC } from '@/actions/application
 import { approveApplicationSHEQ, rejectApplicationSHEQ } from '@/actions/applications/approve-reject-sheq';
 import { approveDocument } from '@/actions/applications/approve-document';
 import { rejectDocument } from '@/actions/applications/reject-document';
+import { resetApplicationStatus } from '@/actions/applications/reset-application-status';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ApplicationSidebar } from './ApplicationSidebar';
+import { ApplicationDocuments } from './ApplicationDocuments';
+import { ApplicationDocumentViewer } from './ApplicationDocumentViewer';
+import { RejectApplicationDocumentModal } from './RejectApplicationDocumentModal';
+import { ApplicationHistory } from './ApplicationHistory';
+import { ApproveApplicationAcModal } from './ApproveApplicationAcModal';
+import { RejectApplicationModal } from './RejectApplicationModal';
+import { ResetApplicationStatusModal } from './ResetApplicationStatusModal';
 
 interface SheqUser {
   id: string;
@@ -33,9 +39,9 @@ interface ApplicationDetailProps {
     license: string | null;
     licenseExpiration: Date | null;
     status: string;
-    processStatus: string;
-    stateAc: string;
-    stateSheq: string;
+    processStatus: ProcessStatus;
+    stateAc: StateAc;
+    stateSheq: StateSheq;
     createdAt: Date;
     company: {
       name: string | null;
@@ -86,7 +92,7 @@ interface ApplicationDetailProps {
     versions?: Array<{
       id: string;
       isActive: boolean;
-      processStatus: string;
+      processStatus: ProcessStatus;
     }>;
   };
   userRoles: string[];
@@ -108,19 +114,22 @@ const stateAcColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
   adjuntar: 'danger',
 };
 
+const stateAcLabelMap: Record<string, string> = {
+  aprobado: 'Aprobado',
+  pendiente: 'En revisión',
+  adjuntar: 'Rechazado',
+};
+
 const stateSheqColorMap: Record<string, 'success' | 'warning' | 'danger'> = {
   aprobado: 'success',
   pendiente: 'warning',
   rechazado: 'danger',
 };
 
-const actionLabels: Record<string, string> = {
-  CREACION: 'Creación',
-  EDICION: 'Edición',
-  APROBACION: 'Aprobación',
-  RECHAZO: 'Rechazo',
-  OBSERVACION: 'Observación',
-  ELIMINACION: 'Eliminación',
+const stateSheqLabelMap: Record<string, string> = {
+  aprobado: 'Aprobado',
+  pendiente: 'En revisión',
+  rechazado: 'Rechazado',
 };
 
 export function ApplicationDetail({ application, userRoles, userId, sheqUsers, versioningAvailable, activeReassignment }: ApplicationDetailProps) {
@@ -136,7 +145,9 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
   const [isLoading, setIsLoading] = useState(false);
   const [rejectDocModalOpen, setRejectDocModalOpen] = useState(false);
   const [selectedDocId, setSelectedDocId] = useState<string>('');
-  
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetStage, setResetStage] = useState<'ac' | 'sheq'>('ac');
+
   // ✅ Verificar permisos granulares
   const canApproveDocuments = can('documents:approve');
   const canRejectDocuments = can('documents:reject');
@@ -153,6 +164,9 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
   const documents = application.documentationFiles.filter(
     doc => doc.documentationId !== null && !(doc.type === 'IMG' && !doc.documentationId)
   );
+
+  // Revisor actual de documentos pendientes
+  const pendingReviewer = application.stateAc !== 'aprobado' ? 'AC' : 'SHEQ';
 
   // Verificar estado de revisión de documentos
   const docsApproved = documents.filter(d => d.approvalStatus === 'approved').length;
@@ -175,6 +189,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                          application.userSheq?.id &&
                          userId === application.userSheq.id) ||
                          (isAdmin && application.stateAc === 'aprobado' && application.stateSheq === 'pendiente');
+  const canReviewCurrentStage = canApproveAC || canApproveSHEQ;
 
   // Indica si el admin está actuando en representación
   const adminActingAsAC = isAdmin && !userRoles.includes('adminContractor') && canApproveAC;
@@ -325,6 +340,20 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
     }
   };
 
+  const handleResetStatus = async () => {
+    setIsLoading(true);
+    const result = await resetApplicationStatus(application.id, resetStage);
+    setIsLoading(false);
+
+    if (result.success) {
+      Swal.fire({ icon: 'success', title: 'Estado reiniciado', text: result.message });
+      setResetModalOpen(false);
+      router.refresh();
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: result.message });
+    }
+  };
+
   const handleApproveDocument = async (documentId: string) => {
     const result = await approveDocument(documentId);
     if (result.success) {
@@ -388,29 +417,74 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Revisión de Solicitud</h1>
-        <p className="text-default-500">ID: {application.id}</p>
+        {isAdmin && (
+          <p className="text-xs text-default-400 font-mono">ID: {application.id}</p>
+        )}
       </div>
 
       {/* Estados y Acciones */}
       <Card className="mb-6">
         <CardBody>
           <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex gap-3 items-center">
-              <div>
-                <p className="text-sm text-default-500 mb-1">Admin. Contrato</p>
-                <Chip color={stateAcColorMap[application.stateAc]} variant="flat">
-                  {application.stateAc.toUpperCase()}
+            <div className="flex gap-4 items-center flex-wrap">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-default-400 uppercase tracking-wide">Revisión AC</p>
+                <Chip
+                  color={stateAcColorMap[application.stateAc]}
+                  variant="flat"
+                  startContent={
+                    application.stateAc === 'aprobado'
+                      ? <CheckCircle className="w-3.5 h-3.5" />
+                      : application.stateAc === 'adjuntar'
+                      ? <XCircle className="w-3.5 h-3.5" />
+                      : <Clock className="w-3.5 h-3.5" />
+                  }
+                >
+                  {stateAcLabelMap[application.stateAc] ?? application.stateAc}
                 </Chip>
               </div>
-              <div>
-                <p className="text-sm text-default-500 mb-1">SHEQ</p>
-                <Chip color={stateSheqColorMap[application.stateSheq]} variant="flat">
-                  {application.stateSheq.toUpperCase()}
+
+              <div className="text-default-300 self-center">→</div>
+
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-default-400 uppercase tracking-wide">Revisión SHEQ</p>
+                <Chip
+                  color={stateSheqColorMap[application.stateSheq]}
+                  variant="flat"
+                  isDisabled={application.stateAc !== 'aprobado'}
+                  startContent={
+                    application.stateSheq === 'aprobado'
+                      ? <CheckCircle className="w-3.5 h-3.5" />
+                      : application.stateSheq === 'rechazado'
+                      ? <XCircle className="w-3.5 h-3.5" />
+                      : <Clock className="w-3.5 h-3.5" />
+                  }
+                >
+                  {stateSheqLabelMap[application.stateSheq] ?? application.stateSheq}
                 </Chip>
               </div>
             </div>
 
             {/* Botones de acción según rol */}
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  color="warning"
+                  startContent={<RotateCcw className="w-4 h-4" />}
+                  onPress={() => {
+                    setResetStage(
+                      application.stateAc === 'aprobado' ? 'sheq' : 'ac'
+                    );
+                    setResetModalOpen(true);
+                  }}
+                >
+                  Reiniciar estado
+                </Button>
+              </div>
+            )}
+
             {canEdit && (
               <div className="flex gap-2">
                 <Button 
@@ -531,132 +605,12 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda: Foto y Datos del Trabajador */}
-        <div className="space-y-6">
-          {/* Foto */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Fotografía
-              </h2>
-            </CardHeader>
-            <CardBody>
-              <div className="relative w-full max-w-[120px] mx-auto aspect-[3/4] rounded-lg overflow-hidden bg-gray-100">
-                {workerPhoto ? (
-                  <Image
-                    src={workerPhoto}
-                    alt={workerFullName}
-                    fill
-                    className="object-cover"
-                    sizes="120px"
-                    quality={90}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <User className="w-16 h-16 text-gray-400" />
-                  </div>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Datos del Trabajador */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold">Información Personal</h2>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <div>
-                <p className="text-sm text-default-500">Nombre Completo</p>
-                <p className="font-medium">{workerFullName}</p>
-              </div>
-              <Divider />
-              <div>
-                <p className="text-sm text-default-500">RUN</p>
-                <p className="font-medium">{application.workerRun}</p>
-              </div>
-              {application.licenseExpiration && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Vencimiento de Acreditación
-                    </p>
-                    <p className="font-medium text-orange-600">
-                      {new Date(application.licenseExpiration).toLocaleDateString('es-CL')}
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
-
-          {/* Información del Contrato */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Contrato y Empresa
-              </h2>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <div>
-                <p className="text-sm text-default-500">Empresa</p>
-                <p className="font-medium">{application.company?.name}</p>
-              </div>
-              <Divider />
-              <div>
-                <p className="text-sm text-default-500">Contrato</p>
-                <p className="font-medium">{application.contract?.contractName}</p>
-                <p className="text-sm text-default-400">N° {application.contract?.contractNumber}</p>
-              </div>
-              {application.contract && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500">Vigencia del Contrato</p>
-                    <p className="text-sm">
-                      {new Date(application.contract.initialDate).toLocaleDateString('es-CL')} - 
-                      {new Date(application.contract.finalDate).toLocaleDateString('es-CL')}
-                    </p>
-                  </div>
-                </>
-              )}
-              {application.userAc && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500">Administrador de Contrato</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium">{application.userAc.displayName}</p>
-                      {activeReassignment && (
-                        <Chip size="sm" variant="flat" color="warning">Cobertura temporal</Chip>
-                      )}
-                    </div>
-                    <p className="text-sm text-default-400">{application.userAc.email}</p>
-                    {activeReassignment && (
-                      <div className="mt-2 rounded-md bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-3 py-2 text-xs space-y-1">
-                        <p className="flex items-center gap-1 text-warning-700 dark:text-warning-300 font-medium">
-                          <ArrowRightLeft size={12} />
-                          AC original ausente: {activeReassignment.originalAcName}
-                        </p>
-                        {activeReassignment.returnDate ? (
-                          <p className="text-warning-600 dark:text-warning-400">
-                            Retorno estimado:{' '}
-                            {new Date(activeReassignment.returnDate).toLocaleDateString('es-CL')}
-                          </p>
-                        ) : (
-                          <p className="text-warning-500">Sin fecha de retorno pactada</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
-        </div>
+        <ApplicationSidebar
+          workerFullName={workerFullName}
+          workerPhoto={workerPhoto}
+          application={application}
+          activeReassignment={activeReassignment}
+        />
 
         <div className="lg:col-span-2 space-y-6">
           {/* Actividades */}
@@ -680,398 +634,80 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
           </Card>
 
           {/* Documentos */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <FileCheck className="w-5 h-5" />
-                Documentos Adjuntos ({documents.length})
-              </h2>
-            </CardHeader>
-            <CardBody>
-              {documents.length > 0 ? (
-                <div className="space-y-3">
-                  {documents.map((doc) => {
-                  const approvalStatus = doc.approvalStatus || 'pending';
-                  
-                  return (
-                    <div 
-                      key={doc.id} 
-                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-default-100 transition-colors ${
-                        approvalStatus === 'approved' ? 'border-l-4 border-l-success bg-success-50/40 dark:bg-success-900/20' :
-                        approvalStatus === 'rejected' ? 'border-l-4 border-l-danger bg-danger-50/40 dark:bg-danger-900/20' :
-                        'border-l-4 border-l-warning'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className={`p-2 rounded ${doc.type === 'PDF' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
-                          <FileText className={`w-5 h-5 ${doc.type === 'PDF' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{doc.documentation?.name || 'Documento'}</p>
-                            {approvalStatus === 'approved' && (
-                              <Chip size="sm" color="success" variant="flat">Aprobado</Chip>
-                            )}
-                            {approvalStatus === 'rejected' && (
-                              <Chip size="sm" color="danger" variant="flat">Rechazado</Chip>
-                            )}
-                            {approvalStatus === 'pending' && (
-                              <Chip size="sm" color="warning" variant="flat">Pendiente</Chip>
-                            )}
-                          </div>
-                          {doc.expiresAt && (
-                            <p className="text-sm text-default-500">
-                              Vence: {new Date(doc.expiresAt).toLocaleDateString('es-CL')}
-                            </p>
-                          )}
-                          {doc.rejectionReason && (
-                            <p className="text-sm text-danger mt-1">
-                              Motivo: {doc.rejectionReason}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          color="primary"
-                          isIconOnly
-                          onPress={() => handleViewDocument(doc.url, doc.type, doc.documentation?.name || 'Documento')}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          color="default"
-                          isIconOnly
-                          as="a"
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        
-                        {/* Botones de aprobación/rechazo solo para revisores */}
-                        {/* Aprobar: se muestra si no está ya aprobado (permite cambiar desde rechazado) */}
-                        {canApproveDocuments && approvalStatus !== 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="success"
-                            isIconOnly
-                            onPress={() => handleApproveDocument(doc.id)}
-                            title="Aprobar documento"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {/* Rechazar: se muestra si no está ya rechazado (permite cambiar desde aprobado) */}
-                        {canRejectDocuments && approvalStatus !== 'rejected' && (
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="danger"
-                            isIconOnly
-                            onPress={() => handleRejectDocumentClick(doc.id)}
-                            title="Rechazar documento"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-default-300 bg-default-50 p-4">
-                  <p className="text-sm font-medium">No hay documentos adjuntos en esta solicitud.</p>
-                  <p className="mt-1 text-sm text-default-500">
-                    Si existían documentos en una versión anterior y fueron eliminados, ya no estarán disponibles aquí.
-                  </p>
-                </div>
-              )}
-            </CardBody>
-          </Card>
+          <ApplicationDocuments
+            documents={documents}
+            pendingReviewer={pendingReviewer}
+            canApprove={canReviewCurrentStage && canApproveDocuments}
+            canReject={canReviewCurrentStage && canRejectDocuments}
+            onView={handleViewDocument}
+            onApprove={handleApproveDocument}
+            onReject={handleRejectDocumentClick}
+          />
 
-          {/* Historial de Revisión */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Historial
-              </h2>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <div>
-                <p className="text-sm text-default-500">Fecha de Solicitud</p>
-                <p className="font-medium">{new Date(application.createdAt).toLocaleString('es-CL')}</p>
-              </div>
-              
-              {application.userAc && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500">Admin. Contrato Asignado</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium">{application.userAc.displayName}</p>
-                      {activeReassignment && (
-                        <Chip size="sm" variant="flat" color="warning">Cobertura temporal</Chip>
-                      )}
-                    </div>
-                    <p className="text-sm text-default-400">{application.userAc.email}</p>
-                    {activeReassignment && (
-                      <div className="mt-2 rounded-md bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-3 py-2 text-xs space-y-1">
-                        <p className="flex items-center gap-1 text-warning-700 dark:text-warning-300 font-medium">
-                          <ArrowRightLeft size={12} />
-                          AC original ausente: {activeReassignment.originalAcName}
-                        </p>
-                        {activeReassignment.returnDate ? (
-                          <p className="text-warning-600 dark:text-warning-400">
-                            Retorno estimado:{' '}
-                            {new Date(activeReassignment.returnDate).toLocaleDateString('es-CL')}
-                          </p>
-                        ) : (
-                          <p className="text-warning-500">Sin fecha de retorno pactada</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-              
-              {application.userSheq && (
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm text-default-500">SHEQ Asignado</p>
-                    <p className="font-medium">{application.userSheq.displayName}</p>
-                    <p className="text-sm text-default-400">{application.userSheq.email}</p>
-                  </div>
-                </>
-              )}
-
-              <Divider />
-              <div>
-                <p className="text-sm font-semibold mb-2">Versiones relacionadas</p>
-                {versioningAvailable ? (
-                  application.versions && application.versions.length > 0 ? (
-                    <div className="space-y-2">
-                      {application.versions.map((version) => (
-                        <div key={version.id} className="rounded-lg border border-default-200 p-3 text-sm">
-                          <p className="font-medium">Versión en revisión</p>
-                          <p className="text-default-500">ID: {version.id}</p>
-                          <p className="text-default-500">Estado: {version.processStatus}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-default-500">
-                      No hay versiones relacionadas para mostrar. Si una versión anterior fue eliminada, ya no está disponible.
-                    </p>
-                  )
-                ) : (
-                  <p className="text-sm text-default-500">
-                    El historial de versiones todavía no está disponible en esta base de datos.
-                  </p>
-                )}
-              </div>
-
-              {/* Auditoría */}
-              <>
-                <>
-                  <Divider />
-                  <div>
-                    <p className="text-sm font-semibold mb-2">Acciones Realizadas</p>
-                    {application.audits.length > 0 ? (
-                      <div className="space-y-2">
-                        {application.audits.map((audit) => (
-                          <div key={audit.id} className="text-sm border-l-2 border-default-300 pl-3 py-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{actionLabels[audit.action] || audit.action}</span>
-                              {audit.action === 'RECHAZO' && <AlertCircle className="w-4 h-4 text-red-500" />}
-                              {audit.action === 'APROBACION' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                            </div>
-                            <p className="text-default-500">{audit.changedBy.displayName}</p>
-                            <p className="text-xs text-default-400">
-                              {new Date(audit.changedAt).toLocaleString('es-CL')}
-                            </p>
-                            {audit.details && (
-                              <p className="mt-1 text-default-600 bg-default-100 p-2 rounded">
-                                {audit.details}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-default-500">No hay acciones registradas todavía para esta solicitud.</p>
-                    )}
-                  </div>
-                </>
-              </>
-            </CardBody>
-          </Card>
+          <ApplicationHistory
+            application={application}
+            versioningAvailable={versioningAvailable}
+            activeReassignment={activeReassignment}
+          />
         </div>
       </div>
 
-      {/* Modal Visor de Documentos */}
-      <Modal 
-        isOpen={viewerOpen} 
+      <ApplicationDocumentViewer
+        isOpen={viewerOpen}
+        document={viewerDocument}
         onClose={() => setViewerOpen(false)}
-        size="5xl"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          <ModalHeader>{viewerDocument?.name}</ModalHeader>
-          <ModalBody className="p-0">
-            {viewerDocument?.type === 'PDF' ? (
-              <iframe
-                src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewerDocument.url)}&embedded=true`}
-                className="w-full h-[80vh]"
-                title={viewerDocument.name}
-              />
-            ) : (
-              <div className="relative w-full h-[80vh] bg-gray-100">
-                <Image
-                  src={viewerDocument?.url || ''}
-                  alt={viewerDocument?.name || ''}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 80vw"
-                />
-              </div>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      />
 
-      {/* Modal Aprobar AC */}
-      {(canApproveAC) && (
-        <Modal isOpen={approveModalOpen} onClose={() => setApproveModalOpen(false)} size="lg" isDismissable={false}>
-          <ModalContent>
-            <ModalHeader>Aprobar Solicitud</ModalHeader>
-            <ModalBody>
-              <p className="mb-4">Selecciona el revisor SHEQ que continuará con la revisión:</p>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">Revisor SHEQ</label>
-                <select
-                  value={selectedSheq}
-                  onChange={(e) => setSelectedSheq(e.target.value)}
-                  className="w-full rounded-lg border border-default-300 bg-default-100 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-success"
-                >
-                  <option value="">Selecciona un revisor</option>
-                  {sheqUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.displayName} - {user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="flat" onPress={() => setApproveModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                color="success"
-                onPress={handleApproveAC}
-                isLoading={isLoading}
-                isDisabled={!selectedSheq || !allDocsApproved}
-              >
-                Aprobar
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+      {canApproveAC && (
+        <ApproveApplicationAcModal
+          isOpen={approveModalOpen}
+          selectedSheq={selectedSheq}
+          sheqUsers={sheqUsers}
+          isLoading={isLoading}
+          canApprove={allDocsApproved}
+          onClose={() => setApproveModalOpen(false)}
+          onSelectedSheqChange={setSelectedSheq}
+          onConfirm={handleApproveAC}
+        />
       )}
 
-      {/* Modal Rechazar */}
-      <Modal isOpen={rejectModalOpen} onClose={() => setRejectModalOpen(false)} size="lg" isDismissable={false}>
-        <ModalContent>
-          <ModalHeader>Rechazar Solicitud</ModalHeader>
-          <ModalBody>
-            <p className="mb-4 text-sm text-default-500">
-              {(canApproveAC && !canApproveSHEQ)
-                ? 'La solicitud será devuelta al usuario para que adjunte nuevamente los documentos.'
-                : 'La solicitud será devuelta al Admin Contractor para revisión.'}
-            </p>
-            
-            {/* Mostrar documentos rechazados si existen */}
-            {docsRejected > 0 && (
-              <div className="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg">
-                <p className="text-sm font-semibold text-danger mb-2">Documentos rechazados:</p>
-                <ul className="text-sm space-y-1">
-                  {documents
-                    .filter(d => d.approvalStatus === 'rejected')
-                    .map((doc, idx) => (
-                      <li key={idx} className="text-default-600">
-                        • <strong>{doc.documentation?.name}</strong>: {doc.rejectionReason}
-                      </li>
-                    ))}
-                </ul>
-                <p className="text-xs text-default-500 mt-2">
-                  {docsRejected === documents.length 
-                    ? 'Puedes dejar las observaciones vacías si solo rechazas por los documentos.' 
-                    : 'Agrega observaciones adicionales si rechazas por otros motivos (foto, datos, etc.)'}
-                </p>
-              </div>
-            )}
-            
-            <Textarea
-              label={docsRejected > 0 ? "Observaciones adicionales (opcional)" : "Observaciones"}
-              placeholder={docsRejected > 0 
-                ? "Agrega observaciones adicionales solo si rechazas por otros motivos (foto, datos personales, contrato, etc.)"
-                : "Ej: Foto no cumple con los requisitos (debe ser de rostro, fondo blanco)\nDatos personales incorrectos\nContrato no corresponde al puesto del trabajador"}
-              value={observations}
-              onValueChange={setObservations}
-              minRows={4}
-              isRequired={docsRejected === 0}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={() => setRejectModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              color="danger" 
-              onPress={(canApproveAC && !canApproveSHEQ) ? handleRejectAC : handleRejectSHEQ} 
-              isLoading={isLoading}
-            >
-              Rechazar
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <RejectApplicationModal
+        isOpen={rejectModalOpen}
+        returnToUser={canApproveAC && !canApproveSHEQ}
+        rejectedDocuments={documents
+          .filter((document) => document.approvalStatus === 'rejected')
+          .map((document) => ({
+            id: document.id,
+            name: document.documentation?.name,
+            rejectionReason: document.rejectionReason,
+          }))}
+        documentCount={documents.length}
+        observations={observations}
+        isLoading={isLoading}
+        onClose={() => setRejectModalOpen(false)}
+        onObservationsChange={setObservations}
+        onConfirm={canApproveAC && !canApproveSHEQ ? handleRejectAC : handleRejectSHEQ}
+      />
 
-      {/* Modal Rechazar Documento Individual */}
-      <Modal isOpen={rejectDocModalOpen} onClose={() => setRejectDocModalOpen(false)} size="lg" isDismissable={false}>
-        <ModalContent>
-          <ModalHeader>Rechazar Documento</ModalHeader>
-          <ModalBody>
-            <p className="mb-4">Indica por qué este documento no es válido:</p>
-            <Textarea
-              label="Motivo del rechazo"
-              placeholder="Ej: Documento vencido, información ilegible, falta firma..."
-              value={docRejectionReason}
-              onValueChange={setDocRejectionReason}
-              minRows={3}
-              isRequired
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={() => setRejectDocModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button color="danger" onPress={handleConfirmRejectDocument}>
-              Rechazar Documento
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <RejectApplicationDocumentModal
+        isOpen={rejectDocModalOpen}
+        rejectionReason={docRejectionReason}
+        onClose={() => setRejectDocModalOpen(false)}
+        onRejectionReasonChange={setDocRejectionReason}
+        onConfirm={handleConfirmRejectDocument}
+      />
+
+      {isAdmin && (
+        <ResetApplicationStatusModal
+          isOpen={resetModalOpen}
+          stateAc={application.stateAc}
+          resetStage={resetStage}
+          isLoading={isLoading}
+          onClose={() => setResetModalOpen(false)}
+          onResetStageChange={setResetStage}
+          onConfirm={handleResetStatus}
+        />
+      )}
     </div>
   );
 }

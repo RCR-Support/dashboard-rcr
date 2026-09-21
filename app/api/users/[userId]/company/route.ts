@@ -6,9 +6,10 @@ import { hasActionPermission } from '@/config/action-permissions';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await params;
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -16,7 +17,7 @@ export async function GET(
 
     // Solo el propio usuario o un admin puede ver la empresa
     if (
-      params.userId !== session.user.id &&
+      userId !== session.user.id &&
       !hasActionPermission('users:edit:any', session.user.roles)
     ) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
@@ -24,7 +25,7 @@ export async function GET(
 
     const user = await db.user.findUnique({
       where: {
-        id: params.userId,
+        id: userId,
       },
       include: {
         company: true,
@@ -49,9 +50,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await params;
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -71,7 +73,7 @@ export async function PATCH(
 
     const updatedUser = await db.user.update({
       where: {
-        id: params.userId,
+        id: userId,
       },
       data: {
         companyId,

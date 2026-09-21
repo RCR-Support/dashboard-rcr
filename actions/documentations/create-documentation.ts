@@ -8,7 +8,7 @@ type AcceptedFileType = 'PDF' | 'IMAGE' | 'DOCUMENT' | 'ANY';
 
 export async function createDocumentation(
   name: string,
-  _acceptedFileType?: AcceptedFileType,
+  acceptedFileType: AcceptedFileType = 'PDF',
   isGlobal: boolean = false
 ) {
   try {
@@ -27,6 +27,7 @@ export async function createDocumentation(
     const documentation = await db.documentation.create({
       data: {
         name: name.trim(),
+        acceptedFileType,
         isGlobal,
       },
     });

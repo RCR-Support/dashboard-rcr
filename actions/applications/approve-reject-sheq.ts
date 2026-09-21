@@ -11,6 +11,8 @@ import {
   sendApplicationApprovedBySHEQEmail,
   sendApplicationRejectedBySHEQEmail,
 } from '@/lib/email/postmark';
+import { getReviewAccessError } from '@/lib/applications/review-access';
+import { getApplicationApprovalError } from '@/lib/applications/document-review';
 
 export async function approveApplicationSHEQ(
   applicationId: string,
@@ -22,6 +24,7 @@ export async function approveApplicationSHEQ(
     if (!hasActionPermission('documents:approve', session.user.roles)) {
       return { success: false, message: 'No tienes permiso para aprobar solicitudes' };
     }
+    const userRoles = session.user.roles as RoleEnum[];
     // Verificar que TODOS los documentos estén aprobados
     const application = await db.application.findUnique({
       where: { id: applicationId },
@@ -38,26 +41,19 @@ export async function approveApplicationSHEQ(
       return { success: false, message: 'Solicitud no encontrada' };
     }
 
-    // Contar documentos por estado
-    const pendingDocs = application.documentationFiles.filter(doc => 
-      !doc.approvalStatus || doc.approvalStatus === 'pending'
-    );
-    const rejectedDocs = application.documentationFiles.filter(doc => 
-      doc.approvalStatus === 'rejected'
-    );
-
-    if (pendingDocs.length > 0) {
-      return { 
-        success: false, 
-        message: `Aún hay ${pendingDocs.length} documento(s) sin revisar. Debes aprobar o rechazar todos los documentos antes de aprobar la solicitud.` 
-      };
+    const accessError = getReviewAccessError({
+      application,
+      roles: userRoles,
+      userId: session.user.id,
+      stage: 'sheq',
+    });
+    if (accessError) {
+      return { success: false, message: accessError };
     }
 
-    if (rejectedDocs.length > 0) {
-      return { 
-        success: false, 
-        message: `Hay ${rejectedDocs.length} documento(s) rechazado(s). No puedes aprobar una solicitud con documentos rechazados.` 
-      };
+    const approvalError = getApplicationApprovalError(application.documentationFiles);
+    if (approvalError) {
+      return { success: false, message: approvalError };
     }
 
     await db.$transaction(async (tx) => {
@@ -71,7 +67,6 @@ export async function approveApplicationSHEQ(
       });
 
       // Registrar en auditoría
-      const userRoles = session.user.roles as RoleEnum[];
       const isAdminActing = userRoles.includes(RoleEnum.admin) && !userRoles.includes(RoleEnum.sheq);
       await tx.applicationAudit.create({
         data: {
@@ -118,6 +113,27 @@ export async function rejectApplicationSHEQ(
     if (!hasActionPermission('documents:reject', session.user.roles)) {
       return { success: false, message: 'No tienes permiso para rechazar solicitudes' };
     }
+    const userRoles = session.user.roles as RoleEnum[];
+
+    const application = await db.application.findUnique({
+      where: { id: applicationId },
+      select: { stateAc: true, stateSheq: true, userAcId: true, userSheqId: true },
+    });
+
+    if (!application) {
+      return { success: false, message: 'Solicitud no encontrada' };
+    }
+
+    const accessError = getReviewAccessError({
+      application,
+      roles: userRoles,
+      userId: session.user.id,
+      stage: 'sheq',
+    });
+    if (accessError) {
+      return { success: false, message: accessError };
+    }
+
     await db.$transaction(async (tx) => {
       // Actualizar estado de la aplicación - reiniciar ciclo
       await tx.application.update({
@@ -125,6 +141,7 @@ export async function rejectApplicationSHEQ(
         data: {
           stateSheq: 'rechazado',
           stateAc: 'adjuntar', // Reinicia el ciclo
+          processStatus: 'rechazado',
         },
       });
 
@@ -145,7 +162,6 @@ export async function rejectApplicationSHEQ(
       // });
 
       // Registrar en auditoría
-      const userRoles = session.user.roles as RoleEnum[];
       const isAdminActing = userRoles.includes(RoleEnum.admin) && !userRoles.includes(RoleEnum.sheq);
       await tx.applicationAudit.create({
         data: {

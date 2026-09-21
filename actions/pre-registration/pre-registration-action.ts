@@ -1,10 +1,10 @@
 'use server';
 
-import { z } from 'zod';
 import { db } from '@/lib/db';
 import { Prisma, RoleEnum } from '@prisma/client';
 import { sendPreRegistrationEmails } from '@/lib/email/postmark';
 import { revalidatePath } from 'next/cache';
+import { preRegisterSchema } from '@/lib/validation-pre-registration';
 
 async function notifyAdminsNewPreRegister(displayName: string, companyName: string) {
   try {
@@ -26,100 +26,6 @@ async function notifyAdminsNewPreRegister(displayName: string, companyName: stri
     console.error('[pre-register] Error creando notificaciones:', err);
   }
 }
-
-// 1. Esquema de validación para el pre-registro
-const preRegisterSchema = z
-  .object({
-    companyId: z.string().optional(),
-    // Datos de la Empresa (solo requeridos si NO hay companyId)
-    companyName: z
-      .string()
-      .min(3, 'El nombre de la empresa es requerido')
-      .optional()
-      .or(z.literal('')),
-    companyRut: z
-      .string()
-      .min(8, 'El RUT de la empresa es requerido')
-      .optional()
-      .or(z.literal('')),
-    companyPhone: z.string().optional().or(z.literal('')),
-    companyCity: z.string().optional().or(z.literal('')),
-    companyUrl: z
-      .string()
-      .optional()
-      .or(z.literal(''))
-      .refine(
-        val => {
-          if (!val || !val.trim()) return true;
-          const candidate = /^https?:\/\//i.test(val.trim())
-            ? val.trim()
-            : `https://${val.trim()}`;
-          try {
-            const parsed = new URL(candidate);
-            return Boolean(parsed.hostname);
-          } catch {
-            return false;
-          }
-        },
-        { message: 'URL inválida' }
-      ),
-
-    // Datos del Usuario
-    userEmail: z.string().email('Email inválido'),
-    userRun: z.string().min(8, 'El RUN debe tener al menos 10 caracteres'),
-    userName: z.string().min(1, 'El nombre es requerido'),
-    userLastName: z.string().min(1, 'El apellido paterno es requerido'),
-    userMiddleName: z.string().optional(),
-    userSecondLastName: z.string().optional(),
-    userPhoneNumber: z.string().min(9, 'El teléfono es requerido'),
-    displayName: z.string().optional(),
-
-    // Datos del Contrato (opcionales cuando isSubcontract = true)
-    isSubcontract: z.boolean().optional(),
-    contractNumber: z.string().optional().or(z.literal('')),
-    contractName: z.string().optional().or(z.literal('')),
-    initialDate: z.coerce.date().optional(),
-    finalDate: z.coerce.date().optional(),
-    adminContractorId: z.string().optional().or(z.literal('')),
-  })
-  .superRefine((data, ctx) => {
-    // Solo validar datos de empresa si NO hay companyId
-    if (!data.companyId) {
-      if (!data.companyName || data.companyName.trim().length < 3) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['companyName'],
-          message: 'El nombre de la empresa es requerido',
-        });
-      }
-      if (!data.companyRut || data.companyRut.trim().length < 8) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['companyRut'],
-          message: 'El RUT de la empresa debe tener al menos 8 caracteres',
-        });
-      }
-      // La validación de URL ya se hace en el campo con .refine()
-    }
-    // Si NO es sub-contratista, los datos de contrato son obligatorios
-    if (!data.isSubcontract) {
-      if (!data.contractNumber || data.contractNumber.trim().length < 1) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['contractNumber'], message: 'El número de contrato es requerido' });
-      }
-      if (!data.contractName || data.contractName.trim().length < 3) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['contractName'], message: 'El nombre del contrato es requerido' });
-      }
-      if (!data.initialDate) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['initialDate'], message: 'La fecha de inicio es requerida' });
-      }
-      if (!data.finalDate) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['finalDate'], message: 'La fecha de término es requerida' });
-      }
-      if (!data.adminContractorId || data.adminContractorId.trim().length < 1) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['adminContractorId'], message: 'Debe seleccionar un administrador de contrato' });
-      }
-    }
-  });
 
 export const preRegisterAction = async (values: unknown) => {
   try {

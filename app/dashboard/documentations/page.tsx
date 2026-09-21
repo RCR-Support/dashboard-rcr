@@ -16,23 +16,32 @@ import {
   Globe,
   Tag,
   ChevronRight,
-  Pencil,
-  Trash2
 } from 'lucide-react';
 import { Button } from '@heroui/react';
 import Link from 'next/link';
+import { DocumentationActions } from '@/components/ui/dashboard/documentation/DocumentationActions';
+import { withPermission } from '@/components/ui/auth/withPermission';
+
+type AcceptedFileType = 'PDF' | 'IMAGE' | 'DOCUMENT' | 'ANY';
+
+const fileTypes: { value: AcceptedFileType; label: string; description: string }[] = [
+  { value: 'PDF', label: 'Solo PDF', description: 'Archivos en formato PDF' },
+  { value: 'IMAGE', label: 'Imágenes', description: 'JPG, PNG, WEBP' },
+  { value: 'DOCUMENT', label: 'Documentos', description: 'PDF, DOC, DOCX' },
+  { value: 'ANY', label: 'Cualquier tipo', description: 'Sin restricción de formato' },
+];
 
 interface DocumentationWithRelations {
   id: string;
   name: string;
-  acceptedFileType?: string;
+  acceptedFileType?: AcceptedFileType;
   isGlobal: boolean;
   activities: { isSpecific: boolean }[];
 }
 
 type ModalMode = 'create' | 'edit';
 
-export default function DocumentationsPage() {
+function DocumentationsPage() {
   const [documentations, setDocumentations] = useState<DocumentationWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +52,7 @@ export default function DocumentationsPage() {
   const [selectedDoc, setSelectedDoc] = useState<DocumentationWithRelations | null>(null);
   const [docName, setDocName] = useState('');
   const [docScope, setDocScope] = useState<'global' | 'specific'>('specific');
+  const [acceptedFileType, setAcceptedFileType] = useState<AcceptedFileType>('PDF');
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -71,6 +81,7 @@ export default function DocumentationsPage() {
     setSelectedDoc(null);
     setDocName('');
     setDocScope('specific');
+    setAcceptedFileType('PDF');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -80,6 +91,7 @@ export default function DocumentationsPage() {
     setSelectedDoc(doc);
     setDocName(doc.name);
     setDocScope(doc.isGlobal ? 'global' : 'specific');
+    setAcceptedFileType(doc.acceptedFileType || 'PDF');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -102,7 +114,7 @@ export default function DocumentationsPage() {
 
     try {
       if (modalMode === 'create') {
-        const result = await createDocumentation(docName.trim(), undefined, docScope === 'global');
+        const result = await createDocumentation(docName.trim(), acceptedFileType, docScope === 'global');
         if (!result.success) {
           setFormError(result.error || 'Error al crear documentación');
           return;
@@ -111,6 +123,7 @@ export default function DocumentationsPage() {
         const result = await updateDocumentation(selectedDoc.id, {
           name: docName.trim(),
           isGlobal: docScope === 'global',
+          acceptedFileType,
         });
 
         if (!result.success) {
@@ -142,6 +155,7 @@ export default function DocumentationsPage() {
       setSelectedDoc(doc);
       setDocName(doc.name);
       setDocScope(doc.isGlobal ? 'global' : 'specific');
+      setAcceptedFileType(doc.acceptedFileType || 'PDF');
     }
   };
 
@@ -373,31 +387,14 @@ export default function DocumentationsPage() {
                 </span>
               </div>
               {(canEdit || canDelete) && (
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
-                  {canEdit && (
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      color="default"
-                      startContent={<Pencil className="h-3.5 w-3.5" />}
-                      onClick={() => openEditModal(doc)}
-                      className="flex-1"
-                    >
-                      Editar
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      startContent={<Trash2 className="h-3.5 w-3.5" />}
-                      onClick={() => handleDelete(doc)}
-                      className="flex-1"
-                    >
-                      Eliminar
-                    </Button>
-                  )}
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <DocumentationActions
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    fullWidth
+                    onEdit={() => openEditModal(doc)}
+                    onDelete={() => handleDelete(doc)}
+                  />
                 </div>
               )}
             </div>
@@ -456,30 +453,12 @@ export default function DocumentationsPage() {
                   </td>
                   {(canEdit || canDelete) && (
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        {canEdit && (
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="default"
-                            startContent={<Pencil className="h-3.5 w-3.5" />}
-                            onClick={() => openEditModal(doc)}
-                          >
-                            Editar
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="danger"
-                            startContent={<Trash2 className="h-3.5 w-3.5" />}
-                            onClick={() => handleDelete(doc)}
-                          >
-                            Eliminar
-                          </Button>
-                        )}
-                      </div>
+                      <DocumentationActions
+                        canEdit={canEdit}
+                        canDelete={canDelete}
+                        onEdit={() => openEditModal(doc)}
+                        onDelete={() => handleDelete(doc)}
+                      />
                     </td>
                   )}
                 </tr>
@@ -513,6 +492,26 @@ export default function DocumentationsPage() {
                   placeholder="Ej: Licencia Municipal"
                   className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo de archivo aceptado
+                </label>
+                <select
+                  value={acceptedFileType}
+                  onChange={(e) => setAcceptedFileType(e.target.value as AcceptedFileType)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                >
+                  {fileTypes.map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label} - {type.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Este valor define qué archivos aceptará la solicitud al pedir esta documentación.
+                </p>
               </div>
 
               <div>
@@ -569,3 +568,10 @@ export default function DocumentationsPage() {
     </div>
   );
 }
+
+const ProtectedDocumentationsPage = withPermission(
+  DocumentationsPage,
+  '/dashboard/documentations'
+);
+
+export default ProtectedDocumentationsPage;

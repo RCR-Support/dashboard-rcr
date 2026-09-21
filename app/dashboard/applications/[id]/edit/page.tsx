@@ -289,7 +289,8 @@ export default function EditApplicationPage() {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: result.message,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          text: (result as any).message ?? (result as any).error ?? 'Ocurrió un error al guardar la solicitud',
         });
       }
     } catch (error) {

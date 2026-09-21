@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { db } from '../../../../lib/db';
 
 type Props = {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 };
 
 function formatDate(d?: Date | string | null) {
@@ -12,7 +12,7 @@ function formatDate(d?: Date | string | null) {
 }
 
 export default async function Page({ params }: Props) {
-  const { token } = params;
+  const { token } = await params;
 
   const qr = await db.applicationQR.findUnique({
     where: { token },

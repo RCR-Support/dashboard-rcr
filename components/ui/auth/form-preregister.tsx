@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,108 +24,22 @@ import { useEffect, useState, useTransition } from 'react';
 import { SearchSelect } from '@/components/ui/search-select';
 import { useRouter } from 'next/navigation';
 import { preRegisterAction } from '@/actions/pre-registration/pre-registration-action';
-import { baseUserSchema } from '@/lib/zod';
-import { companySchema } from '@/lib/validation-company';
+import {
+  preRegisterInputSchema,
+  validatePreRegisterConditions,
+} from '@/lib/validation-pre-registration';
+import { PreRegisterSuccess } from './PreRegisterSuccess';
 
-// El mismo esquema de Zod que en la acción para validación en el cliente
-const preRegisterFormSchema = z
-  .object({
-    isSubcontract: z.boolean().optional(),
-    companyId: z.string().optional(),
-    companyName: companySchema.shape.name.optional(),
-    companyRut: companySchema.shape.rut.optional(),
-    companyPhone: companySchema.shape.phone.optional(),
-    companyCity: companySchema.shape.city.optional(),
-    companyUrl: companySchema.shape.url.optional().or(z.literal('')),
-
-    // Campos de usuario reutilizando baseUserSchema
-    userName: baseUserSchema.shape.name,
-    userLastName: baseUserSchema.shape.lastName,
-    userMiddleName: baseUserSchema.shape.middleName,
-    userSecondLastName: baseUserSchema.shape.secondLastName,
-    userEmail: baseUserSchema.shape.email,
-    userEmailConfirm: z.string().email('Email inválido'),
-    userRun: baseUserSchema.shape.run,
-    userPhoneNumber: z.string().min(9, 'El teléfono es requerido'),
-    displayName: z.string().optional(),
-
-    contractNumber: z.string().optional(),
-    contractName: z.string().optional(),
-    initialDate: z.string().optional().transform(str => str ? new Date(str) : undefined),
-    finalDate: z.string().optional().transform(str => str ? new Date(str) : undefined),
-    adminContractorId: z.string().optional(),
-  })
+const preRegisterFormSchema = preRegisterInputSchema
+  .extend({ userEmailConfirm: z.string().email('Email inválido') })
   .superRefine((data, ctx) => {
-    // Validar que los emails coincidan
+    validatePreRegisterConditions(data, ctx);
     if (data.userEmail && data.userEmailConfirm && data.userEmail !== data.userEmailConfirm) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['userEmailConfirm'],
         message: 'Los correos no coinciden',
       });
-    }
-    // Si NO hay companyId, los campos de empresa son obligatorios
-    if (!data.companyId) {
-      if (!data.companyName || data.companyName.trim().length < 3) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['companyName'],
-          message: 'El nombre de la empresa es requerido',
-        });
-      }
-      if (!data.companyRut || data.companyRut.trim().length < 9) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['companyRut'],
-          message: 'El RUT de la empresa es requerido',
-        });
-      }
-    }
-    // Si NO es sub-contratista, los datos de contrato son obligatorios
-    if (!data.isSubcontract) {
-      if (!data.contractNumber || data.contractNumber.trim().length < 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['contractNumber'],
-          message: 'El número de contrato es requerido',
-        });
-      }
-      if (!data.contractName || data.contractName.trim().length < 3) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['contractName'],
-          message: 'El nombre del contrato es requerido',
-        });
-      }
-      if (!data.initialDate) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['initialDate'],
-          message: 'La fecha de inicio es requerida',
-        });
-      }
-      if (!data.finalDate) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['finalDate'],
-          message: 'La fecha de término es requerida',
-        });
-      }
-      if (!data.adminContractorId || data.adminContractorId.trim().length < 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['adminContractorId'],
-          message: 'Debe seleccionar un administrador de contrato',
-        });
-      }
-      // Validar que la fecha de término sea posterior a la de inicio
-      if (data.initialDate && data.finalDate && data.finalDate <= data.initialDate) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['finalDate'],
-          message: 'La fecha de término debe ser posterior a la fecha de inicio',
-        });
-      }
     }
   });
 
@@ -291,7 +205,10 @@ export const FormPreRegister = () => {
   };
 
   // Sincronizar campos y errores al cambiar entre empresa existente/nueva
-  const watchedCompanyId = form.watch('companyId');
+  const watchedCompanyId = useWatch({
+    control: form.control,
+    name: 'companyId',
+  });
   useEffect(() => {
     if (watchedCompanyId) {
       setShowCompanyFields(false);
@@ -317,67 +234,10 @@ export const FormPreRegister = () => {
 
   if (submitted) {
     return (
-      <div className="py-8 text-center space-y-6">
-        {/* Ícono de éxito */}
-        <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-            <svg className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            ¡Solicitud enviada correctamente!
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto">
-            Te enviamos un correo de confirmación con un resumen de los datos ingresados. Guárdalo por si necesitas verificar algo.
-          </p>
-        </div>
-
-        {/* Pasos de lo que viene */}
-        <div className="bg-gray-50 dark:bg-[#161b22] rounded-lg p-5 text-left space-y-4 max-w-md mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">¿Qué pasa ahora?</p>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D05F27] text-white text-xs font-bold">1</span>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Revisa tu correo — te enviamos un resumen con todos los datos de tu solicitud.
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D05F27] text-white text-xs font-bold">2</span>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                El administrador revisará tu empresa, contrato y usuario, y activará tu cuenta.
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D05F27] text-white text-xs font-bold">3</span>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Cuando tu cuenta esté lista, recibirás <strong>otro correo</strong> con tus credenciales para acceder al sistema.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Button
-            type="button"
-            onClick={() => router.push('/login')}
-            className="bg-[#D05F27] hover:bg-[#b84e1e] text-white"
-          >
-            Ir al inicio de sesión
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push('/')}
-          >
-            Volver al inicio
-          </Button>
-        </div>
-      </div>
+      <PreRegisterSuccess
+        onGoToLogin={() => router.push('/login')}
+        onGoHome={() => router.push('/')}
+      />
     );
   }
 
@@ -472,7 +332,9 @@ export const FormPreRegister = () => {
                             `${nombre} ${apellido}`.trim()
                           );
                         }
-                        field.onBlur && field.onBlur(); // <-- corregido, sin pasar e
+                        if (field.onBlur) {
+                          field.onBlur();
+                        }
                       }}
                     />
                   </FormControl>
@@ -558,7 +420,7 @@ export const FormPreRegister = () => {
                     Empresa <span className="text-red-600">*</span>
                   </FormLabel>
                   <FormControl>
-                    <>
+                    <div className="w-full">
                       <SearchSelect
                         value={field.value === null ? undefined : field.value}
                         onValueChange={value => {
@@ -573,7 +435,7 @@ export const FormPreRegister = () => {
                         }
                         className="w-full"
                       />
-                      {!form.watch('companyId') && !loadingCompanies && (
+                      {!field.value && !loadingCompanies && (
                         <button
                           type="button"
                           onClick={() => setShowCompanyFields(!showCompanyFields)}
@@ -584,7 +446,7 @@ export const FormPreRegister = () => {
                             : '¿Tu empresa no está en la lista? Regístrala aquí'}
                         </button>
                       )}
-                    </>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

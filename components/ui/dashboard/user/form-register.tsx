@@ -25,18 +25,17 @@ import {
 } from 'lucide-react';
 import { SearchSelect } from '../../search-select';
 import { fetchCompanies } from '@/actions';
-import { fetchAdmins } from '@/actions/user/get-admincContractor';
 import { registerAction } from '@/actions/register-action';
 import { cn } from '@/lib/utils';
 import { editAction } from '@/actions/edit-action';
 import { UserEdit } from '@/interfaces/user.interfaceEdit';
-import { AdminOption } from '@/interfaces/admin.interface';
 import {
   RegisterActionInput,
 } from '@/interfaces/action.interface';
 import { FormValues, registerSchema, editSchema } from '@/lib/zod';
 import Image from 'next/image';
 import { getCldImageUrl } from 'next-cloudinary';
+import { ImageEditorModal } from '@/components/ui/ImageEditorModal';
 
 // Definimos la interfaz para las opciones
 interface CompanyOption {
@@ -330,7 +329,6 @@ const FormRegister = ({
     });
   };
 
-  const [, setAdmins] = useState<AdminOption[]>([]);
   const watchedRoles = form.watch('roles');
   const previousRolesRef = useRef<string[] | null>(null);
 
@@ -387,6 +385,9 @@ const FormRegister = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [imageBeforeEdit, setImageBeforeEdit] = useState<string | null>(null);
+  const [fileBeforeEdit, setFileBeforeEdit] = useState<File | null>(null);
 
   // Cargar la imagen existente cuando estamos en modo edición
   useEffect(() => {
@@ -407,17 +408,6 @@ const FormRegister = ({
     }
   }, [isEditing, initialData]);
 
-  useEffect(() => {
-    const loadAdmins = async () => {
-      // Cargar los administradores independientemente del rol seleccionado
-      const response = await fetchAdmins();
-      if (response.ok && response.admins) {
-        setAdmins(response.admins);
-      }
-    };
-    loadAdmins();
-  }, []);
-
   // Manejador para la carga de imágenes
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -434,16 +424,43 @@ const FormRegister = ({
         return;
       }
 
+      setImageBeforeEdit(selectedImage);
+      setFileBeforeEdit(selectedFile);
       const reader = new FileReader();
       reader.onload = () => {
         setSelectedImage(reader.result as string);
+        setIsEditorOpen(true);
       };
       reader.readAsDataURL(file);
       setSelectedFile(file);
+    }
+  };
 
-      // Importante: No almacenamos el nombre del archivo en form.setValue
-      // En su lugar, solo marcamos que la imagen ha cambiado
-      setImageChanged(true);
+  const handleImageSave = (editedFile: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(editedFile);
+    setSelectedFile(editedFile);
+    setImageChanged(true);
+    setIsEditorOpen(false);
+    setImageBeforeEdit(null);
+    setFileBeforeEdit(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImageCancel = () => {
+    setIsEditorOpen(false);
+    setSelectedImage(imageBeforeEdit ?? '/placeholder-user.png');
+    setSelectedFile(fileBeforeEdit);
+    setImageChanged(!!fileBeforeEdit);
+    setImageBeforeEdit(null);
+    setFileBeforeEdit(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -672,6 +689,24 @@ const FormRegister = ({
           />
 
           {/* Elemento de relleno si es necesario */}
+          {isEditorOpen && selectedImage && selectedFile && (
+            <ImageEditorModal
+              imageSrc={selectedImage}
+              originalFile={selectedFile}
+              isOpen={isEditorOpen}
+              title="Editar Imagen de Perfil"
+              subtitle="Ajusta la imagen para que se vea bien como foto de usuario"
+              aspectRatio={1}
+              targetWidth={400}
+              targetHeight={400}
+              cropShape="round"
+              guideTitle="Guía de perfil"
+              guideItems={['Rostro centrado', 'Foto cuadrada', 'Buena iluminación']}
+              onSave={handleImageSave}
+              onCancel={handleImageCancel}
+            />
+          )}
+
           {needsFiller && (
             <div className="col-span-12 md:col-span-6 md:col-start-7 hidden md:block" />
           )}

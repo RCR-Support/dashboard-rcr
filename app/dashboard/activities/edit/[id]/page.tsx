@@ -5,10 +5,11 @@ import EditActivityClient from '../EditActivityClient';
 export default async function EditActivityPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const activities = await listActivities();
-  const activity = activities.find((a: { id: string }) => a.id === params.id);
+  const activity = activities.find((a: { id: string }) => a.id === id);
   if (!activity) return notFound();
 
   // Map requiredDocumentations to include documentationId expected by the form

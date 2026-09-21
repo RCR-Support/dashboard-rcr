@@ -7,9 +7,10 @@ import { sendSubcontractLinkedEmails } from '@/lib/email/postmark';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
     if (!session?.user?.email) {
       return new NextResponse('No autorizado', { status: 401 });
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const subcontract = await db.subcontract.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         subCompany: {
           select: { id: true, name: true, rut: true, city: true },
@@ -59,9 +60,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
     if (!session?.user?.email) {
       return new NextResponse('No autorizado', { status: 401 });
@@ -75,7 +77,7 @@ export async function PATCH(
     const { status, isActive } = body as { status?: SubcontractStatus; isActive?: boolean };
 
     const subcontract = await db.subcontract.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { subCompany: true },
     });
     if (!subcontract) {
@@ -83,7 +85,7 @@ export async function PATCH(
     }
 
     const updated = await db.subcontract.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(status !== undefined && { status }),
         ...(isActive !== undefined && { isActive }),
