@@ -5,6 +5,8 @@ import { editActivityServer } from './actions';
 import { listDocumentations } from '@/actions/documentations/list-documentations';
 import { getActivityDocumentations } from '@/actions/activities/get-activity-documentations';
 import { updateActivityDocumentations } from '@/actions/activities/update-activity-documentations';
+import { ImageEditorModal } from '@/components/ui/ImageEditorModal';
+import { Crop } from 'lucide-react';
 
 interface Documentation {
   id: string;
@@ -100,6 +102,38 @@ export default function EditActivityForm({
     error: '',
     success: '',
   });
+
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+        setIsEditorOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageSave = (editedFile: File) => {
+    updateFormData('imageFile')(editedFile);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(editedFile);
+    setIsEditorOpen(false);
+  };
+
+  const handleImageCancel = () => {
+    setIsEditorOpen(false);
+  };
 
   const updateFormData =
     (field: keyof EditActivityFormData) => (value: string | File | null) => {
@@ -360,12 +394,51 @@ export default function EditActivityForm({
         <input
           type="file"
           accept="image/*"
-          onChange={e =>
-            updateFormData('imageFile')(e.target.files?.[0] || null)
-          }
-          className="w-full"
+          onChange={handleFileSelect}
+          className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
         />
+
+        {imagePreview && (
+          <div className="mt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-sm text-gray-500">Nueva vista previa recortada:</p>
+              {selectedFile && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditorOpen(true)}
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  <Crop size={14} /> Reajustar imagen
+                </button>
+              )}
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imagePreview}
+              alt="Vista previa"
+              className="max-w-xs rounded-lg border border-gray-200"
+            />
+          </div>
+        )}
       </div>
+
+      {/* Modal Editor de Imagen */}
+      {isEditorOpen && selectedImage && selectedFile && (
+        <ImageEditorModal
+          isOpen={isEditorOpen}
+          imageSrc={selectedImage}
+          originalFile={selectedFile}
+          title="Editar Imagen de Actividad"
+          subtitle="Recorta y ajusta la imagen para que se muestre correctamente en las tarjetas"
+          aspectRatio={16 / 9}
+          targetWidth={800}
+          targetHeight={450}
+          guideTitle="📷 Ajuste de Actividad"
+          guideItems={['Maquinaria / objeto centrado', 'Recorte horizontal (16:9)', 'Buena visibilidad']}
+          onSave={handleImageSave}
+          onCancel={handleImageCancel}
+        />
+      )}
       <div className="flex justify-between mt-6">
         <button
           type="button"

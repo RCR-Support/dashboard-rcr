@@ -20,18 +20,28 @@ import {
 import { Button } from '@heroui/react';
 import Link from 'next/link';
 import { DocumentationActions } from '@/components/ui/dashboard/documentation/DocumentationActions';
+import { withPermission } from '@/components/ui/auth/withPermission';
+
+type AcceptedFileType = 'PDF' | 'IMAGE' | 'DOCUMENT' | 'ANY';
+
+const fileTypes: { value: AcceptedFileType; label: string; description: string }[] = [
+  { value: 'PDF', label: 'Solo PDF', description: 'Archivos en formato PDF' },
+  { value: 'IMAGE', label: 'Imágenes', description: 'JPG, PNG, WEBP' },
+  { value: 'DOCUMENT', label: 'Documentos', description: 'PDF, DOC, DOCX' },
+  { value: 'ANY', label: 'Cualquier tipo', description: 'Sin restricción de formato' },
+];
 
 interface DocumentationWithRelations {
   id: string;
   name: string;
-  acceptedFileType?: string;
+  acceptedFileType?: AcceptedFileType;
   isGlobal: boolean;
   activities: { isSpecific: boolean }[];
 }
 
 type ModalMode = 'create' | 'edit';
 
-export default function DocumentationsPage() {
+function DocumentationsPage() {
   const [documentations, setDocumentations] = useState<DocumentationWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +52,7 @@ export default function DocumentationsPage() {
   const [selectedDoc, setSelectedDoc] = useState<DocumentationWithRelations | null>(null);
   const [docName, setDocName] = useState('');
   const [docScope, setDocScope] = useState<'global' | 'specific'>('specific');
+  const [acceptedFileType, setAcceptedFileType] = useState<AcceptedFileType>('PDF');
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,6 +81,7 @@ export default function DocumentationsPage() {
     setSelectedDoc(null);
     setDocName('');
     setDocScope('specific');
+    setAcceptedFileType('PDF');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -79,6 +91,7 @@ export default function DocumentationsPage() {
     setSelectedDoc(doc);
     setDocName(doc.name);
     setDocScope(doc.isGlobal ? 'global' : 'specific');
+    setAcceptedFileType(doc.acceptedFileType || 'PDF');
     setFormError('');
     setIsModalOpen(true);
   };
@@ -101,7 +114,7 @@ export default function DocumentationsPage() {
 
     try {
       if (modalMode === 'create') {
-        const result = await createDocumentation(docName.trim(), undefined, docScope === 'global');
+        const result = await createDocumentation(docName.trim(), acceptedFileType, docScope === 'global');
         if (!result.success) {
           setFormError(result.error || 'Error al crear documentación');
           return;
@@ -110,6 +123,7 @@ export default function DocumentationsPage() {
         const result = await updateDocumentation(selectedDoc.id, {
           name: docName.trim(),
           isGlobal: docScope === 'global',
+          acceptedFileType,
         });
 
         if (!result.success) {
@@ -141,6 +155,7 @@ export default function DocumentationsPage() {
       setSelectedDoc(doc);
       setDocName(doc.name);
       setDocScope(doc.isGlobal ? 'global' : 'specific');
+      setAcceptedFileType(doc.acceptedFileType || 'PDF');
     }
   };
 
@@ -481,6 +496,26 @@ export default function DocumentationsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo de archivo aceptado
+                </label>
+                <select
+                  value={acceptedFileType}
+                  onChange={(e) => setAcceptedFileType(e.target.value as AcceptedFileType)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                >
+                  {fileTypes.map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label} - {type.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Este valor define qué archivos aceptará la solicitud al pedir esta documentación.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Alcance
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -533,3 +568,10 @@ export default function DocumentationsPage() {
     </div>
   );
 }
+
+const ProtectedDocumentationsPage = withPermission(
+  DocumentationsPage,
+  '/dashboard/documentations'
+);
+
+export default ProtectedDocumentationsPage;

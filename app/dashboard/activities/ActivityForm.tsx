@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Camera, FileText, CreditCard, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Camera, FileText, CreditCard, Save, AlertCircle, CheckCircle2, Crop } from 'lucide-react';
+import { ImageEditorModal } from '@/components/ui/ImageEditorModal';
 
 interface ActivityFormData {
   name: string;
@@ -41,6 +42,31 @@ export default function ActivityForm({ onSuccess }: ActivityFormProps) {
   
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [autoSaved, setAutoSaved] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+        setIsEditorOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageSave = (editedFile: File) => {
+    updateFormData('imageFile')(editedFile);
+    setIsEditorOpen(false);
+  };
+
+  const handleImageCancel = () => {
+    setIsEditorOpen(false);
+  };
 
   // Auto-save a localStorage
   useEffect(() => {
@@ -205,14 +231,25 @@ export default function ActivityForm({ onSuccess }: ActivityFormProps) {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => updateFormData('imageFile')(e.target.files?.[0] || null)}
+              onChange={handleFileSelect}
               className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"
             />
             
             {imagePreview && (
               <div className="mt-4">
-                <p className="text-sm text-gray-500 mb-2">Vista previa:</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-sm text-gray-500">Vista previa ajustada:</p>
+                  {selectedFile && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditorOpen(true)}
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Crop size={14} /> Reajustar imagen
+                    </button>
+                  )}
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imagePreview}
                   alt="Vista previa"
@@ -222,6 +259,24 @@ export default function ActivityForm({ onSuccess }: ActivityFormProps) {
             )}
           </div>
         </div>
+
+        {/* Modal Editor de Imagen */}
+        {isEditorOpen && selectedImage && selectedFile && (
+          <ImageEditorModal
+            isOpen={isEditorOpen}
+            imageSrc={selectedImage}
+            originalFile={selectedFile}
+            title="Editar Imagen de Actividad"
+            subtitle="Recorta y ajusta la imagen para que se muestre correctamente en las tarjetas"
+            aspectRatio={16 / 9}
+            targetWidth={800}
+            targetHeight={450}
+            guideTitle="📷 Ajuste de Actividad"
+            guideItems={['Maquinaria / objeto centrado', 'Recorte horizontal (16:9)', 'Buena visibilidad']}
+            onSave={handleImageSave}
+            onCancel={handleImageCancel}
+          />
+        )}
 
         {/* Mensajes de estado */}
         {formState.error && (

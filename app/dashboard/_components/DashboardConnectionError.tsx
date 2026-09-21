@@ -12,17 +12,22 @@ export default function DashboardConnectionError() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setRetrying(true);
-          router.refresh();
-          return 0;
+        if (prev > 1) {
+          return prev - 1;
         }
-        return prev - 1;
+        clearInterval(interval);
+        return 0;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (countdown === 0 && !retrying) {
+      setRetrying(true);
+      router.refresh();
+    }
+  }, [countdown, retrying, router]);
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">

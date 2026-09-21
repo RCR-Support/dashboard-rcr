@@ -8,6 +8,7 @@ import { hasActionPermission } from '@/config/action-permissions';
 interface UpdateDocumentationData {
   name: string;
   isGlobal?: boolean;
+  acceptedFileType?: 'PDF' | 'IMAGE' | 'DOCUMENT' | 'ANY';
 }
 
 export async function updateDocumentation(
@@ -26,6 +27,7 @@ export async function updateDocumentation(
       data: {
         name: data.name.trim(),
         ...(typeof data.isGlobal === 'boolean' ? { isGlobal: data.isGlobal } : {}),
+        ...(data.acceptedFileType ? { acceptedFileType: data.acceptedFileType } : {}),
       },
     });
 

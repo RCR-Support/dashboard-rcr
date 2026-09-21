@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import { editSchema } from '@/lib/zod';
 import { Prisma, RoleEnum } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
+import { hasActionPermission } from '@/config/action-permissions';
 // Reemplazar las importaciones de sistema de archivos
 // import { writeFile } from 'fs/promises';
 // import path from 'path';
@@ -20,6 +22,15 @@ cloudinary.config({
 
 export const editAction = async (userId: string, formData: FormData) => {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return { error: 'No autenticado' };
+    }
+
+    if (!hasActionPermission('users:edit:any', session.user.roles as RoleEnum[])) {
+      return { error: 'No tienes permiso para editar usuarios' };
+    }
+
     // Extraer y procesar los campos del FormData
     const values: Record<string, any> = {};
     // Convertir FormData a un objeto para validación
@@ -153,26 +164,28 @@ export const editAction = async (userId: string, formData: FormData) => {
         const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
 
         // Subir la nueva imagen a Cloudinary
-        const uploadResult = await new Promise((resolve, reject) => {
+        const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
           cloudinary.uploader.upload(
             base64Image,
             {
               folder: 'user-profiles',
-              public_id: `user-${userId}-${Date.now()}`,
+              public_id: `user-${userId}`,
               overwrite: true,
+              invalidate: true,
               transformation: [
-                { width: 400, height: 400, gravity: 'face', crop: 'fill' },
+                { quality: 'auto:best', fetch_format: 'auto' },
               ],
             },
             (error, result) => {
               if (error) reject(error);
-              else resolve(result);
+              else if (result) resolve({ secure_url: result.secure_url });
+              else reject(new Error('No result from Cloudinary'));
             }
           );
         });
 
         // Guardar la URL en el objeto de actualización
-        updateData.image = (uploadResult as any).secure_url;
+        updateData.image = uploadResult.secure_url;
       } catch (uploadError) {
         console.error('Error al subir imagen a Cloudinary:', uploadError);
         return {

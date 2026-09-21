@@ -10,6 +10,19 @@ export interface Area {
 }
 
 /**
+ * Calcula las dimensiones tras rotar una imagen
+ */
+function rotateSize(width: number, height: number, rotation: number) {
+  const rotRad = (rotation * Math.PI) / 180;
+  return {
+    width:
+      Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+    height:
+      Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
+  };
+}
+
+/**
  * Crea una imagen recortada a partir de las coordenadas especificadas
  */
 export async function getCroppedImg(
@@ -25,39 +38,53 @@ export async function getCroppedImg(
     throw new Error('No se pudo crear el contexto del canvas');
   }
 
-  const maxSize = Math.max(image.width, image.height);
-  const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+  const rotRad = (rotation * Math.PI) / 180;
 
-  // Configurar canvas para rotación
-  canvas.width = safeArea;
-  canvas.height = safeArea;
-
-  ctx.translate(safeArea / 2, safeArea / 2);
-  ctx.rotate((rotation * Math.PI) / 180);
-  ctx.translate(-safeArea / 2, -safeArea / 2);
-
-  // Dibujar imagen rotada
-  ctx.drawImage(
-    image,
-    safeArea / 2 - image.width * 0.5,
-    safeArea / 2 - image.height * 0.5
+  // Calcular las dimensiones del bounding box tras la rotación
+  const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
+    image.width,
+    image.height,
+    rotation
   );
 
-  const data = ctx.getImageData(0, 0, safeArea, safeArea);
+  // Configurar el canvas para soportar la rotación sin recortar bordes
+  canvas.width = bBoxWidth;
+  canvas.height = bBoxHeight;
 
-  // Crear canvas del tamaño final
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
+  ctx.rotate(rotRad);
+  ctx.translate(-image.width / 2, -image.height / 2);
 
-  ctx.putImageData(
-    data,
-    Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
-    Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+  // Dibujar la imagen rotada
+  ctx.drawImage(image, 0, 0);
+
+  // Crear canvas final con las dimensiones exactas del área seleccionada
+  const croppedCanvas = document.createElement('canvas');
+  const croppedCtx = croppedCanvas.getContext('2d');
+
+  if (!croppedCtx) {
+    throw new Error('No se pudo crear el contexto del canvas de recorte');
+  }
+
+  croppedCanvas.width = pixelCrop.width;
+  croppedCanvas.height = pixelCrop.height;
+
+  // Extraer el rectángulo exacto seleccionado en el cropper
+  croppedCtx.drawImage(
+    canvas,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
   );
 
   // Convertir a blob
   return new Promise((resolve, reject) => {
-    canvas.toBlob(
+    croppedCanvas.toBlob(
       blob => {
         if (!blob) {
           reject(new Error('Error al crear la imagen'));

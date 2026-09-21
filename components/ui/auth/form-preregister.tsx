@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -205,7 +205,10 @@ export const FormPreRegister = () => {
   };
 
   // Sincronizar campos y errores al cambiar entre empresa existente/nueva
-  const watchedCompanyId = form.watch('companyId');
+  const watchedCompanyId = useWatch({
+    control: form.control,
+    name: 'companyId',
+  });
   useEffect(() => {
     if (watchedCompanyId) {
       setShowCompanyFields(false);
@@ -329,7 +332,9 @@ export const FormPreRegister = () => {
                             `${nombre} ${apellido}`.trim()
                           );
                         }
-                        field.onBlur && field.onBlur(); // <-- corregido, sin pasar e
+                        if (field.onBlur) {
+                          field.onBlur();
+                        }
                       }}
                     />
                   </FormControl>
@@ -415,7 +420,7 @@ export const FormPreRegister = () => {
                     Empresa <span className="text-red-600">*</span>
                   </FormLabel>
                   <FormControl>
-                    <>
+                    <div className="w-full">
                       <SearchSelect
                         value={field.value === null ? undefined : field.value}
                         onValueChange={value => {
@@ -430,7 +435,7 @@ export const FormPreRegister = () => {
                         }
                         className="w-full"
                       />
-                      {!form.watch('companyId') && !loadingCompanies && (
+                      {!field.value && !loadingCompanies && (
                         <button
                           type="button"
                           onClick={() => setShowCompanyFields(!showCompanyFields)}
@@ -441,7 +446,7 @@ export const FormPreRegister = () => {
                             : '¿Tu empresa no está en la lista? Regístrala aquí'}
                         </button>
                       )}
-                    </>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
