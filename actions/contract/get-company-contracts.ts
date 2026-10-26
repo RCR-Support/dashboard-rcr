@@ -26,11 +26,11 @@ export async function getCompanyContracts(companyId: string) {
       orderBy: { finalDate: 'asc' },
     });
 
-    // 2. Contratos como sub-empresa (solo si el usuario actual es el representante designado)
+    // 2. Contratos como sub-empresa activa.
+    // El representante principal se guarda en Subcontract.userId, pero no limita la visibilidad.
     const subcontractLinks = await db.subcontract.findMany({
       where: {
         subCompanyId: companyId,
-        userId: session.user.id,
         status: 'activo',
         isActive: true,
         contract: {

@@ -63,8 +63,8 @@ export function PreRegisterSuccess({
               3
             </span>
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              Cuando tu cuenta esté lista, recibirás <strong>otro correo</strong> con tus
-              credenciales para acceder al sistema.
+              Cuando tu cuenta esté lista, recibirás <strong>otro correo</strong> con un
+              enlace seguro para configurar tu contraseña.
             </p>
           </div>
         </div>

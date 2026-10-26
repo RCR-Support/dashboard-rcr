@@ -149,12 +149,13 @@ export async function listContracts() {
           orderBy: { createdAt: 'desc' },
         });
 
-        // Contratos donde su empresa es sub-empresa y el usuario es el representante designado
+        // Contratos donde su empresa es sub-empresa activa.
+        // userId se usa como representante principal, no como unica condicion de acceso.
         const subLinks = await db.subcontract.findMany({
           where: {
             subCompanyId: user.companyId,
-            userId: user.id,
             isActive: true,
+            status: 'activo',
             contract: { deletedAt: null },
           },
           select: {

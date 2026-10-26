@@ -15,7 +15,20 @@ export default async function SubcontractsAdminPage() {
   const subcontracts = await db.subcontract.findMany({
     include: {
       subCompany: {
-        select: { id: true, name: true, rut: true, city: true },
+        select: {
+          id: true,
+          name: true,
+          rut: true,
+          city: true,
+          User: {
+            where: { deletedLogic: false },
+            select: { id: true, displayName: true, email: true, isActive: true },
+            orderBy: { displayName: 'asc' },
+          },
+        },
+      },
+      user: {
+        select: { id: true, displayName: true, email: true, isActive: true },
       },
       contract: {
         select: {
@@ -29,5 +42,16 @@ export default async function SubcontractsAdminPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  return <SubcontractsAdminClient subcontracts={subcontracts} />;
+  const mappedSubcontracts = subcontracts.map(({ subCompany, ...subcontract }) => ({
+    ...subcontract,
+    subCompany: {
+      id: subCompany.id,
+      name: subCompany.name,
+      rut: subCompany.rut,
+      city: subCompany.city,
+    },
+    availableUsers: subCompany.User,
+  }));
+
+  return <SubcontractsAdminClient subcontracts={mappedSubcontracts} />;
 }

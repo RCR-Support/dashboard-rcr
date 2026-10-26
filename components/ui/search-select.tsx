@@ -76,6 +76,10 @@ export const SearchSelect = React.forwardRef<
       React.useState<string>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
+    React.useEffect(() => {
+      setSelectedValue(defaultValue);
+    }, [defaultValue]);
+
     const handleSelect = (option: string) => {
       setSelectedValue(option);
       onValueChange(option);

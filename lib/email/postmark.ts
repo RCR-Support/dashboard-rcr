@@ -371,8 +371,8 @@ export async function sendPreRegistrationEmails(params: {
       <p style="margin: 0 0 6px;"><strong>¿Qué sigue?</strong></p>
       <ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8;">
         <li>Un administrador revisará tus datos y los de tu empresa.</li>
-        <li>El administrador vinculará tu empresa al contrato correspondiente.</li>
-        <li>Cuando tu cuenta sea activada, recibirás un segundo correo con tus credenciales de acceso.</li>
+        <li>La vinculación con la empresa mandante y el contrato quedará pendiente hasta la aprobación.</li>
+        <li>Cuando tu cuenta sea activada, recibirás otro correo con un enlace seguro para configurar tu contraseña.</li>
       </ol>
     </div>
   ` : `
@@ -380,8 +380,8 @@ export async function sendPreRegistrationEmails(params: {
       <p style="margin: 0 0 6px;"><strong>¿Qué sigue?</strong></p>
       <ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8;">
         <li>Un administrador revisará tus datos y los de tu empresa.</li>
-        <li>Cuando tu cuenta sea activada, recibirás un segundo correo en esta dirección con tus credenciales de acceso.</li>
-        <li>Con esas credenciales podrás ingresar al sistema y comenzar a gestionar tus solicitudes.</li>
+        <li>Cuando tu cuenta sea activada, recibirás otro correo en esta dirección con un enlace seguro para configurar tu contraseña.</li>
+        <li>Después de configurar la contraseña podrás ingresar al sistema y comenzar a gestionar tus solicitudes.</li>
       </ol>
     </div>
   `;
@@ -511,11 +511,11 @@ export async function sendApplicationRejectedBySHEQEmail(
 }
 
 // ============================================
-// BIENVENIDA / CREDENCIALES DE ACCESO
+// BIENVENIDA / CONFIGURACION DE ACCESO
 // ============================================
 
 /**
- * Correo de bienvenida con credenciales de acceso.
+ * Correo de bienvenida con enlace seguro para configurar contraseña.
  * Se envía en dos momentos:
  *   1. Cuando un admin crea un usuario desde el panel.
  *   2. Cuando un admin activa una cuenta pre-registrada (isActive: false → true).
@@ -527,7 +527,7 @@ export async function sendWelcomeEmail(params: {
   passwordSetupUrl: string;
 }) {
   const html = buildWelcomeEmailHtml(params);
-  await sendEmail(params.toEmail, '¡Bienvenido/a a SHEQ Manto Verde! — Tus credenciales de acceso', html);
+  await sendEmail(params.toEmail, '¡Bienvenido/a a SHEQ Manto Verde! — Configura tu acceso', html);
 }
 
 // ============================================
@@ -646,8 +646,10 @@ export async function sendSubcontractRequestEmails(params: {
   contractId: string;
   subCompanyId: string;
   representativeEmail: string;
+  subcontractId: string;
+  inviteToken: string;
 }) {
-  const { contractId, subCompanyId, representativeEmail } = params;
+  const { contractId, subCompanyId, representativeEmail, subcontractId, inviteToken } = params;
 
   const [contract, subCompany] = await Promise.all([
     db.contract.findUnique({
@@ -674,7 +676,9 @@ export async function sendSubcontractRequestEmails(params: {
   const safeAcName = escapeHtml(contract.userAc.displayName ?? contract.userAc.name);
   const safeAcEmail = escapeHtml(contract.userAc.email);
   const approvalUrl = getAppUrl('/dashboard/admin/subcontracts');
-  const preRegisterUrl = getAppUrl('/pre-register');
+  const preRegisterUrl = getAppUrl(
+    `/pre-register?subcontractId=${encodeURIComponent(subcontractId)}&token=${encodeURIComponent(inviteToken)}`
+  );
 
   const dataTable = `
     <table style="width:100%; border-collapse:collapse; font-size:13px; margin:12px 0;">
@@ -721,9 +725,9 @@ export async function sendSubcontractRequestEmails(params: {
       <tr style="background:#f9fafb;"><td style="padding:8px 12px; color:#6b7280;">Empresa mandante</td><td style="padding:8px 12px; font-weight:600;">${safeMandante}</td></tr>
       <tr><td style="padding:8px 12px; color:#6b7280;">Vigencia</td><td style="padding:8px 12px;">${fmt(contract.initialDate)} → ${fmt(contract.finalDate)}</td></tr>
     </table>
-    <p>Para que la vinculación pueda completarse, necesitas crear tu cuenta en el sistema. Haz click en el botón a continuación y completa el formulario de registro con tus datos y los de tu empresa.</p>
+    <p>Para que la vinculación pueda completarse, necesitas completar tu pre-registro en el sistema. Haz click en el botón a continuación y revisa los datos de la sub-empresa, que ya vienen asociados a esta invitación.</p>
     <div style="background:#fefce8; border-left:4px solid #ca8a04; padding:12px 16px; border-radius:4px; margin:16px 0; font-size:13px; color:#713f12;">
-      <strong>Importante:</strong> Al completar el formulario, indica el nombre de tu empresa como <strong>${safeSubName}</strong> y el RUT <strong>${safeSubRut}</strong> para que el administrador pueda asociar tu cuenta correctamente.
+      <strong>Importante:</strong> Esta invitación no entrega acceso inmediato. Primero debes completar el formulario; luego un administrador revisará la solicitud y, si corresponde, recibirás otro correo para configurar tu contraseña.
     </div>
     ${actionButton(preRegisterUrl, 'Completar mi registro')}
     <p style="font-size:12px; color:#9ca3af; text-align:center; margin-top:8px;">

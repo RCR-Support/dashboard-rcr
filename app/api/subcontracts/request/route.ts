@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
 import { sendSubcontractRequestEmails } from '@/lib/email/postmark';
+import { revalidatePath } from 'next/cache';
+import { createSubcontractInviteToken } from '@/lib/subcontracts/invite-token';
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,6 +56,9 @@ export async function POST(req: NextRequest) {
       return new NextResponse('El RUT de empresa ya está registrado en el sistema. Usa la opción "Empresa Existente" para vincularla.', { status: 409 });
     }
 
+    const normalizedRepEmail = repEmail.trim().toLowerCase();
+    const invite = createSubcontractInviteToken();
+
     // Crear empresa nueva en estado inactivo (pendiente de aprobación)
     const newCompany = await db.company.create({
       data: {
@@ -69,6 +74,9 @@ export async function POST(req: NextRequest) {
       data: {
         contractId,
         subCompanyId: newCompany.id,
+        representativeEmail: normalizedRepEmail,
+        inviteToken: invite.tokenHash,
+        inviteExpiresAt: invite.expiresAt,
         status: 'pendiente',
         isActive: false,
       },
@@ -84,7 +92,7 @@ export async function POST(req: NextRequest) {
         data: adminRoles.map(({ userId }) => ({
           type: 'SUBCONTRACT_REQUEST',
           title: `Nueva solicitud de sub-empresa: ${companyName}`,
-          message: `La empresa ${contract.Company.name ?? contract.Company.rut} solicitó incorporar a ${companyName} (${companyRut}) en el contrato ${contract.contractNumber} - ${contract.contractName}. Representante: ${repEmail}.`,
+          message: `La empresa ${contract.Company.name ?? contract.Company.rut} solicitó incorporar a ${companyName} (${companyRut}) en el contrato ${contract.contractNumber} - ${contract.contractName}. Contacto principal: ${normalizedRepEmail}.`,
           userId,
         })),
       });
@@ -94,10 +102,16 @@ export async function POST(req: NextRequest) {
     await sendSubcontractRequestEmails({
       contractId,
       subCompanyId: newCompany.id,
-      representativeEmail: repEmail,
+      representativeEmail: normalizedRepEmail,
+      subcontractId: subcontract.id,
+      inviteToken: invite.token,
     }).catch((err) => {
       console.error('[sendSubcontractRequestEmails]', err);
     });
+
+    revalidatePath('/dashboard/contracts');
+    revalidatePath('/dashboard/companies');
+    revalidatePath('/dashboard/admin/subcontracts');
 
     return NextResponse.json({ subcontract, company: newCompany }, { status: 201 });
   } catch {

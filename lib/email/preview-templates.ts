@@ -20,7 +20,6 @@ const D = {
   name: 'Juan Pérez',
   userName: 'jperez',
   email: 'juan.perez@constructora.cl',
-  pass: 'Rcr#Xk3mP9',
   company: 'Construcciones ABC Ltda.',
   contractNum: 'CT-2024-001',
   contractName: 'Contrato de Mantención Planta Norte',
@@ -117,18 +116,10 @@ function steps(items: { label: string; text: string }[]): string {
 function tplWelcomeManual(): string {
   const credBox = `
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin:24px 0;">
-      <p style="margin:0 0 12px;font-size:13px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Tus credenciales de acceso</p>
+      <p style="margin:0 0 12px;font-size:13px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Datos de tu cuenta</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <tr>
-          <td style="padding:6px 0;color:#64748b;width:40%;">Usuario</td>
-          <td style="padding:6px 0;font-weight:700;color:#1e293b;font-family:monospace;font-size:15px;">${D.userName}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:#64748b;">Contraseña</td>
-          <td style="padding:6px 0;font-weight:700;color:#1e293b;font-family:monospace;font-size:15px;">${D.pass}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:#64748b;">Email</td>
+          <td style="padding:6px 0;color:#64748b;width:40%;">Email</td>
           <td style="padding:6px 0;font-weight:700;color:#1e293b;">${D.email}</td>
         </tr>
       </table>
@@ -141,7 +132,7 @@ function tplWelcomeManual(): string {
     ${credBox}
     <p style="margin:20px 0 12px;font-size:13px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.05em;">Primeros pasos</p>
     ${steps([
-      { label: 'Inicia sesión', text: 'con las credenciales de arriba en el botón de acceso.' },
+      { label: 'Configura tu acceso', text: 'usando el enlace seguro de este correo.' },
     ])}
     <p style="text-align:center;margin:8px 0 16px;"><img src="https://res.cloudinary.com/ddwzut6un/image/upload/v1778356671/copy_of_captura_de_pantalla_2026-05-09_a_la_s_33321_pm_guc2zd_554437.png" alt="Pantalla de inicio de sesión" style="width:100%;max-width:520px;border-radius:8px;border:1px solid #e5e7eb;" /></p>
     ${steps([
@@ -150,7 +141,7 @@ function tplWelcomeManual(): string {
       { label: 'Recibe notificaciones', text: 'por correo en cada etapa del proceso: aprobación, observaciones, credencial lista para imprimir y código QR de habilitación.' },
       { label: 'Actualiza tu perfil', text: 'desde el menú superior (ícono de tu nombre) puedes cambiar tu foto, teléfono y contraseña en cualquier momento.' },
     ])}
-    ${btn('Acceder al sistema')}
+    ${btn('Configurar acceso')}
     <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:8px;">Si tienes algún problema para ingresar, comunícate con el administrador del sistema.</p>
   `);
 }
@@ -158,25 +149,17 @@ function tplWelcomeManual(): string {
 function tplWelcomePreRegister(): string {
   const credBox = `
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin:24px 0;">
-      <p style="margin:0 0 12px;font-size:13px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Tus credenciales de acceso</p>
+      <p style="margin:0 0 12px;font-size:13px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Datos de tu cuenta</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <tr>
-          <td style="padding:6px 0;color:#64748b;width:40%;">Usuario</td>
-          <td style="padding:6px 0;font-weight:700;color:#1e293b;font-family:monospace;font-size:15px;">${D.userName}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:#64748b;">Contraseña</td>
-          <td style="padding:6px 0;font-weight:700;color:#1e293b;font-family:monospace;font-size:15px;">${D.pass}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:#64748b;">Email</td>
+          <td style="padding:6px 0;color:#64748b;width:40%;">Email</td>
           <td style="padding:6px 0;font-weight:700;color:#1e293b;">${D.email}</td>
         </tr>
       </table>
     </div>`;
 
-  const tempNote = `<div style="background:#fefce8;border-left:4px solid #ca8a04;padding:12px 16px;border-radius:4px;margin:0 0 20px;font-size:13px;color:#713f12;">
-    <strong>Contraseña temporal:</strong> Te recomendamos cambiarla en tu primer ingreso desde tu perfil de usuario.
+  const accessNote = `<div style="background:#fefce8;border-left:4px solid #ca8a04;padding:12px 16px;border-radius:4px;margin:0 0 20px;font-size:13px;color:#713f12;">
+    <strong>Acceso seguro:</strong> El enlace para configurar tu contraseña vence por seguridad. Si expira, solicita uno nuevo al administrador.
   </div>`;
 
   return doc(`
@@ -184,10 +167,10 @@ function tplWelcomePreRegister(): string {
     <p style="font-size:13px;color:#6b7280;margin-top:-8px;">Sistema de acreditación de licencias internas — Minera Manto Verde</p>
     <p>Tu cuenta fue revisada y aprobada. Ya puedes ingresar al sistema para gestionar las solicitudes de acreditación de tus trabajadores.</p>
     ${credBox}
-    ${tempNote}
+    ${accessNote}
     <p style="margin:20px 0 12px;font-size:13px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.05em;">Primeros pasos</p>
     ${steps([
-      { label: 'Inicia sesión', text: 'con las credenciales de arriba en el botón de acceso.' },
+      { label: 'Configura tu contraseña', text: 'desde el enlace seguro antes de iniciar sesión por primera vez.' },
     ])}
     <p style="text-align:center;margin:8px 0 16px;"><img src="https://res.cloudinary.com/ddwzut6un/image/upload/v1778356671/copy_of_captura_de_pantalla_2026-05-09_a_la_s_33321_pm_guc2zd_554437.png" alt="Pantalla de inicio de sesión" style="width:100%;max-width:520px;border-radius:8px;border:1px solid #e5e7eb;" /></p>
     ${steps([
@@ -196,7 +179,7 @@ function tplWelcomePreRegister(): string {
       { label: 'Recibe notificaciones', text: 'por correo en cada etapa del proceso: aprobación, observaciones, credencial lista para imprimir y código QR de habilitación.' },
       { label: 'Actualiza tu perfil', text: 'desde el menú superior (ícono de tu nombre) puedes cambiar tu foto, teléfono y contraseña en cualquier momento.' },
     ])}
-    ${btn('Acceder al sistema')}
+    ${btn('Configurar contraseña')}
     <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:8px;">Si tienes algún problema para ingresar, comunícate con el administrador del sistema.</p>
   `);
 }
@@ -210,8 +193,8 @@ function tplPreRegisterUser(): string {
       <p style="margin:0 0 6px;"><strong>¿Qué sigue?</strong></p>
       <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;">
         <li>Un administrador revisará tus datos y los de tu empresa.</li>
-        <li>Cuando tu cuenta sea activada, recibirás un segundo correo en esta dirección con tus credenciales de acceso.</li>
-        <li>Con esas credenciales podrás ingresar al sistema y comenzar a gestionar tus solicitudes.</li>
+        <li>Cuando tu cuenta sea activada, recibirás un segundo correo con un enlace seguro para configurar tu contraseña.</li>
+        <li>Después de configurar tu contraseña podrás ingresar al sistema y comenzar a gestionar tus solicitudes.</li>
       </ol>
     </div>
     <p style="font-size:13px;color:#6b7280;">Si los datos anteriores tienen algún error, comunícate con el administrador antes de que la cuenta sea activada.</p>
@@ -325,14 +308,14 @@ export function getEmailPreviews(): EmailPreview[] {
       id: 'welcome-manual',
       label: 'Bienvenida — Creación por admin',
       category: 'Cuentas de usuario',
-      subject: '¡Bienvenido/a a SHEQ Manto Verde! — Tus credenciales de acceso',
+      subject: '¡Bienvenido/a a SHEQ Manto Verde! — Configura tu acceso',
       html: tplWelcomeManual(),
     },
     {
       id: 'welcome-preregister',
       label: 'Bienvenida — Activación pre-registro',
       category: 'Cuentas de usuario',
-      subject: '¡Bienvenido/a a SHEQ Manto Verde! — Tus credenciales de acceso',
+      subject: '¡Bienvenido/a a SHEQ Manto Verde! — Configura tu acceso',
       html: tplWelcomePreRegister(),
     },
     {

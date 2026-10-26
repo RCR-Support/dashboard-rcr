@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
-import { SubcontractStatus } from '@prisma/client';
+import { Prisma, SubcontractStatus } from '@prisma/client';
 import { sendSubcontractLinkedEmails } from '@/lib/email/postmark';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(
   _req: NextRequest,
@@ -74,7 +75,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status, isActive } = body as { status?: SubcontractStatus; isActive?: boolean };
+    const { status, isActive, userId } = body as { status?: SubcontractStatus; isActive?: boolean; userId?: string | null };
 
     const subcontract = await db.subcontract.findUnique({
       where: { id },
@@ -84,12 +85,39 @@ export async function PATCH(
       return new NextResponse('Subcontrato no encontrado', { status: 404 });
     }
 
+    const updateData: Prisma.SubcontractUpdateInput = {
+      ...(status !== undefined && { status }),
+      ...(isActive !== undefined && { isActive }),
+    };
+
+    if (userId !== undefined) {
+      const normalizedUserId = userId || null;
+
+      if (normalizedUserId) {
+        const representative = await db.user.findFirst({
+          where: {
+            id: normalizedUserId,
+            companyId: subcontract.subCompanyId,
+            deletedLogic: false,
+          },
+          select: { id: true, email: true },
+        });
+
+        if (!representative) {
+          return new NextResponse('El contacto seleccionado no pertenece a la sub-empresa', { status: 400 });
+        }
+
+        updateData.user = { connect: { id: representative.id } };
+        updateData.representativeEmail = representative.email;
+      } else {
+        updateData.user = { disconnect: true };
+        updateData.representativeEmail = null;
+      }
+    }
+
     const updated = await db.subcontract.update({
       where: { id },
-      data: {
-        ...(status !== undefined && { status }),
-        ...(isActive !== undefined && { isActive }),
-      },
+      data: updateData,
     });
 
     // Si se activa un subcontrato pendiente → activar también la empresa + enviar emails
@@ -104,6 +132,12 @@ export async function PATCH(
         subCompanyId: subcontract.subCompanyId,
       }).catch(() => {});
     }
+
+    revalidatePath('/dashboard/contracts');
+    revalidatePath('/dashboard/my-company');
+    revalidatePath('/dashboard/companies');
+    revalidatePath('/dashboard/admin/subcontracts');
+    revalidatePath('/dashboard/applications');
 
     return NextResponse.json(updated);
   } catch {

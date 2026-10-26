@@ -2,8 +2,16 @@ import { z } from 'zod';
 import { baseUserSchema } from '@/lib/zod';
 import { companySchema } from '@/lib/validation-company';
 
+const optionalDateField = z.preprocess(
+  value => value === '' || value === null ? undefined : value,
+  z.coerce.date().optional()
+);
+
 export const preRegisterInputSchema = z.object({
   isSubcontract: z.boolean().optional(),
+  subcontractId: z.string().optional(),
+  subcontractToken: z.string().optional(),
+  subcontractContractId: z.string().optional().or(z.literal('')),
   companyId: z.string().optional(),
   companyName: companySchema.shape.name.optional().or(z.literal('')),
   companyRut: companySchema.shape.rut.optional().or(z.literal('')),
@@ -20,8 +28,8 @@ export const preRegisterInputSchema = z.object({
   displayName: z.string().optional(),
   contractNumber: z.string().optional().or(z.literal('')),
   contractName: z.string().optional().or(z.literal('')),
-  initialDate: z.coerce.date().optional(),
-  finalDate: z.coerce.date().optional(),
+  initialDate: optionalDateField,
+  finalDate: optionalDateField,
   adminContractorId: z.string().optional().or(z.literal('')),
 });
 
@@ -42,6 +50,16 @@ export function validatePreRegisterConditions(
         code: z.ZodIssueCode.custom,
         path: ['companyRut'],
         message: 'El RUT de la empresa debe tener al menos 8 caracteres',
+      });
+    }
+  }
+
+  if (data.isSubcontract && !data.subcontractId) {
+    if (!data.subcontractContractId || data.subcontractContractId.trim().length < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['subcontractContractId'],
+        message: 'Debe seleccionar la empresa mandante y contrato asociado',
       });
     }
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { FieldErrors, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,6 +29,7 @@ import {
   validatePreRegisterConditions,
 } from '@/lib/validation-pre-registration';
 import { PreRegisterSuccess } from './PreRegisterSuccess';
+import type { SubcontractInviteContext } from '@/actions/pre-registration/get-subcontract-invite';
 
 const preRegisterFormSchema = preRegisterInputSchema
   .extend({ userEmailConfirm: z.string().email('Email inválido') })
@@ -45,7 +46,11 @@ const preRegisterFormSchema = preRegisterInputSchema
 
 type PreRegisterFormValues = z.infer<typeof preRegisterFormSchema>;
 
-export const FormPreRegister = () => {
+type FormPreRegisterProps = {
+  inviteContext?: SubcontractInviteContext | null;
+};
+
+export const FormPreRegister = ({ inviteContext }: FormPreRegisterProps) => {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [, setSuccess] = useState<string | null>(null);
@@ -55,10 +60,14 @@ export const FormPreRegister = () => {
   const [adminOptions, setAdminOptions] = useState<
     { label: string; value: string; description?: string }[]
   >([]);
+  const [contractOptions, setContractOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
-  const [isSubcontract, setIsSubcontract] = useState(false);
-  const [showCompanyFields, setShowCompanyFields] = useState(false);
+  const [loadingContracts, setLoadingContracts] = useState(true);
+  const [isSubcontract, setIsSubcontract] = useState(Boolean(inviteContext));
+  const [showCompanyFields, setShowCompanyFields] = useState(Boolean(inviteContext));
   // Estado para animación fade-out
   const [showCard, setShowCard] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -98,23 +107,38 @@ export const FormPreRegister = () => {
         setLoadingAdmins(false);
       }
     };
+    const loadContracts = async () => {
+      try {
+        const res = await fetch('/api/pre-register/contracts');
+        const data = await res.json();
+        if (Array.isArray(data)) setContractOptions(data);
+      } catch {
+        // silencioso
+      } finally {
+        setLoadingContracts(false);
+      }
+    };
     loadCompanies();
     loadAdmins();
+    loadContracts();
   }, []);
 
   const form = useForm<PreRegisterFormValues>({
     resolver: zodResolver(preRegisterFormSchema),
     mode: 'onChange', // Validación en tiempo real
     defaultValues: {
-      isSubcontract: false,
+      isSubcontract: Boolean(inviteContext),
+      subcontractId: inviteContext?.subcontractId,
+      subcontractToken: inviteContext?.token,
+      subcontractContractId: '',
       companyId: '',
-      companyName: '',
-      companyRut: '',
+      companyName: inviteContext?.subCompany.name ?? '',
+      companyRut: inviteContext?.subCompany.rut ?? '',
       companyPhone: '',
-      companyCity: '',
+      companyCity: inviteContext?.subCompany.city ?? '',
       companyUrl: '',
-      userEmail: '',
-      userEmailConfirm: '',
+      userEmail: inviteContext?.representativeEmail ?? '',
+      userEmailConfirm: inviteContext?.representativeEmail ?? '',
       userRun: '',
       userName: '',
       userLastName: '',
@@ -134,9 +158,12 @@ export const FormPreRegister = () => {
     setError(null);
     setSuccess(null);
 
-    // Si companyId es string vacío, lo convertimos a undefined para el flujo correcto
+    const isInviteFlow = Boolean(inviteContext);
+
+    // Si viene desde invitación, la empresa ya está fijada por el Subcontract.
+    // Ignorar cualquier companyId evita que el usuario cambie el destino del vínculo.
     const normalizedCompanyId =
-      data.companyId && data.companyId !== '' ? data.companyId : undefined;
+      !isInviteFlow && data.companyId && data.companyId !== '' ? data.companyId : undefined;
     
     // Propagar el estado de isSubcontract
     data.isSubcontract = isSubcontract;
@@ -171,6 +198,12 @@ export const FormPreRegister = () => {
       // Nueva empresa: limpiar companyId (enviar undefined, no string vacío)
       dataToSend = {
         ...data,
+        isSubcontract: isSubcontract || isInviteFlow,
+        subcontractId: inviteContext?.subcontractId,
+        subcontractToken: inviteContext?.token,
+        companyName: inviteContext?.subCompany.name ?? data.companyName,
+        companyRut: inviteContext?.subCompany.rut ?? data.companyRut,
+        companyCity: inviteContext?.subCompany.city ?? data.companyCity,
         companyId: undefined,
         displayName: finalDisplayName,
       };
@@ -204,20 +237,114 @@ export const FormPreRegister = () => {
     });
   };
 
+  const onInvalid = (errors: FieldErrors<PreRegisterFormValues>) => {
+    const firstErrorField = document.querySelector('[aria-invalid="true"]');
+    firstErrorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const firstMessage = Object.values(errors).find(error => error?.message)?.message;
+    setError(
+      typeof firstMessage === 'string'
+        ? firstMessage
+        : 'Revisa los campos requeridos antes de enviar la solicitud.'
+    );
+  };
+
   // Sincronizar campos y errores al cambiar entre empresa existente/nueva
   const watchedCompanyId = useWatch({
     control: form.control,
     name: 'companyId',
   });
+  const watchedCompanyName = useWatch({
+    control: form.control,
+    name: 'companyName',
+  });
+  const watchedCompanyRut = useWatch({
+    control: form.control,
+    name: 'companyRut',
+  });
+  const watchedCompanyCity = useWatch({
+    control: form.control,
+    name: 'companyCity',
+  });
+  const watchedUserEmail = useWatch({
+    control: form.control,
+    name: 'userEmail',
+  });
+  const watchedUserEmailConfirm = useWatch({
+    control: form.control,
+    name: 'userEmailConfirm',
+  });
+
   useEffect(() => {
+    if (!inviteContext) return;
+
+    setShowCompanyFields(true);
+    setIsSubcontract(true);
+
+    if (!form.getValues('isSubcontract')) {
+      form.setValue('isSubcontract', true, { shouldValidate: true });
+    }
+    if (form.getValues('subcontractId') !== inviteContext.subcontractId) {
+      form.setValue('subcontractId', inviteContext.subcontractId, { shouldValidate: false });
+    }
+    if (form.getValues('subcontractToken') !== inviteContext.token) {
+      form.setValue('subcontractToken', inviteContext.token, { shouldValidate: false });
+    }
+  }, [form, inviteContext]);
+
+  useEffect(() => {
+    if (!inviteContext) return;
+
+    const inviteCompanyName = inviteContext.subCompany.name ?? '';
+    const inviteCompanyRut = inviteContext.subCompany.rut;
+    const inviteCompanyCity = inviteContext.subCompany.city ?? '';
+    const inviteEmail = inviteContext.representativeEmail ?? '';
+
+    if (watchedCompanyName !== inviteCompanyName) {
+      form.setValue('companyName', inviteCompanyName, { shouldValidate: true });
+    }
+    if (watchedCompanyRut !== inviteCompanyRut) {
+      form.setValue('companyRut', inviteCompanyRut, { shouldValidate: true });
+    }
+    if (watchedCompanyCity !== inviteCompanyCity) {
+      form.setValue('companyCity', inviteCompanyCity, { shouldValidate: false });
+    }
+    if (watchedUserEmail !== inviteEmail) {
+      form.setValue('userEmail', inviteEmail, { shouldValidate: true });
+    }
+    if (watchedUserEmailConfirm !== inviteEmail) {
+      form.setValue('userEmailConfirm', inviteEmail, { shouldValidate: true });
+    }
+  }, [
+    form,
+    inviteContext,
+    watchedCompanyName,
+    watchedCompanyRut,
+    watchedCompanyCity,
+    watchedUserEmail,
+    watchedUserEmailConfirm,
+  ]);
+
+  useEffect(() => {
+    if (inviteContext) return;
+
     if (watchedCompanyId) {
-      setShowCompanyFields(false);
+      if (showCompanyFields) setShowCompanyFields(false);
       // Limpiar campos de empresa y errores (poner en undefined para que Zod no los valide)
-      form.setValue('companyName', undefined, { shouldValidate: true });
-      form.setValue('companyRut', undefined, { shouldValidate: true });
-      form.setValue('companyPhone', undefined, { shouldValidate: false });
-      form.setValue('companyCity', undefined, { shouldValidate: false });
-      form.setValue('companyUrl', undefined, { shouldValidate: false });
+      if (form.getValues('companyName') !== undefined) {
+        form.setValue('companyName', undefined, { shouldValidate: true });
+      }
+      if (form.getValues('companyRut') !== undefined) {
+        form.setValue('companyRut', undefined, { shouldValidate: true });
+      }
+      if (form.getValues('companyPhone') !== undefined) {
+        form.setValue('companyPhone', undefined, { shouldValidate: false });
+      }
+      if (form.getValues('companyCity') !== undefined) {
+        form.setValue('companyCity', undefined, { shouldValidate: false });
+      }
+      if (form.getValues('companyUrl') !== undefined) {
+        form.setValue('companyUrl', undefined, { shouldValidate: false });
+      }
       form.clearErrors([
         'companyName',
         'companyRut',
@@ -226,11 +353,11 @@ export const FormPreRegister = () => {
         'companyUrl',
       ]);
     }
-    if (showCompanyFields) {
+    if (showCompanyFields && watchedCompanyId !== '') {
       form.setValue('companyId', '', { shouldValidate: true });
       form.clearErrors(['companyId']);
     }
-  }, [watchedCompanyId, showCompanyFields, form]);
+  }, [watchedCompanyId, showCompanyFields, form, inviteContext]);
 
   if (submitted) {
     return (
@@ -243,7 +370,37 @@ export const FormPreRegister = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
+        {inviteContext && (
+          <Card className="border-[#D05F27]/30 bg-[#D05F27]/5">
+            <CardHeader>
+              <CardTitle>Invitación como subcontratista</CardTitle>
+              <CardDescription>
+                La empresa mandante ya solicitó tu incorporación. Completa tus datos para que el administrador revise y active tu cuenta.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Empresa mandante</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{inviteContext.contract.mandanteName ?? inviteContext.contract.mandanteRut}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Contrato</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{inviteContext.contract.contractName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">N° {inviteContext.contract.contractNumber}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Sub-empresa</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{inviteContext.subCompany.name ?? inviteContext.subCompany.rut}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">RUT sub-empresa</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{inviteContext.subCompany.rut}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Card de Usuario */}
         <Card>
           <CardHeader>
@@ -411,47 +568,49 @@ export const FormPreRegister = () => {
                 </FormItem>
               )}
             />
-            <FormField
-              name="companyId"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem className="md:col-span-1">
-                  <FormLabel>
-                    Empresa <span className="text-red-600">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <div className="w-full">
-                      <SearchSelect
-                        value={field.value === null ? undefined : field.value}
-                        onValueChange={value => {
-                          field.onChange(value);
-                          if (value) setShowCompanyFields(false);
-                        }}
-                        options={empresaOptions}
-                        placeholder={
-                          loadingCompanies
-                            ? 'Cargando empresas...'
-                            : 'Seleccione una empresa'
-                        }
-                        className="w-full"
-                      />
-                      {!field.value && !loadingCompanies && (
-                        <button
-                          type="button"
-                          onClick={() => setShowCompanyFields(!showCompanyFields)}
-                          className="mt-2 text-sm text-[#D05F27] hover:underline focus:outline-none"
-                        >
-                          {showCompanyFields
-                            ? '← Seleccionar empresa existente'
-                            : '¿Tu empresa no está en la lista? Regístrala aquí'}
-                        </button>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!inviteContext && (
+              <FormField
+                name="companyId"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem className="md:col-span-1">
+                    <FormLabel>
+                      Empresa <span className="text-red-600">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <div className="w-full">
+                        <SearchSelect
+                          value={field.value === null ? undefined : field.value}
+                          onValueChange={value => {
+                            field.onChange(value);
+                            if (value) setShowCompanyFields(false);
+                          }}
+                          options={empresaOptions}
+                          placeholder={
+                            loadingCompanies
+                              ? 'Cargando empresas...'
+                              : 'Seleccione una empresa'
+                          }
+                          className="w-full"
+                        />
+                        {!field.value && !loadingCompanies && (
+                          <button
+                            type="button"
+                            onClick={() => setShowCompanyFields(!showCompanyFields)}
+                            className="mt-2 text-sm text-[#D05F27] hover:underline focus:outline-none"
+                          >
+                            {showCompanyFields
+                              ? '← Seleccionar empresa existente'
+                              : '¿Tu empresa no está en la lista? Regístrala aquí'}
+                          </button>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -468,7 +627,9 @@ export const FormPreRegister = () => {
               <CardHeader>
                 <CardTitle>Datos de la Empresa</CardTitle>
                 <CardDescription>
-                  Información de la nueva empresa a registrar.
+                  {inviteContext
+                    ? 'Estos datos vienen desde la solicitud de la empresa mandante y no se pueden cambiar en este formulario.'
+                    : 'Información de la nueva empresa a registrar.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -481,7 +642,7 @@ export const FormPreRegister = () => {
                         Nombre <span className="text-red-600">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombre de la empresa" {...field} />
+                        <Input placeholder="Nombre de la empresa" readOnly={Boolean(inviteContext)} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -496,7 +657,7 @@ export const FormPreRegister = () => {
                         RUT <span className="text-red-600">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="76.123.456-7" {...field} />
+                        <Input placeholder="76.123.456-7" readOnly={Boolean(inviteContext)} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -511,7 +672,7 @@ export const FormPreRegister = () => {
                         Teléfono <span className="text-red-600">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="+56 9 1234 5678" {...field} />
+                        <Input placeholder="+56 9 1234 5678" readOnly={Boolean(inviteContext)} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -524,7 +685,7 @@ export const FormPreRegister = () => {
                     <FormItem>
                       <FormLabel>Ciudad <span className="text-red-600">*</span></FormLabel>
                       <FormControl>
-                        <Input placeholder="Santiago" {...field} />
+                        <Input placeholder="Santiago" readOnly={Boolean(inviteContext)} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -537,7 +698,7 @@ export const FormPreRegister = () => {
                     <FormItem className="md:col-span-2">
                       <FormLabel>Sitio Web (Opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://empresa.com" {...field} />
+                        <Input placeholder="https://empresa.com" readOnly={Boolean(inviteContext)} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -549,7 +710,7 @@ export const FormPreRegister = () => {
         )}
 
         {/* Toggle sub-contratista */}
-        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-dashed border-default-200 bg-default-50 cursor-pointer" onClick={() => {
+        {!inviteContext && <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-dashed border-default-200 bg-default-50 cursor-pointer" onClick={() => {
           setIsSubcontract(v => !v);
           form.setValue('isSubcontract', !isSubcontract);
           if (!isSubcontract) {
@@ -559,7 +720,11 @@ export const FormPreRegister = () => {
             form.setValue('initialDate', '' as unknown as Date);
             form.setValue('finalDate', '' as unknown as Date);
             form.setValue('adminContractorId', '');
+            form.setValue('subcontractContractId', '');
             form.clearErrors(['contractNumber', 'contractName', 'initialDate', 'finalDate', 'adminContractorId']);
+          } else {
+            form.setValue('subcontractContractId', '');
+            form.clearErrors(['subcontractContractId']);
           }
         }}>
           <div className={`mt-0.5 h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
@@ -574,10 +739,48 @@ export const FormPreRegister = () => {
           <div>
             <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Soy sub-contratista</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Mi empresa trabaja bajo el contrato de otra empresa. No tengo un contrato propio que registrar.
+              Mi empresa trabajará bajo el contrato de una empresa mandante. Este formulario registra tus datos; la vinculación al contrato la revisará la mandante o el administrador.
             </p>
           </div>
-        </div>
+        </div>}
+
+        {isSubcontract && !inviteContext && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Empresa mandante y contrato</CardTitle>
+              <CardDescription>
+                Indica para qué contrato trabajará tu empresa. Con esto la mandante y el administrador podrán revisar la solicitud sin clasificarla manualmente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-6">
+              <FormField
+                name="subcontractContractId"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Mandante / contrato <span className="text-red-600">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <SearchSelect
+                        value={field.value === null ? undefined : field.value}
+                        onValueChange={field.onChange}
+                        options={contractOptions}
+                        placeholder={
+                          loadingContracts
+                            ? 'Cargando contratos...'
+                            : 'Buscar mandante por empresa, RUT, número o nombre de contrato'
+                        }
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Card de Contrato */}
         {!isSubcontract && <Card>
@@ -698,8 +901,7 @@ export const FormPreRegister = () => {
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm space-y-1">
             <p className="font-medium text-blue-800 dark:text-blue-300">ℹ️ Registro como sub-contratista</p>
             <p className="text-blue-700 dark:text-blue-400">
-              El administrador del sistema vinculará tu empresa al contrato correspondiente una vez que apruebe tu cuenta.
-              No necesitas ingresar datos de contrato.
+              El administrador revisará tu cuenta y la vinculación quedará asociada a la empresa mandante y contrato que seleccionaste.
             </p>
           </div>
         )}

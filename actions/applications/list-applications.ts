@@ -122,17 +122,18 @@ export async function listApplications(contractId?: string) {
         };
       }
 
-      // 1. Sub-empresas activas donde el usuario es el representante designado
-      const repSubcontracts = await db.subcontract.findMany({
+      // 1. Subcontratos activos donde la empresa del usuario opera como sub-empresa.
+      // Subcontract.userId identifica al representante principal, pero no bloquea visibilidad.
+      const companySubcontracts = await db.subcontract.findMany({
         where: {
-          userId: user.id,
+          subCompanyId: user.companyId,
           isActive: true,
           status: 'activo',
           ...(contractId ? { contractId } : {}),
         },
         select: { contractId: true },
       });
-      const repContractIds = repSubcontracts.map(s => s.contractId);
+      const companySubcontractIds = companySubcontracts.map(s => s.contractId);
 
       // 2. Sub-empresas activas vinculadas a contratos de su empresa (como mandante)
       const mandanteSubcontracts = await db.subcontract.findMany({
@@ -155,10 +156,10 @@ export async function listApplications(contractId?: string) {
               companyId: user.companyId,
               contract: { companyId: user.companyId },
             },
-            // Solicitudes de sub-contratos donde el usuario es representante designado
+            // Solicitudes de sub-contratos donde la empresa del usuario es sub-empresa
             {
               companyId: user.companyId,
-              contractId: { in: repContractIds },
+              contractId: { in: companySubcontractIds },
             },
             // Solicitudes de sub-empresas (vista mandante)
             ...(subCompanyIds.length > 0 ? [{

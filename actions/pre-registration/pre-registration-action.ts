@@ -5,6 +5,7 @@ import { Prisma, RoleEnum } from '@prisma/client';
 import { sendPreRegistrationEmails } from '@/lib/email/postmark';
 import { revalidatePath } from 'next/cache';
 import { preRegisterSchema } from '@/lib/validation-pre-registration';
+import { hashSubcontractInviteToken } from '@/lib/subcontracts/invite-token';
 
 async function notifyAdminsNewPreRegister(displayName: string, companyName: string) {
   try {
@@ -27,6 +28,64 @@ async function notifyAdminsNewPreRegister(displayName: string, companyName: stri
   }
 }
 
+async function notifyMandanteSubcontractRequest(contractId: string, displayName: string, companyName: string) {
+  try {
+    const contract = await db.contract.findUnique({
+      where: { id: contractId },
+      select: {
+        contractName: true,
+        contractNumber: true,
+        companyId: true,
+        useracId: true,
+      },
+    });
+
+    if (!contract) return;
+
+    const mandanteUsers = await db.user.findMany({
+      where: {
+        companyId: contract.companyId,
+        isActive: true,
+        deletedLogic: false,
+        roles: {
+          some: {
+            role: {
+              name: { in: [RoleEnum.user, RoleEnum.adminContractor] },
+            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    const recipientIds = Array.from(new Set([
+      contract.useracId,
+      ...mandanteUsers.map(user => user.id),
+    ]));
+
+    if (recipientIds.length === 0) return;
+
+    await db.notification.createMany({
+      data: recipientIds.map(userId => ({
+        userId,
+        type: 'SUBCONTRACT_REQUEST',
+        title: 'Nueva subcontratista pendiente',
+        message: `${displayName} de ${companyName} solicitó vincularse al contrato ${contract.contractNumber} - ${contract.contractName}.`,
+        actionUrl: '/dashboard/contracts',
+      })),
+    });
+  } catch (err) {
+    console.error('[pre-register] Error notificando solicitud de subcontrato:', err);
+  }
+}
+
+type InvitedSubcontract = Prisma.SubcontractGetPayload<{
+  include: {
+    subCompany: true;
+    contract: true;
+  };
+}>;
+
 export const preRegisterAction = async (values: unknown) => {
   try {
     // 1. Parseo general para obtener companyId
@@ -41,8 +100,59 @@ export const preRegisterAction = async (values: unknown) => {
       };
     }
     const data = parsedGeneral.data;
-    const isEmpresaExistente = !!data.companyId && data.companyId !== '';
+    const hasSubcontractInvite = Boolean(data.subcontractId && data.subcontractToken);
+    let invitedSubcontract: InvitedSubcontract | null = null;
+
+    if (hasSubcontractInvite && data.subcontractId && data.subcontractToken) {
+      invitedSubcontract = await db.subcontract.findFirst({
+        where: {
+          id: data.subcontractId,
+          inviteToken: hashSubcontractInviteToken(data.subcontractToken),
+          status: 'pendiente',
+          isActive: false,
+          OR: [
+            { inviteExpiresAt: null },
+            { inviteExpiresAt: { gt: new Date() } },
+          ],
+        },
+        include: {
+          subCompany: true,
+          contract: true,
+        },
+      });
+
+      if (!invitedSubcontract) {
+        return { error: 'La invitación de subcontratista es inválida o expiró.' };
+      }
+
+      if (invitedSubcontract.userId) {
+        return { error: 'Esta invitación ya fue utilizada por otro usuario.' };
+      }
+    }
+
+    const isEmpresaExistente = invitedSubcontract
+      ? true
+      : !!data.companyId && data.companyId !== '';
     const isSubcontract = !!data.isSubcontract;
+    const subcontractContractId = !invitedSubcontract && isSubcontract
+      ? data.subcontractContractId
+      : undefined;
+
+    const subcontractContract = subcontractContractId
+      ? await db.contract.findFirst({
+          where: { id: subcontractContractId, deletedAt: null },
+          select: {
+            id: true,
+            contractName: true,
+            contractNumber: true,
+            companyId: true,
+          },
+        })
+      : null;
+
+    if (isSubcontract && !invitedSubcontract && !subcontractContract) {
+      return { error: 'Debe seleccionar un contrato mandante válido.' };
+    }
 
     // Validación condicional de campos de empresa
     if (!isEmpresaExistente) {
@@ -94,20 +204,38 @@ export const preRegisterAction = async (values: unknown) => {
     // 2. Lógica principal según si es empresa existente o nueva
     if (isEmpresaExistente) {
       // --- FLUJO: Asociar a empresa existente ---
-      if (!data.companyId) {
+      if (!data.companyId && !invitedSubcontract) {
         return { error: 'Debe seleccionar una empresa válida' };
       }
-      const company = await db.company.findUnique({
-        where: { id: data.companyId },
+      const companyId = invitedSubcontract?.subCompanyId ?? data.companyId!;
+      const company = invitedSubcontract?.subCompany ?? await db.company.findUnique({
+        where: { id: companyId },
       });
       if (!company) {
         return { error: 'La empresa seleccionada no existe' };
       }
+      if (subcontractContract && subcontractContract.companyId === companyId) {
+        return { error: 'La empresa subcontratista no puede ser la misma empresa mandante del contrato.' };
+      }
+      if (subcontractContract) {
+        const existingSubcontract = await db.subcontract.findUnique({
+          where: {
+            contractId_subCompanyId: {
+              contractId: subcontractContract.id,
+              subCompanyId: companyId,
+            },
+          },
+          select: { status: true },
+        });
+
+        if (existingSubcontract) {
+          return { error: 'Esta empresa ya tiene una solicitud o vínculo registrado para el contrato seleccionado.' };
+        }
+      }
       // Crear usuario y contrato en transacción para evitar datos huérfanos
-      const companyId = data.companyId!;
-      const existingCompany = await db.company.findUnique({ where: { id: companyId }, select: { name: true } });
+      const existingCompany = { name: company.name };
       await db.$transaction(async (prisma) => {
-        await prisma.user.create({
+        const newUser = await prisma.user.create({
           data: {
             email: data.userEmail,
             run: data.userRun,
@@ -135,6 +263,32 @@ export const preRegisterAction = async (values: unknown) => {
             },
           },
         });
+
+        if (invitedSubcontract) {
+          await prisma.subcontract.update({
+            where: { id: invitedSubcontract.id },
+            data: {
+              userId: newUser.id,
+              representativeEmail: data.userEmail.trim().toLowerCase(),
+              inviteAcceptedAt: new Date(),
+            },
+          });
+        }
+
+        if (!invitedSubcontract && isSubcontract && subcontractContract) {
+          await prisma.subcontract.create({
+            data: {
+              contractId: subcontractContract.id,
+              subCompanyId: companyId,
+              userId: newUser.id,
+              representativeEmail: data.userEmail.trim().toLowerCase(),
+              inviteAcceptedAt: new Date(),
+              status: 'pendiente',
+              isActive: false,
+            },
+          });
+        }
+
         // Solo crear contrato si NO es sub-contratista
         if (!isSubcontract && data.contractNumber && data.contractName && data.initialDate && data.finalDate && data.adminContractorId) {
           await prisma.contract.create({
@@ -157,8 +311,8 @@ export const preRegisterAction = async (values: unknown) => {
           userLastName: data.userLastName,
           userRun: data.userRun,
           companyName: existingCompany?.name ?? companyId,
-          contractNumber: data.contractNumber ?? '',
-          contractName: data.contractName ?? '',
+          contractNumber: subcontractContract?.contractNumber ?? data.contractNumber ?? '',
+          contractName: subcontractContract?.contractName ?? data.contractName ?? '',
           initialDate: data.initialDate ?? new Date(),
           finalDate: data.finalDate ?? new Date(),
           adminContractorId: data.adminContractorId ?? '',
@@ -169,7 +323,13 @@ export const preRegisterAction = async (values: unknown) => {
       }
       const displayName = `${data.userName} ${data.userLastName}`.trim();
       await notifyAdminsNewPreRegister(displayName, existingCompany?.name ?? companyId);
+      if (subcontractContract) {
+        await notifyMandanteSubcontractRequest(subcontractContract.id, displayName, existingCompany?.name ?? companyId);
+      }
       revalidatePath('/dashboard/users');
+      revalidatePath('/dashboard/admin/subcontracts');
+      revalidatePath('/dashboard/contracts');
+      revalidatePath('/dashboard/companies');
       return {
         success: true,
         message:
@@ -179,6 +339,28 @@ export const preRegisterAction = async (values: unknown) => {
       // --- FLUJO: Crear nueva empresa ---
       if (!data.companyRut || !data.companyName) {
         return { error: 'Debe completar los datos de la empresa' };
+      }
+      if (isSubcontract && subcontractContract) {
+        const existingCompanyForSubcontract = await db.company.findUnique({
+          where: { rut: data.companyRut },
+          select: { id: true },
+        });
+
+        if (existingCompanyForSubcontract) {
+          const existingSubcontract = await db.subcontract.findUnique({
+            where: {
+              contractId_subCompanyId: {
+                contractId: subcontractContract.id,
+                subCompanyId: existingCompanyForSubcontract.id,
+              },
+            },
+            select: { status: true },
+          });
+
+          if (existingSubcontract) {
+            return { error: 'Esta empresa ya tiene una solicitud o vínculo registrado para el contrato seleccionado.' };
+          }
+        }
       }
       const result = await db.$transaction(async prisma => {
         // Crear Empresa pendiente de aprobación
@@ -234,6 +416,24 @@ export const preRegisterAction = async (values: unknown) => {
             },
           });
         }
+
+        if (isSubcontract && subcontractContract) {
+          if (subcontractContract.companyId === newCompany.id) {
+            throw new Error('La empresa subcontratista no puede ser la misma empresa mandante del contrato.');
+          }
+
+          await prisma.subcontract.create({
+            data: {
+              contractId: subcontractContract.id,
+              subCompanyId: newCompany.id,
+              userId: newUser.id,
+              representativeEmail: data.userEmail.trim().toLowerCase(),
+              inviteAcceptedAt: new Date(),
+              status: 'pendiente',
+              isActive: false,
+            },
+          });
+        }
         return { newCompany, newUser };
       });
       // Enviar correos (sin bloquear respuesta si fallan)
@@ -244,8 +444,8 @@ export const preRegisterAction = async (values: unknown) => {
           userLastName: data.userLastName,
           userRun: data.userRun,
           companyName: data.companyName ?? '',
-          contractNumber: data.contractNumber ?? '',
-          contractName: data.contractName ?? '',
+          contractNumber: subcontractContract?.contractNumber ?? data.contractNumber ?? '',
+          contractName: subcontractContract?.contractName ?? data.contractName ?? '',
           initialDate: data.initialDate ?? new Date(),
           finalDate: data.finalDate ?? new Date(),
           adminContractorId: data.adminContractorId ?? '',
@@ -256,7 +456,13 @@ export const preRegisterAction = async (values: unknown) => {
       }
       const displayName2 = `${data.userName} ${data.userLastName}`.trim();
       await notifyAdminsNewPreRegister(displayName2, data.companyName ?? '');
+      if (subcontractContract) {
+        await notifyMandanteSubcontractRequest(subcontractContract.id, displayName2, data.companyName ?? '');
+      }
       revalidatePath('/dashboard/users');
+      revalidatePath('/dashboard/admin/subcontracts');
+      revalidatePath('/dashboard/contracts');
+      revalidatePath('/dashboard/companies');
       return {
         success: true,
         message:

@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
 import { sendSubcontractLinkedEmails } from '@/lib/email/postmark';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -114,6 +115,12 @@ export async function POST(req: NextRequest) {
 
     // Enviar emails en background (no bloquea la respuesta)
     sendSubcontractLinkedEmails({ contractId, subCompanyId }).catch(() => {});
+
+    revalidatePath('/dashboard/contracts');
+    revalidatePath('/dashboard/my-company');
+    revalidatePath('/dashboard/companies');
+    revalidatePath('/dashboard/admin/subcontracts');
+    revalidatePath('/dashboard/applications');
 
     return NextResponse.json(subcontract, { status: 201 });
   } catch (err: unknown) {

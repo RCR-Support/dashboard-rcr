@@ -9,13 +9,12 @@ import {
   ModalFooter,
   Button,
   Input,
-  Select,
-  SelectItem,
   Chip,
   Spinner,
 } from '@heroui/react';
 import { Building2, User, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { Contract } from '@/interfaces/contract.interface';
+import { SearchSelect } from '@/components/ui/search-select';
 
 interface SubcompanyOption {
   id: string;
@@ -180,8 +179,8 @@ export function SubcontractModal({
   const getTitle = () => {
     if (flow === null) return 'Vincular Sub-empresa';
     if (flow === 'A') {
-      if (stepA === 'select-company') return 'Seleccionar Empresa';
-      if (stepA === 'select-user') return 'Seleccionar Representante';
+      if (stepA === 'select-company') return 'Seleccionar subempresa';
+      if (stepA === 'select-user') return 'Seleccionar contacto principal';
       return 'Confirmar Vinculación';
     }
     if (stepB === 'form') return 'Datos de Nueva Empresa';
@@ -275,35 +274,24 @@ export function SubcontractModal({
                       </button>
                     </div>
                   ) : (
-                    <Select
-                      label="Seleccionar empresa"
-                      placeholder="Buscar por nombre o RUT..."
-                      selectedKeys={selectedCompanyId ? new Set([selectedCompanyId]) : new Set()}
-                      onSelectionChange={(keys) => {
-                        const val = Array.from(keys)[0] as string;
-                        setSelectedCompanyId(val || '');
-                        setSelectedUserId('');
-                      }}
-                    >
-                      {companies
-                        .filter(c => !c.linkedContractIds.includes(contract.id) || c.id === selectedCompanyId)
-                        .map((c) => (
-                          <SelectItem
-                            key={c.id}
-                            textValue={`${c.name ?? ''} ${c.rut}`}
-                          >
-                            <div className="flex items-center justify-between w-full">
-                              <div>
-                                <p className="font-medium">{c.name ?? 'Sin nombre'}</p>
-                                <p className="text-xs text-default-500">{c.rut}</p>
-                              </div>
-                              {c.linkedContractIds.includes(contract.id) && (
-                                <Chip size="sm" color="warning" variant="flat">Ya vinculada</Chip>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </Select>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-default-700">Seleccionar subempresa</p>
+                      <SearchSelect
+                        options={companies
+                          .filter(c => !c.linkedContractIds.includes(contract.id) || c.id === selectedCompanyId)
+                          .map(c => ({
+                            value: c.id,
+                            label: `${c.name ?? 'Sin nombre'} - ${c.rut}${c.linkedContractIds.includes(contract.id) ? ' (ya vinculada)' : ''}`,
+                          }))}
+                        defaultValue={selectedCompanyId}
+                        placeholder="Buscar subempresa por nombre o RUT..."
+                        modalPopover
+                        onValueChange={(value) => {
+                          setSelectedCompanyId(value);
+                          setSelectedUserId('');
+                        }}
+                      />
+                    </div>
                   )}
 
                   {selectedCompany && !isLinked && selectedCompany.activeUsers.length === 0 && (
@@ -370,8 +358,8 @@ export function SubcontractModal({
                 <div className="space-y-4">
                   <p className="text-sm text-default-600">
                     {selectedCompany.activeUsers.length === 1
-                      ? <>¿Es <strong>{selectedCompany.activeUsers[0].alias ?? selectedCompany.activeUsers[0].name}</strong> el representante que gestionará las solicitudes de este contrato?</>
-                      : <>La empresa <strong>{selectedCompany.name}</strong> tiene múltiples usuarios activos. Selecciona el representante que gestionará las solicitudes de este contrato:</>
+                      ? <>¿Es <strong>{selectedCompany.activeUsers[0].alias ?? selectedCompany.activeUsers[0].name}</strong> el contacto principal para este contrato?</>
+                      : <>La empresa <strong>{selectedCompany.name}</strong> tiene múltiples usuarios activos. Selecciona el contacto principal para notificaciones y coordinación:</>
                     }
                   </p>
                   <div className="space-y-2">
@@ -394,7 +382,7 @@ export function SubcontractModal({
                     >
                       <AlertCircle className="h-5 w-5 text-warning shrink-0" />
                       <div>
-                        <p className="font-medium text-sm">El representante no está en esta lista</p>
+                        <p className="font-medium text-sm">El contacto principal no está en esta lista</p>
                         <p className="text-xs text-default-500">Aún no tiene usuario activo en el sistema</p>
                       </div>
                       {selectedUserId === 'none' && <CheckCircle className="h-5 w-5 text-warning ml-auto" />}
@@ -407,10 +395,10 @@ export function SubcontractModal({
                       <div className="p-4 bg-warning-50 border border-warning-200 rounded-xl text-sm space-y-2">
                         <p className="font-semibold text-warning-800 flex items-center gap-2">
                           <AlertCircle className="h-4 w-4 shrink-0" />
-                          El representante debe estar registrado en el sistema
+                          El contacto principal debe estar registrado en el sistema
                         </p>
                         <p className="text-warning-700">
-                          Para vincular esta empresa al contrato, el representante debe tener una cuenta activa y aprobada por el administrador.
+                          Para completar una vinculación operativa, la sub-empresa debe tener al menos un usuario activo aprobado por el administrador.
                         </p>
                       </div>
                       <div className="p-4 bg-default-50 border border-default-200 rounded-xl text-sm space-y-3">
@@ -419,7 +407,7 @@ export function SubcontractModal({
                           <li>Comparte el link de pre-registro con el representante de la sub-empresa.</li>
                           <li>Él completa el formulario con sus datos y los de su empresa.</li>
                           <li>El administrador del sistema aprueba la cuenta.</li>
-                          <li>Vuelve aquí, actualiza la lista y el representante aparecerá para seleccionar.</li>
+                          <li>Vuelve aquí, actualiza la lista y el contacto principal aparecerá para seleccionar.</li>
                         </ol>
                         <div className="flex items-center gap-2 mt-2">
                           <input
@@ -468,7 +456,7 @@ export function SubcontractModal({
                     </div>
                     {selectedUserId && selectedUserId !== 'none' && (
                       <div className="py-3">
-                        <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Representante</p>
+                        <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Contacto principal</p>
                         {(() => {
                           const u = selectedCompany.activeUsers.find(u => u.id === selectedUserId);
                           return u ? (
@@ -481,7 +469,7 @@ export function SubcontractModal({
                     )}
                   </div>
                   <div className="p-3 bg-success-50 rounded-lg text-sm text-success-700">
-                    La vinculación será activa de inmediato.
+                    La vinculación será activa de inmediato. Los usuarios activos de la sub-empresa podrán operar bajo este contrato.
                   </div>
                 </div>
               )}
@@ -493,14 +481,14 @@ export function SubcontractModal({
                   {!noDataMode ? (
                     <>
                       <div className="p-3 bg-primary-50 border border-primary-200 rounded-xl text-sm">
-                        <p className="text-primary-700">Completa los datos de la nueva empresa y el email del representante. Se le enviará una invitación para que complete su registro.</p>
+                        <p className="text-primary-700">Completa los datos de la nueva empresa y el email del contacto principal. Se creará una solicitud pendiente y se le enviará una invitación para completar su registro.</p>
                       </div>
                       <p className="text-sm font-medium text-default-600">Datos de la empresa</p>
                       <Input label="Nombre de la empresa" value={companyName} onValueChange={setCompanyName} isRequired />
                       <Input label="RUT de la empresa" placeholder="12345678-9" value={companyRut} onValueChange={setCompanyRut} isRequired />
                       <Input label="Ciudad (opcional)" value={companyCity} onValueChange={setCompanyCity} />
-                      <p className="text-sm font-medium text-default-600 pt-2">Representante</p>
-                      <Input label="Email del representante" type="email" description="Se le enviará un correo con el link para completar su registro" value={repEmail} onValueChange={setRepEmail} isRequired />
+                      <p className="text-sm font-medium text-default-600 pt-2">Contacto principal</p>
+                      <Input label="Email del contacto principal" type="email" description="Se le enviará un correo con el link para completar su registro" value={repEmail} onValueChange={setRepEmail} isRequired />
                       <div className="p-3 bg-warning-50 rounded-lg text-sm text-warning-700">
                         Esta solicitud será revisada por el administrador del sistema antes de activarse.
                       </div>
@@ -519,7 +507,7 @@ export function SubcontractModal({
                           Necesitas los datos de la empresa para continuar
                         </p>
                         <p className="text-warning-700">
-                          Para solicitar la incorporación de una nueva empresa, necesitas al menos el nombre, RUT y el email del representante.
+                          Para solicitar la incorporación de una nueva empresa, necesitas al menos el nombre, RUT y el email del contacto principal.
                         </p>
                       </div>
                       <div className="p-4 bg-default-50 border border-default-200 rounded-xl text-sm space-y-3">
@@ -571,7 +559,7 @@ export function SubcontractModal({
                       {companyCity && <p className="text-sm text-default-500">Ciudad: {companyCity}</p>}
                     </div>
                     <div className="py-3">
-                      <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Representante</p>
+                      <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Contacto principal</p>
                       <p className="text-sm text-default-500">{repEmail}</p>
                     </div>
                     <div className="py-3">
@@ -581,7 +569,7 @@ export function SubcontractModal({
                     </div>
                   </div>
                   <div className="p-3 bg-warning-50 rounded-lg text-sm text-warning-700">
-                    Se enviará una invitación al representante para que complete su registro. El administrador revisará y activará la cuenta.
+                    Se creará una solicitud pendiente y se enviará una invitación al contacto principal. El administrador revisará la empresa antes de activar la vinculación.
                   </div>
                 </div>
               )}

@@ -55,9 +55,10 @@ export const CompaniesGrid = ({ companies }: Props) => {
     text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const normalizedFilter = normalizeText(searchTerm.toLowerCase());
-  const filteredCompanies = companies.filter(company =>
-    normalizeText(company.label).toLowerCase().includes(normalizedFilter)
-  );
+  const filteredCompanies = companies.filter(company => {
+    const searchableText = `${company.label} ${company.description}`;
+    return normalizeText(searchableText).toLowerCase().includes(normalizedFilter);
+  });
 
   return (
     <>
@@ -69,7 +70,7 @@ export const CompaniesGrid = ({ companies }: Props) => {
               classNames={{
                 inputWrapper: 'border-1',
               }}
-              placeholder="Buscar empresa..."
+              placeholder="Buscar empresa por nombre, RUT, ciudad o contacto..."
               size="sm"
               startContent={<CiSearch className="text-default-300" />}
               value={searchTerm}

@@ -1,8 +1,19 @@
 import { FormPreRegister } from '@/components/ui/auth/form-preregister';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getSubcontractInviteContext } from '@/actions/pre-registration/get-subcontract-invite';
 
-const PreRegisterPage = () => {
+type PreRegisterPageProps = {
+  searchParams?: Promise<{ subcontractId?: string; token?: string }>;
+};
+
+const PreRegisterPage = async ({ searchParams }: PreRegisterPageProps) => {
+  const params = await searchParams;
+  const inviteContext = await getSubcontractInviteContext(
+    params?.subcontractId,
+    params?.token
+  );
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#171c23] px-4 py-10">
       <div className="mx-auto w-full max-w-4xl space-y-6">
@@ -64,11 +75,11 @@ const PreRegisterPage = () => {
               <span className="text-gray-300 dark:text-gray-600 self-center">→</span>
               <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#D05F27] text-white font-bold text-[10px]">3</span>
-                Recibes tus credenciales
+                Configuras tu contraseña
               </div>
             </div>
           </div>
-          <FormPreRegister />
+          <FormPreRegister inviteContext={inviteContext} />
         </div>
       </div>
     </div>
