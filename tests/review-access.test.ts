@@ -45,6 +45,15 @@ describe('getReviewAccessError', () => {
     })).toBe('No tienes asignada esta solicitud');
   });
 
+  it('mantiene la asignación estricta del AC aunque pertenezca a otro equipo', () => {
+    expect(getReviewAccessError({
+      application: acPendingApplication,
+      roles: [RoleEnum.adminContractor],
+      userId: 'ac-otro',
+      stage: 'ac',
+    })).toBe('No tienes asignada esta solicitud');
+  });
+
   it('permite al SHEQ asignado solo después de la aprobación AC', () => {
     expect(getReviewAccessError({
       application: sheqPendingApplication,
@@ -52,6 +61,24 @@ describe('getReviewAccessError', () => {
       userId: 'sheq-1',
       stage: 'sheq',
     })).toBeNull();
+  });
+
+  it('permite a otro SHEQ revisar una solicitud pendiente asignada a un colega', () => {
+    expect(getReviewAccessError({
+      application: sheqPendingApplication,
+      roles: [RoleEnum.sheq],
+      userId: 'sheq-2',
+      stage: 'sheq',
+    })).toBeNull();
+  });
+
+  it('no permite a un usuario sin rol SHEQ revisar una solicitud de otro revisor', () => {
+    expect(getReviewAccessError({
+      application: sheqPendingApplication,
+      roles: [RoleEnum.user],
+      userId: 'user-1',
+      stage: 'sheq',
+    })).toBe('Solo un revisor SHEQ puede revisar esta etapa');
   });
 
   it('rechaza el cruce de roles y etapas', () => {

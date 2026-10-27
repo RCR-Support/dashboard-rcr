@@ -56,7 +56,7 @@ export async function approveDocument(documentId: string) {
 
     if (!isAdmin) {
       const assignedAc = isAcStage && userRoles.includes(RoleEnum.adminContractor) && document.application.userAcId === session.user.id;
-      const assignedSheq = isSheqStage && userRoles.includes(RoleEnum.sheq) && document.application.userSheqId === session.user.id;
+      const assignedSheq = isSheqStage && userRoles.includes(RoleEnum.sheq);
       if (!assignedAc && !assignedSheq) {
         return { success: false, error: 'No tienes asignado este documento para revisión.' };
       }

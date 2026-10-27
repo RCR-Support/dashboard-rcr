@@ -121,6 +121,7 @@ model User {
   applicationsAsAc      application[]      @relation("AdminContractorApplications")
   application           application[]      @relation("UserApplications")
   applicationsAsSheq    application[]      @relation("SheqApplications")
+  assignedSheqAudits    ApplicationAudit[]  @relation("AssignedSheqAudits")
   subcontractsAsRep     Subcontract[]      @relation("SubcontractRepresentative")
 }
 
@@ -140,6 +141,7 @@ model application {
   userId             String?
   contractId         String?
   createdAt          DateTime            @default(now())
+  lastSubmittedAt    DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   userAcId           String?
   userSheqId         String?
@@ -297,10 +299,14 @@ model ApplicationAudit {
   applicationId String
   action        AuditAction
   changedById   String
+  assignedSheqId String?
   changedAt     DateTime    @default(now())
   details       String?
   application   application @relation(fields: [applicationId], references: [id])
   changedBy     User        @relation("UserApplicationAudits", fields: [changedById], references: [id])
+  assignedSheq  User?       @relation("AssignedSheqAudits", fields: [assignedSheqId], references: [id], onDelete: SetNull)
+
+  @@index([assignedSheqId])
 }
 
 enum RoleEnum {

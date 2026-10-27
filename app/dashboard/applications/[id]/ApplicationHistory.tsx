@@ -14,6 +14,7 @@ interface ApplicationHistoryProps {
       action: string;
       changedAt: Date;
       details: string | null;
+      assignedSheq: { id: string; displayName: string; email: string } | null;
       changedBy: { displayName: string; email: string };
     }>;
     versions?: Array<{
@@ -127,7 +128,14 @@ export function ApplicationHistory({ application, versioningAvailable, activeRea
                     {audit.action === 'RECHAZO' && <AlertCircle className="w-4 h-4 text-red-500" />}
                     {audit.action === 'APROBACION' && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <p className="text-default-500">{audit.changedBy.displayName}</p>
+                  <p className="text-default-500">
+                    Realizado por: {audit.changedBy.displayName}
+                  </p>
+                  {(audit.action === 'APROBACION' || audit.action === 'RECHAZO') && (
+                    <p className="text-xs text-default-500">
+                      SHEQ asignado al momento: {audit.assignedSheq?.displayName ?? 'No registrado'}
+                    </p>
+                  )}
                   <p className="text-xs text-default-400">{new Date(audit.changedAt).toLocaleString('es-CL')}</p>
                   {audit.details && <p className="mt-1 text-default-600 bg-default-100 p-2 rounded">{audit.details}</p>}
                 </div>

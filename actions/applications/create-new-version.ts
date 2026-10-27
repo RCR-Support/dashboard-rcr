@@ -131,6 +131,7 @@ export async function createNewVersion(input: CreateNewVersionInput) {
           processStatus: ProcessStatus.pendiente,
           stateAc: StateAc.pendiente,
           stateSheq: StateSheq.pendiente,
+          lastSubmittedAt: new Date(),
           statusToken: uuidv4(),
           workerName: input.workerName,
           workerPaternal: input.workerPaternal,

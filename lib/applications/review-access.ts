@@ -34,7 +34,8 @@ export function getReviewAccessError({ application, roles, userId, stage }: Revi
   }
 
   const assignedUserId = stage === 'ac' ? application.userAcId : application.userSheqId;
-  if (!isAdmin && assignedUserId !== userId) {
+  const canReviewCrossAssignment = stage === 'sheq' && roles.includes(RoleEnum.sheq);
+  if (!isAdmin && !canReviewCrossAssignment && assignedUserId !== userId) {
     return 'No tienes asignada esta solicitud';
   }
 

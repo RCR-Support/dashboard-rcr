@@ -13,7 +13,10 @@ export async function getApplicationTimeline(applicationId: string) {
     }
     const audits = await db.applicationAudit.findMany({
       where: { applicationId },
-      include: { changedBy: { select: { id: true, displayName: true } } },
+      include: {
+        changedBy: { select: { id: true, displayName: true } },
+        assignedSheq: { select: { id: true, displayName: true, email: true } },
+      },
       orderBy: { changedAt: 'desc' },
     });
 

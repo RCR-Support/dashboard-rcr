@@ -9,10 +9,13 @@ import { RoleEnum } from '@prisma/client';
 
 export default async function ApplicationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ scope?: string }>;
 }) {
   const { id } = await params;
+  const query = await searchParams;
   const session = await auth();
   
   if (!session?.user) {
@@ -99,6 +102,13 @@ export default async function ApplicationPage({
           action: true,
           changedAt: true,
           details: true,
+          assignedSheq: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+            },
+          },
           changedBy: {
             select: {
               displayName: true,
@@ -165,8 +175,10 @@ export default async function ApplicationPage({
 
   if (!canViewAll) {
     if (canViewAssigned) {
-      // permite sólo si está asignado como AC o SHEQ
-      if (application.userAc?.id !== user.id && application.userSheq?.id !== user.id) {
+      const isSheq = userRoles.includes(RoleEnum.sheq);
+      const isAssignedReviewer = application.userAc?.id === user.id || application.userSheq?.id === user.id;
+      const hasGlobalSheqScope = isSheq && query.scope === 'all';
+      if (!isAssignedReviewer && !hasGlobalSheqScope) {
         return (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">

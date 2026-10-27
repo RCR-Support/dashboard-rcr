@@ -142,6 +142,7 @@ export async function updateApplication(input: UpdateApplicationInput) {
           stateAc: 'pendiente', // Reiniciar estado para nueva revisión
           stateSheq: 'pendiente',
           processStatus: 'pendiente',
+          lastSubmittedAt: new Date(),
           userAcId: contract.useracId,
           activities: {
             set: input.activities.map((id) => ({ id })),

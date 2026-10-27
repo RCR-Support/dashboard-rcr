@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { hasActionPermission } from '@/config/action-permissions';
 import { RoleEnum } from '@prisma/client';
 
-export async function listApplications(contractId?: string) {
+export async function listApplications(contractId?: string, includeAllSheq = false) {
   try {
     // ✅ VALIDACIÓN 1: Autenticación
     const session = await auth();
@@ -50,6 +50,7 @@ export async function listApplications(contractId?: string) {
       licenseExpiration: true,
       processStatus: true,
       createdAt: true,
+      lastSubmittedAt: true,
       company: {
         select: {
           name: true,
@@ -57,18 +58,21 @@ export async function listApplications(contractId?: string) {
       },
       contract: {
         select: {
+          id: true,
           contractNumber: true,
           contractName: true,
         },
       },
       userAc: {
         select: {
+          id: true,
           displayName: true,
           email: true,
         },
       },
       userSheq: {
         select: {
+          id: true,
           displayName: true,
           email: true,
         },
@@ -99,18 +103,22 @@ export async function listApplications(contractId?: string) {
         },
       });
     } else if (canViewAssigned) {
-      // SHEQ y AdminContractor: solo ven solicitudes asignadas a ellos
+      const canViewAllSheq = includeAllSheq && userRoles.includes(RoleEnum.sheq);
+      const assignmentFilter = canViewAllSheq
+        ? {}
+        : userRoles.includes(RoleEnum.sheq) && !userRoles.includes(RoleEnum.adminContractor)
+          ? { userSheqId: user.id }
+          : userRoles.includes(RoleEnum.adminContractor) && !userRoles.includes(RoleEnum.sheq)
+            ? { userAcId: user.id }
+            : { OR: [{ userAcId: user.id }, { userSheqId: user.id }] };
       applications = await db.application.findMany({
         where: {
           ...contractFilter,
-          OR: [
-            { userAcId: user.id }, // Asignadas como AdminContractor (AC)
-            { userSheqId: user.id }, // Asignadas como SHEQ
-          ],
+          ...assignmentFilter,
         },
         select: selectQuery,
         orderBy: {
-          createdAt: 'desc',
+          lastSubmittedAt: 'desc',
         },
       });
     } else if (canViewOwn) {

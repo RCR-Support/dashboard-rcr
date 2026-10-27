@@ -18,18 +18,22 @@ interface Application {
   stateSheq: string;
   licenseExpiration: Date | null;
   createdAt: Date;
+  lastSubmittedAt: Date;
   company?: {
     name: string | null;
   } | null;
   contract: {
+    id: string;
     contractNumber: string;
     contractName: string;
   } | null;
   userAc?: {
+    id: string;
     displayName: string;
     email: string;
   } | null;
   userSheq?: {
+    id: string;
     displayName: string;
     email: string;
   } | null;
@@ -48,9 +52,11 @@ interface ApplicationsClientPageProps {
   initialApplications: Application[];
   userRole?: string;
   contractFilter?: { contractName: string; contractNumber: string } | null;
+  canViewAllSheq?: boolean;
+  allSheqView?: boolean;
 }
 
-export default function ApplicationsClientPage({ initialApplications, userRole, contractFilter }: ApplicationsClientPageProps) {
+export default function ApplicationsClientPage({ initialApplications, userRole, contractFilter, canViewAllSheq = false, allSheqView = false }: ApplicationsClientPageProps) {
   const { can } = usePermissions();
   const canEdit = can('applications:edit:any') || can('applications:edit:own');
   const canDelete = can('applications:delete');
@@ -83,7 +89,14 @@ export default function ApplicationsClientPage({ initialApplications, userRole, 
       </div>
 
       {initialApplications && initialApplications.length > 0 ? (
-        <ApplicationsView applications={initialApplications} userRole={userRole} canEdit={canEdit} canDelete={canDelete} />
+        <ApplicationsView
+          applications={initialApplications}
+          userRole={userRole}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          canViewAllSheq={canViewAllSheq}
+          allSheqView={allSheqView}
+        />
       ) : (
         <Card className="overflow-hidden border border-default-200 shadow-sm dark:border-default-100/10 dark:bg-slate-950">
           <CardBody className="p-0">

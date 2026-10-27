@@ -116,6 +116,7 @@ export async function createApplication(
         processStatus: ProcessStatus.pendiente,
         stateAc: StateAc.pendiente,
         stateSheq: StateSheq.pendiente,
+        lastSubmittedAt: new Date(),
 
         // Datos del trabajador
         workerName: input.workerName,

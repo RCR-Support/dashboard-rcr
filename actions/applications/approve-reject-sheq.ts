@@ -16,7 +16,8 @@ import { getApplicationApprovalError } from '@/lib/applications/document-review'
 
 export async function approveApplicationSHEQ(
   applicationId: string,
-  _userSheqId?: string // deprecated: se usa session.user.id
+  _userSheqId?: string, // deprecated: se usa session.user.id
+  crossReviewReason = ''
 ) {
   try {
     const session = await auth();
@@ -51,6 +52,11 @@ export async function approveApplicationSHEQ(
       return { success: false, message: accessError };
     }
 
+    const isCrossReview = userRoles.includes(RoleEnum.sheq) && application.userSheqId !== session.user.id;
+    if (isCrossReview && !crossReviewReason.trim()) {
+      return { success: false, message: 'Debes indicar el motivo de la revisión cruzada.' };
+    }
+
     const approvalError = getApplicationApprovalError(application.documentationFiles);
     if (approvalError) {
       return { success: false, message: approvalError };
@@ -58,13 +64,16 @@ export async function approveApplicationSHEQ(
 
     await db.$transaction(async (tx) => {
       // Actualizar estado de la aplicación
-      await tx.application.update({
-        where: { id: applicationId },
+      const updateResult = await tx.application.updateMany({
+        where: { id: applicationId, stateAc: 'aprobado', stateSheq: 'pendiente' },
         data: {
           stateSheq: 'aprobado',
           processStatus: 'aprobado',
         },
       });
+      if (updateResult.count !== 1) {
+        throw new Error('La solicitud ya fue procesada por otro revisor. Actualiza la página e inténtalo nuevamente.');
+      }
 
       // Registrar en auditoría
       const isAdminActing = userRoles.includes(RoleEnum.admin) && !userRoles.includes(RoleEnum.sheq);
@@ -73,9 +82,12 @@ export async function approveApplicationSHEQ(
           applicationId,
           action: 'APROBACION',
           changedById: session.user.id,
+          assignedSheqId: application.userSheqId,
           details: isAdminActing
             ? 'Aprobado por Admin (en representación de SHEQ) - Todos los documentos aprobados'
-            : 'Aprobado por SHEQ - Todos los documentos aprobados',
+            : isCrossReview
+              ? `Aprobado por SHEQ en revisión cruzada. Motivo: ${crossReviewReason.trim()}`
+              : 'Aprobado por SHEQ asignado - Todos los documentos aprobados',
         },
       });
     });
@@ -97,7 +109,10 @@ export async function approveApplicationSHEQ(
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud aprobada correctamente' };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('La solicitud ya fue procesada')) {
+      return { success: false, message: error.message };
+    }
     return { success: false, message: 'Error al aprobar la solicitud' };
   }
 }
@@ -105,7 +120,8 @@ export async function approveApplicationSHEQ(
 export async function rejectApplicationSHEQ(
   applicationId: string,
   _userSheqId: string, // deprecated: se usa session.user.id
-  observations: string
+  observations: string,
+  crossReviewReason = ''
 ) {
   try {
     const session = await auth();
@@ -134,16 +150,24 @@ export async function rejectApplicationSHEQ(
       return { success: false, message: accessError };
     }
 
+    const isCrossReview = userRoles.includes(RoleEnum.sheq) && application.userSheqId !== session.user.id;
+    if (isCrossReview && !crossReviewReason.trim()) {
+      return { success: false, message: 'Debes indicar el motivo de la revisión cruzada.' };
+    }
+
     await db.$transaction(async (tx) => {
       // Actualizar estado de la aplicación - reiniciar ciclo
-      await tx.application.update({
-        where: { id: applicationId },
+      const updateResult = await tx.application.updateMany({
+        where: { id: applicationId, stateAc: 'aprobado', stateSheq: 'pendiente' },
         data: {
           stateSheq: 'rechazado',
           stateAc: 'adjuntar', // Reinicia el ciclo
           processStatus: 'rechazado',
         },
       });
+      if (updateResult.count !== 1) {
+        throw new Error('La solicitud ya fue procesada por otro revisor. Actualiza la página e inténtalo nuevamente.');
+      }
 
       // NO resetear documentos - mantener estados individuales para modo edición
       // Los documentos aprobados quedan bloqueados (verde)
@@ -168,9 +192,12 @@ export async function rejectApplicationSHEQ(
           applicationId,
           action: 'RECHAZO',
           changedById: session.user.id,
+          assignedSheqId: application.userSheqId,
           details: isAdminActing
             ? `Rechazado por Admin (en representación de SHEQ): ${observations}`
-            : observations,
+            : isCrossReview
+              ? `Rechazado por SHEQ en revisión cruzada. Motivo: ${crossReviewReason.trim()}. Observaciones: ${observations}`
+              : `Rechazado por SHEQ asignado: ${observations}`,
         },
       });
     });
@@ -203,7 +230,10 @@ export async function rejectApplicationSHEQ(
 
     revalidatePath('/dashboard/applications');
     return { success: true, message: 'Solicitud rechazada correctamente' };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('La solicitud ya fue procesada')) {
+      return { success: false, message: error.message };
+    }
     return { success: false, message: 'Error al rechazar la solicitud' };
   }
 }

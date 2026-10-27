@@ -25,19 +25,23 @@ interface Application {
   stateAc: string;
   stateSheq: string;
   createdAt: Date;
+  lastSubmittedAt: Date;
   licenseExpiration: Date | null;
   company?: {
     name: string | null;
   } | null;
   contract: {
+    id: string;
     contractNumber: string;
     contractName: string;
   } | null;
   userAc?: {
+    id: string;
     displayName: string;
     email: string;
   } | null;
   userSheq?: {
+    id: string;
     displayName: string;
     email: string;
   } | null;
@@ -57,6 +61,7 @@ interface ApplicationsTableProps {
   userRole?: string;
   canEdit?: boolean;
   canDelete?: boolean;
+  allSheqView?: boolean;
 }
 
 const getOverallStatus = (stateAc: string, stateSheq: string) => {
@@ -72,12 +77,60 @@ const getOverallStatus = (stateAc: string, stateSheq: string) => {
   return { label: 'En proceso', color: 'default' as const, icon: Clock };
 };
 
-export function ApplicationsTable({ applications, userRole, canEdit = false, canDelete = false }: ApplicationsTableProps) {
+export function ApplicationsTable({ applications, userRole, canEdit = false, canDelete = false, allSheqView = false }: ApplicationsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expiryFilter, setExpiryFilter] = useState('all');
-  const [sortBy] = useState('createdAt');
+  const [companyFilter, setCompanyFilter] = useState('all');
+  const [sheqFilter, setSheqFilter] = useState('all');
+  const [acFilter, setAcFilter] = useState('all');
+  const [contractFilter, setContractFilter] = useState('all');
   const router = useRouter();
+
+  const companyOptions = useMemo(
+    () => Array.from(new Set(applications.map(app => app.company?.name).filter((name): name is string => Boolean(name)))).sort((a, b) => a.localeCompare(b, 'es')),
+    [applications]
+  );
+  const sheqOptions = useMemo(
+    () => Array.from(new Map(applications.filter(app => app.userSheq).map(app => [app.userSheq!.id, app.userSheq!.displayName])).entries()).sort((a, b) => a[1].localeCompare(b[1], 'es')),
+    [applications]
+  );
+  const acOptions = useMemo(
+    () => Array.from(new Map(applications.filter(app => app.userAc).map(app => [app.userAc!.id, app.userAc!.displayName])).entries()).sort((a, b) => a[1].localeCompare(b[1], 'es')),
+    [applications]
+  );
+  const contractOptions = useMemo(
+    () => Array.from(new Map(applications.filter(app => app.contract).map(app => [app.contract!.id, `${app.contract!.contractNumber} - ${app.contract!.contractName}`])).entries()).sort((a, b) => a[1].localeCompare(b[1], 'es')),
+    [applications]
+  );
+  const companySelectItems = [
+    { id: 'all', label: 'Todas las empresas' },
+    ...companyOptions.map(company => ({ id: company, label: company })),
+  ];
+  const sheqSelectItems = [
+    { id: 'all', label: 'Todos los SHEQ' },
+    ...sheqOptions.map(([id, label]) => ({ id, label })),
+  ];
+  const acSelectItems = [
+    { id: 'all', label: 'Todos los AC' },
+    ...acOptions.map(([id, label]) => ({ id, label })),
+  ];
+  const contractSelectItems = [
+    { id: 'all', label: 'Todos los contratos' },
+    ...contractOptions.map(([id, label]) => ({ id, label })),
+  ];
+  const tableColumns = [
+    <TableColumn key="worker" className="min-w-[200px]">TRABAJADOR</TableColumn>,
+    <TableColumn key="company" className="min-w-[150px]">EMPRESA</TableColumn>,
+    <TableColumn key="contract" className="min-w-[180px]">CONTRATO</TableColumn>,
+    <TableColumn key="sheq" className={allSheqView ? 'min-w-[160px]' : 'hidden'}>SHEQ ASIGNADO</TableColumn>,
+    <TableColumn key="activities" className="min-w-[140px]">ACTIVIDADES</TableColumn>,
+    <TableColumn key="documents" className="min-w-[100px]">DOCUMENTOS</TableColumn>,
+    <TableColumn key="status" className="min-w-[140px]">ESTADO GENERAL</TableColumn>,
+    <TableColumn key="expiry" className="min-w-[130px]">VENCIMIENTO</TableColumn>,
+    <TableColumn key="submission" className="min-w-[120px]">{allSheqView ? 'ÚLTIMO ENVÍO' : 'FECHA CREACIÓN'}</TableColumn>,
+    <TableColumn key="actions" className="min-w-[120px]">ACCIONES</TableColumn>,
+  ];
 
   const filteredAndSortedApplications = useMemo(() => {
     const filtered = applications.filter(app => {
@@ -91,29 +144,20 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
 
       const overallStatus = getOverallStatus(app.stateAc, app.stateSheq);
       const matchesStatus = statusFilter === 'all' || overallStatus.label === statusFilter;
+      const matchesCompany = companyFilter === 'all' || app.company?.name === companyFilter;
+      const matchesSheq = sheqFilter === 'all' || app.userSheq?.id === sheqFilter;
+      const matchesAc = acFilter === 'all' || app.userAc?.id === acFilter;
+      const matchesContract = contractFilter === 'all' || app.contract?.id === contractFilter;
 
       const nearest = getNearestExpiry(app.licenseExpiration, app.documentationFiles);
       const expiry = getExpiryStatus(nearest);
       const matchesExpiry = expiryFilter === 'all' || expiry.key === expiryFilter;
 
-      return matchesSearch && matchesStatus && matchesExpiry;
+      return matchesSearch && matchesStatus && matchesExpiry && matchesCompany && matchesSheq && matchesAc && matchesContract;
     });
 
-    return filtered.sort((a, b) => {
-      if (sortBy === 'createdAt') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      if (sortBy === 'expiry') {
-        const ea = getNearestExpiry(a.licenseExpiration, a.documentationFiles);
-        const eb = getNearestExpiry(b.licenseExpiration, b.documentationFiles);
-        if (!ea && !eb) return 0;
-        if (!ea) return 1;
-        if (!eb) return -1;
-        return ea.getTime() - eb.getTime();
-      }
-      return 0;
-    });
-  }, [applications, searchTerm, statusFilter, expiryFilter, sortBy]);
+    return filtered.sort((a, b) => new Date(b.lastSubmittedAt).getTime() - new Date(a.lastSubmittedAt).getTime());
+  }, [applications, searchTerm, statusFilter, expiryFilter, companyFilter, sheqFilter, acFilter, contractFilter]);
 
   const handleEditClick = async (appId: string) => {
     const result = await Swal.fire({
@@ -170,7 +214,7 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
     <div className="space-y-4">
       {/* Filtros y búsqueda */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 flex-1">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 flex-1">
           <Input
             type="text"
             placeholder="Buscar por nombre, RUN, contrato o empresa..."
@@ -194,6 +238,50 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
             <SelectItem key="En proceso">En proceso</SelectItem>
             <SelectItem key="Requiere atención">Requiere atención</SelectItem>
           </Select>
+          {allSheqView && (
+            <>
+              <Select
+                items={companySelectItems}
+                aria-label="Filtrar por empresa"
+                placeholder="Empresa"
+                selectedKeys={companyFilter !== 'all' ? [companyFilter] : []}
+                onSelectionChange={(keys) => setCompanyFilter((Array.from(keys)[0] as string) || 'all')}
+                className="sm:max-w-xs"
+              >
+                {item => <SelectItem key={item.id} textValue={item.label}>{item.label}</SelectItem>}
+              </Select>
+              <Select
+                items={sheqSelectItems}
+                aria-label="Filtrar por SHEQ asignado"
+                placeholder="SHEQ asignado"
+                selectedKeys={sheqFilter !== 'all' ? [sheqFilter] : []}
+                onSelectionChange={(keys) => setSheqFilter((Array.from(keys)[0] as string) || 'all')}
+                className="sm:max-w-xs"
+              >
+                {item => <SelectItem key={item.id} textValue={item.label}>{item.label}</SelectItem>}
+              </Select>
+              <Select
+                items={acSelectItems}
+                aria-label="Filtrar por Administrador de Contrato"
+                placeholder="Admin. Contrato"
+                selectedKeys={acFilter !== 'all' ? [acFilter] : []}
+                onSelectionChange={(keys) => setAcFilter((Array.from(keys)[0] as string) || 'all')}
+                className="sm:max-w-xs"
+              >
+                {item => <SelectItem key={item.id} textValue={item.label}>{item.label}</SelectItem>}
+              </Select>
+              <Select
+                items={contractSelectItems}
+                aria-label="Filtrar por contrato"
+                placeholder="Contrato"
+                selectedKeys={contractFilter !== 'all' ? [contractFilter] : []}
+                onSelectionChange={(keys) => setContractFilter((Array.from(keys)[0] as string) || 'all')}
+                className="sm:max-w-xs"
+              >
+                {item => <SelectItem key={item.id} textValue={item.label}>{item.label}</SelectItem>}
+              </Select>
+            </>
+          )}
           <Select
             placeholder="Vencimiento"
             selectedKeys={expiryFilter !== 'all' ? [expiryFilter] : []}
@@ -223,15 +311,7 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
           className="min-w-full"
         >
           <TableHeader>
-            <TableColumn className="min-w-[200px]">TRABAJADOR</TableColumn>
-            <TableColumn className="min-w-[150px]">EMPRESA</TableColumn>
-            <TableColumn className="min-w-[180px]">CONTRATO</TableColumn>
-            <TableColumn className="min-w-[140px]">ACTIVIDADES</TableColumn>
-            <TableColumn className="min-w-[100px]">DOCUMENTOS</TableColumn>
-            <TableColumn className="min-w-[140px]">ESTADO GENERAL</TableColumn>
-            <TableColumn className="min-w-[130px]">VENCIMIENTO</TableColumn>
-            <TableColumn className="min-w-[120px]">FECHA CREACIÓN</TableColumn>
-            <TableColumn className="min-w-[120px]">ACCIONES</TableColumn>
+            {tableColumns}
           </TableHeader>
           <TableBody>
             {filteredAndSortedApplications.map((app) => {
@@ -262,6 +342,9 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
                         {app.contract?.contractName}
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell className={allSheqView ? '' : 'hidden'}>
+                    <div className="text-sm">{app.userSheq?.displayName ?? 'Sin asignar'}</div>
                   </TableCell>
                   <TableCell>
                     <Tooltip 
@@ -332,13 +415,13 @@ export function ApplicationsTable({ applications, userRole, canEdit = false, can
                   <TableCell>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="h-4 w-4" />
-                      {new Date(app.createdAt).toLocaleDateString('es-CL')}
+                      {new Date(allSheqView ? app.lastSubmittedAt : app.createdAt).toLocaleDateString('es-CL')}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Tooltip content="Ver detalles">
-                        <Link href={`/dashboard/applications/${app.id}`}>
+                        <Link href={`/dashboard/applications/${app.id}${allSheqView ? '?scope=all' : ''}`}>
                           <Button 
                             size="sm" 
                             variant="light"

@@ -84,6 +84,7 @@ interface ApplicationDetailProps {
       action: string;
       changedAt: Date;
       details: string | null;
+      assignedSheq: { id: string; displayName: string; email: string } | null;
       changedBy: {
         displayName: string;
         email: string;
@@ -185,9 +186,7 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
                        
   const canApproveSHEQ = (userRoles.includes('sheq') && 
                          application.stateAc === 'aprobado' && 
-                         application.stateSheq === 'pendiente' &&
-                         application.userSheq?.id &&
-                         userId === application.userSheq.id) ||
+                         application.stateSheq === 'pendiente') ||
                          (isAdmin && application.stateAc === 'aprobado' && application.stateSheq === 'pendiente');
   const canReviewCurrentStage = canApproveAC || canApproveSHEQ;
 
@@ -284,8 +283,24 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
   };
 
   const handleApproveSHEQ = async () => {
+    let crossReviewReason = '';
+    if (userRoles.includes('sheq') && application.userSheq?.id !== userId) {
+      const result = await Swal.fire({
+        title: 'Revisión cruzada SHEQ',
+        text: `La solicitud está asignada a ${application.userSheq?.displayName ?? 'otro SHEQ'}. Indica por qué realizarás la revisión.`,
+        input: 'textarea',
+        inputPlaceholder: 'Motivo de la revisión cruzada...',
+        inputValidator: value => value?.trim() ? undefined : 'El motivo es obligatorio.',
+        showCancelButton: true,
+        confirmButtonText: 'Continuar y aprobar',
+        cancelButtonText: 'Cancelar',
+      });
+      if (!result.isConfirmed) return;
+      crossReviewReason = result.value.trim();
+    }
+
     setIsLoading(true);
-    const result = await approveApplicationSHEQ(application.id, userId);
+    const result = await approveApplicationSHEQ(application.id, userId, crossReviewReason);
     setIsLoading(false);
 
     if (result.success) {
@@ -319,8 +334,24 @@ export function ApplicationDetail({ application, userRoles, userId, sheqUsers, v
     const finalObservations = observations.trim() || 
       `Documentos rechazados: ${documents.filter(d => d.approvalStatus === 'rejected').map(d => d.documentation?.name).join(', ')}`;
 
+    let crossReviewReason = '';
+    if (userRoles.includes('sheq') && application.userSheq?.id !== userId) {
+      const result = await Swal.fire({
+        title: 'Revisión cruzada SHEQ',
+        text: `La solicitud está asignada a ${application.userSheq?.displayName ?? 'otro SHEQ'}. Indica por qué realizarás la revisión.`,
+        input: 'textarea',
+        inputPlaceholder: 'Motivo de la revisión cruzada...',
+        inputValidator: value => value?.trim() ? undefined : 'El motivo es obligatorio.',
+        showCancelButton: true,
+        confirmButtonText: 'Continuar y rechazar',
+        cancelButtonText: 'Cancelar',
+      });
+      if (!result.isConfirmed) return;
+      crossReviewReason = result.value.trim();
+    }
+
     setIsLoading(true);
-    const result = await rejectApplicationSHEQ(application.id, userId, finalObservations);
+    const result = await rejectApplicationSHEQ(application.id, userId, finalObservations, crossReviewReason);
     setIsLoading(false);
 
     if (result.success) {

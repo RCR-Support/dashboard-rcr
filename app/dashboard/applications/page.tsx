@@ -5,15 +5,17 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 
 interface Props {
-  searchParams: Promise<{ contract?: string; view?: string }>;
+  searchParams: Promise<{ contract?: string; view?: string; scope?: string }>;
 }
 
 export default async function ApplicationsPage({ searchParams }: Props) {
   const session = await auth();
   const params = await searchParams;
   const contractId = params?.contract;
+  const isSheq = session?.user?.roles?.includes('sheq') ?? false;
+  const showAllSheq = isSheq && params?.scope === 'all';
 
-  const result = await listApplications(contractId);
+  const result = await listApplications(contractId, showAllSheq);
 
   // Si hay filtro por contrato, buscar info del contrato
   let contractInfo: { contractName: string; contractNumber: string } | null = null;
@@ -46,6 +48,8 @@ export default async function ApplicationsPage({ searchParams }: Props) {
         initialApplications={applications}
         userRole={session?.user?.roles?.[0]}
         contractFilter={contractInfo}
+        canViewAllSheq={isSheq}
+        allSheqView={showAllSheq}
       />
     </Suspense>
   );
