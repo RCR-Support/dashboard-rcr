@@ -6,6 +6,7 @@ import { StateAc, StateSheq, ProcessStatus, RoleEnum } from '@prisma/client';
 import { hasActionPermission } from '@/config/action-permissions';
 import { sendApplicationConfirmationEmail } from '@/lib/email/postmark';
 import { notifyAcOnNewApplication } from '@/actions/notifications/create-notification';
+import { validateRequiredApplicationDocuments } from '@/lib/applications/validate-required-documents';
 
 export interface CreateApplicationInput {
   // Datos del contrato
@@ -20,6 +21,7 @@ export interface CreateApplicationInput {
   
   // Actividades seleccionadas
   activityIds: string[];
+  zones: string[];
   
   // Documentos subidos (con URLs de Cloudinary)
   documents: {
@@ -69,6 +71,15 @@ export async function createApplication(
 
     if (input.activityIds.length === 0) {
       return { success: false, error: 'Debe seleccionar al menos una actividad' };
+    }
+
+    const requiredDocumentsError = await validateRequiredApplicationDocuments(
+      input.activityIds,
+      input.zones ?? [],
+      input.documents
+    );
+    if (requiredDocumentsError) {
+      return { success: false, error: requiredDocumentsError };
     }
 
     // Obtener el contrato para asignar el AdminContractor y su fecha de término
@@ -135,6 +146,9 @@ export async function createApplication(
         // Conectar actividades
         activities: {
           connect: input.activityIds.map(id => ({ id })),
+        },
+        zones: {
+          connect: (input.zones ?? []).map(id => ({ id })),
         },
       };
 

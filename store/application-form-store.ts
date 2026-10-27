@@ -39,6 +39,7 @@ interface ApplicationFormState {
 
   // Paso 3: Actividades
   selectedActivities: Activity[];
+  selectedZones: string[];
   availableActivities: Activity[];
   isLoadingActivities: boolean;
 
@@ -54,6 +55,7 @@ interface ApplicationFormState {
   setWorkerData: (data: WorkerFormValues) => void;
   setCredentialPhoto: (photoUrl: string | null) => void;
   setSelectedActivities: (activities: Activity[]) => void;
+  setSelectedZones: (zoneIds: string[]) => void;
   setAvailableActivities: (activities: Activity[]) => void;
   setDocuments: (documents: Document[]) => void;
   setExistingDocuments: (existingDocs: Map<string, any> | null) => void;
@@ -71,6 +73,7 @@ type ActionTypes = {
   setWorkerData: (data: WorkerFormValues) => void;
   setCredentialPhoto: (photoUrl: string | null) => void;
   setSelectedActivities: (activities: Activity[]) => void;
+  setSelectedZones: (zoneIds: string[]) => void;
   setAvailableActivities: (activities: Activity[]) => void;
   setDocuments: (documents: Document[]) => void;
   setExistingDocuments: (existingDocs: Map<string, any> | null) => void;
@@ -86,6 +89,7 @@ const initialState: Omit<ApplicationFormState, keyof ActionTypes> = {
   workerData: null,
   credentialPhoto: null,
   selectedActivities: [],
+  selectedZones: [],
   availableActivities: [],
   isLoadingActivities: false,
   documents: [],
@@ -116,7 +120,7 @@ export const useApplicationFormStore = create<ApplicationFormState>()(
       // Acciones
       setCurrentStep: step => {
         // Simplificar: solo validar rango, sin cambios automáticos
-        if (step >= 0 && step <= 3) {
+        if (step >= 0 && step <= 4) {
           set({ currentStep: step });
         }
       },
@@ -129,6 +133,7 @@ export const useApplicationFormStore = create<ApplicationFormState>()(
       setCredentialPhoto: photoUrl => set({ credentialPhoto: photoUrl }),
       setSelectedActivities: activities =>
         set({ selectedActivities: activities }),
+      setSelectedZones: zoneIds => set({ selectedZones: zoneIds }),
       setAvailableActivities: activities =>
         set({ availableActivities: activities }),
       setDocuments: documents => set({ documents }),

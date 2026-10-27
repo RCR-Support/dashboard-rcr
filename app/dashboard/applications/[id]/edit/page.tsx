@@ -126,6 +126,7 @@ export default function EditApplicationPage() {
         );
         
         store.setSelectedActivities(selectedActivities);
+        store.setSelectedZones(app.zones.map(zone => zone.id));
 
         // Paso 6: Documents - Necesitamos esperar a que DocumentsStep genere los documentos
         // Solo guardamos un mapa de los documentos existentes para marcarlos como completados después
@@ -253,7 +254,7 @@ export default function EditApplicationPage() {
           license: null,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           activities: data.activities.map((a: any) => a.id),
-          zones: [],
+          zones: data.zones,
           documents,
         });
       } else {
@@ -270,7 +271,7 @@ export default function EditApplicationPage() {
           license: null,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           activities: data.activities.map((a: any) => a.id),
-          zones: [],
+          zones: data.zones,
           documents,
         });
       }

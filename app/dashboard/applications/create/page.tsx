@@ -119,6 +119,7 @@ export default function CreateApplicationPage() {
         workerRun: data.workerData.workerRun,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         activityIds: data.activities.map((a: any) => a.id),
+        zones: data.zones,
         documents,
         credentialPhotoUrl,
       });

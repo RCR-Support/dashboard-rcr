@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
 import { RoleEnum, License } from '@prisma/client';
+import { validateRequiredApplicationDocuments } from '@/lib/applications/validate-required-documents';
 
 interface UpdateApplicationInput {
   applicationId: string;
@@ -64,6 +65,15 @@ export async function updateApplication(input: UpdateApplicationInput) {
         success: false, 
         message: 'Solicitud no encontrada.'
       };
+    }
+
+    const requiredDocumentsError = await validateRequiredApplicationDocuments(
+      input.activities,
+      input.zones,
+      input.documents
+    );
+    if (requiredDocumentsError) {
+      return { success: false, message: requiredDocumentsError };
     }
 
     // ✅ VALIDACIÓN 4: Ownership (si no es admin)

@@ -6,6 +6,7 @@ import { auth } from '@/auth';
 import { hasActionPermission } from '@/config/action-permissions';
 import { RoleEnum, StateAc, StateSheq, ProcessStatus, License } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { validateRequiredApplicationDocuments } from '@/lib/applications/validate-required-documents';
 
 interface CreateNewVersionInput {
   originalApplicationId: string;
@@ -52,6 +53,15 @@ export async function createNewVersion(input: CreateNewVersionInput) {
 
     if (!original) {
       return { success: false, error: 'Solicitud original no encontrada' };
+    }
+
+    const requiredDocumentsError = await validateRequiredApplicationDocuments(
+      input.activities,
+      input.zones,
+      input.documents
+    );
+    if (requiredDocumentsError) {
+      return { success: false, error: requiredDocumentsError };
     }
 
     // Verificar ownership si no es admin

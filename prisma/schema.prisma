@@ -14,6 +14,7 @@ model Activity {
   requiredDriverLicense  String?
   imageUrl               String?
   requiredDocumentations ActivityDocumentation[]
+  zoneDocumentations     ActivityZoneDocumentation[]
   documentationFiles     DocumentationFile[]
   applications           application[]           @relation("ActivityApplications")
 }
@@ -24,6 +25,7 @@ model Documentation {
   isGlobal           Boolean                 @default(false)
   acceptedFileType   AcceptedFileType        @default(PDF)
   activities         ActivityDocumentation[]
+  zoneActivities     ActivityZoneDocumentation[]
   documentationFiles DocumentationFile[]
 }
 
@@ -41,10 +43,27 @@ model ActivityDocumentation {
   @@index([activityId, documentationId])
 }
 
+model ActivityZoneDocumentation {
+  id              String        @id @default(cuid())
+  activityId      String
+  zoneId          String
+  documentationId String
+  quantity        Int?
+  notes           String?
+  activity        Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  zone            Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  documentation   Documentation @relation(fields: [documentationId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, zoneId, documentationId])
+  @@index([activityId, zoneId])
+  @@index([documentationId])
+}
+
 model Zone {
-  id           String        @id @default(cuid())
-  name         String
-  applications application[] @relation("ZoneApplications")
+  id                   String                      @id @default(cuid())
+  name                 String
+  applications         application[]               @relation("ZoneApplications")
+  activityDocumentations ActivityZoneDocumentation[]
 }
 
 model Company {

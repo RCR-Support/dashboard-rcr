@@ -276,7 +276,7 @@ const ActivitiesStep = ({ contract, onNext, onBack }: ActivitiesStepProps) => {
       <StepNavigation
         onBack={onBack}
         currentStep={2}
-        totalSteps={4}
+        totalSteps={5}
         onNext={handleNext}
         isNextDisabled={selectedActivities.length === 0}
       />

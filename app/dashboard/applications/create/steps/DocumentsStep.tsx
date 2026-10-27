@@ -28,6 +28,7 @@ export function DocumentsStep({
   const selectedActivities = useApplicationFormStore(
     state => state.selectedActivities
   );
+  const selectedZones = useApplicationFormStore(state => state.selectedZones);
   const credentialPhoto = useApplicationFormStore(
     state => state.credentialPhoto
   );
@@ -101,12 +102,43 @@ export function DocumentsStep({
           });
         });
 
+        const conditionalDocuments = new Map<string, DocumentData>();
+        selectedActivities.forEach(activity => {
+          activity.zoneDocumentations?.forEach(requirement => {
+            if (!selectedZones.includes(requirement.zone.id)) return;
+            const key = `${activity.id}:${requirement.documentation.id}`;
+            if (
+              globalDocuments.has(requirement.documentation.id) ||
+              specificDocuments.some(document => document.activityId === activity.id && document.documentationId === requirement.documentation.id) ||
+              conditionalDocuments.has(key)
+            ) return;
+
+            conditionalDocuments.set(key, {
+              id: `${requirement.documentation.id}-${activity.id}`,
+              documentationId: requirement.documentation.id,
+              activityId: activity.id,
+              name: requirement.documentation.name,
+              activityName: activity.name,
+              notes: [
+                requirement.notes,
+                `Requerido por zona: ${requirement.zone.name}`,
+              ].filter(Boolean).join(' - '),
+              isSpecific: true,
+              status: 'pending',
+              relatedActivities: [activity.name],
+              quantity: requirement.quantity || undefined,
+              acceptedFileType: requirement.documentation.acceptedFileType || 'PDF',
+            });
+          });
+        });
+
         // Nota: La foto de credencial ahora se maneja en el WorkerStep
 
         // Combinar documentos: solo globales y específicos
         const allDocuments = [
           ...Array.from(globalDocuments.values()),
           ...specificDocuments,
+          ...Array.from(conditionalDocuments.values()),
         ];
 
         // Verificar si existen documentos cargados en modo edición
@@ -144,7 +176,7 @@ export function DocumentsStep({
     };
 
     loadRequiredDocuments();
-  }, [selectedActivities]);
+  }, [selectedActivities, selectedZones]);
 
   const handleFileSelect = async (documentId: string, file: File | null) => {
     // Si file es null, eliminar el archivo

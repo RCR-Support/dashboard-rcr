@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react';
 import { getCompanyContracts } from '@/actions/contract/get-company-contracts';
 import { useApplicationFormStore } from '@/store/application-form-store';
 import { ActivitiesStep } from './steps/ActivitiesStep';
+import { ZonesStep } from './steps/ZonesStep';
 import { Contract } from '@/interfaces/contract.interface';
 import { Tooltip } from '@heroui/tooltip';
 import { Spinner } from '@heroui/spinner';
@@ -30,6 +31,7 @@ interface ApplicationData {
   contract: Contract | null;
   workerData: WorkerData;
   activities: Activity[];
+  zones: string[];
   documents: DocumentData[];
 }
 
@@ -72,11 +74,18 @@ interface DocumentsStepProps {
   isSubmitting?: boolean;
 }
 
+interface ZonesStepProps {
+  initialZoneIds: string[];
+  onNext: (zoneIds: string[]) => void;
+  onBack: () => void;
+}
+
 // Definir los tipos literales de los pasos
 const StepTypes = {
   contract: 'contract',
   worker: 'worker',
   activities: 'activities',
+  zones: 'zones',
   documents: 'documents',
 } as const;
 
@@ -87,6 +96,7 @@ type StepPropsMap = {
   contract: ContractStepProps;
   worker: WorkerStepProps;
   activities: ActivitiesStepProps;
+  zones: ZonesStepProps;
   documents: DocumentsStepProps;
 };
 
@@ -102,6 +112,7 @@ type Step =
   | StepType<'contract'>
   | StepType<'worker'>
   | StepType<'activities'>
+  | StepType<'zones'>
   | StepType<'documents'>;
 
 // Definición de los pasos
@@ -127,6 +138,13 @@ const steps: Step[] = [
     Component: ActivitiesStep,
     type: 'activities',
   } as StepType<'activities'>,
+  {
+    id: 'zones',
+    title: 'Zonas',
+    description: 'Selecciona las zonas de operación',
+    Component: ZonesStep,
+    type: 'zones',
+  } as StepType<'zones'>,
   {
     id: 'documents',
     title: 'Documentos',
@@ -224,7 +242,7 @@ export function ApplicationStepper({ onComplete, onCancel, isSubmitting = false,
     };
   }, [session, isEditMode]); // Ejecutar cuando cambie la sesión o modo edición
 
-  type StepData = Contract | WorkerData | Activity[] | DocumentData[];
+  type StepData = Contract | WorkerData | Activity[] | string[] | DocumentData[];
 
   const handleStepComplete = async (stepData: StepData) => {
     setStepTransition(true);
@@ -248,13 +266,18 @@ export function ApplicationStepper({ onComplete, onCancel, isSubmitting = false,
         store.setCurrentStep(currentStep + 1);
         break;
       case 3:
+        store.setSelectedZones(stepData as string[]);
+        store.setCurrentStep(currentStep + 1);
+        break;
+      case 4:
         store.setDocuments(stepData as DocumentData[]);
-        const { contract, workerData, selectedActivities } = store;
+        const { contract, workerData, selectedActivities, selectedZones } = store;
         if (onComplete && contract && workerData) {
           onComplete({
             contract,
             workerData,
             activities: selectedActivities,
+            zones: selectedZones,
             documents: stepData as DocumentData[],
           });
         }
@@ -306,6 +329,17 @@ export function ApplicationStepper({ onComplete, onCancel, isSubmitting = false,
           <Component
             key="activities"
             contract={store.contract}
+            onNext={handleStepComplete}
+            onBack={handleBack}
+          />
+        );
+      }
+      case StepTypes.zones: {
+        const { Component } = step;
+        return (
+          <Component
+            key="zones"
+            initialZoneIds={store.selectedZones}
             onNext={handleStepComplete}
             onBack={handleBack}
           />

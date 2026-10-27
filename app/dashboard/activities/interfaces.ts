@@ -14,6 +14,17 @@ export interface Activity {
     isSpecific: boolean;
     quantity: number | null;
   }[];
+  zoneDocumentations?: {
+    id: string;
+    zone: { id: string; name: string };
+    documentation: {
+      id: string;
+      name: string;
+      acceptedFileType?: 'PDF' | 'IMAGE' | 'DOCUMENT' | 'ANY';
+    };
+    notes: string | null;
+    quantity: number | null;
+  }[];
 }
 
 export type ViewType = 'cards' | 'table';

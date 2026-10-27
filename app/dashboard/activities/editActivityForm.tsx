@@ -5,6 +5,9 @@ import { editActivityServer } from './actions';
 import { listDocumentations } from '@/actions/documentations/list-documentations';
 import { getActivityDocumentations } from '@/actions/activities/get-activity-documentations';
 import { updateActivityDocumentations } from '@/actions/activities/update-activity-documentations';
+import { getActivityZoneDocumentations } from '@/actions/activities/get-activity-zone-documentations';
+import { updateActivityZoneDocumentations } from '@/actions/activities/update-activity-zone-documentations';
+import { listZones } from '@/actions/activities/list-zones';
 import { ImageEditorModal } from '@/components/ui/ImageEditorModal';
 import { Crop } from 'lucide-react';
 
@@ -21,6 +24,17 @@ interface ActivityDocumentation {
   notes?: string | null;
 }
 
+interface ZoneDocumentationRequirement {
+  zoneId: string;
+  documentationId: string;
+  notes?: string | null;
+}
+
+interface ZoneOption {
+  id: string;
+  name: string;
+}
+
 interface Activity {
   id: string;
   name: string;
@@ -35,6 +49,7 @@ interface EditActivityFormData {
   imageFile: File | null;
   requiresDocs: boolean;
   documentations: ActivityDocumentation[];
+  zoneDocumentations: ZoneDocumentationRequirement[];
 }
 
 interface EditActivityFormProps {
@@ -51,6 +66,7 @@ export default function EditActivityForm({
     Documentation[]
   >([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [availableZones, setAvailableZones] = useState<ZoneOption[]>([]);
 
   // Cargar documentaciones disponibles
   useEffect(() => {
@@ -66,6 +82,7 @@ export default function EditActivityForm({
     };
 
     loadDocumentations();
+    listZones().then(setAvailableZones).catch(() => setAvailableZones([]));
   }, []);
 
   // Cargar documentaciones de la actividad
@@ -84,6 +101,16 @@ export default function EditActivityForm({
     };
 
     loadActivityDocs();
+    getActivityZoneDocumentations(activity.id)
+      .then(requirements => setFormData(prev => ({
+        ...prev,
+        zoneDocumentations: requirements.map(requirement => ({
+          zoneId: requirement.zoneId,
+          documentationId: requirement.documentationId,
+          notes: requirement.notes,
+        })),
+      })))
+      .catch(() => undefined);
   }, [activity.id]);
 
   const [formData, setFormData] = useState<EditActivityFormData>({
@@ -95,6 +122,7 @@ export default function EditActivityForm({
     imageFile: null,
     requiresDocs: (activity.requiredDocumentations || []).length > 0,
     documentations: activity.requiredDocumentations || [],
+    zoneDocumentations: [],
   });
 
   const [formState, setFormState] = useState({
@@ -107,6 +135,11 @@ export default function EditActivityForm({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const nextAvailableZoneRule = availableZones.flatMap(zone =>
+    availableDocumentations.map(documentation => ({ zoneId: zone.id, documentationId: documentation.id }))
+  ).find(candidate => !formData.zoneDocumentations.some(requirement =>
+    requirement.zoneId === candidate.zoneId && requirement.documentationId === candidate.documentationId
+  ));
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,6 +207,14 @@ export default function EditActivityForm({
         // Si no requiere docs, eliminar todas las documentaciones
         await updateActivityDocumentations(activity.id, []);
       }
+
+      await updateActivityZoneDocumentations(
+        activity.id,
+        formData.zoneDocumentations.map(requirement => ({
+          ...requirement,
+          notes: requirement.notes ?? undefined,
+        }))
+      );
 
       setFormState(prev => ({
         ...prev,
@@ -384,6 +425,100 @@ export default function EditActivityForm({
             <div className="ml-6 mt-4 text-gray-500">
               Cargando documentaciones disponibles...
             </div>
+          )}
+        </div>
+
+        <div className="mb-4 mt-6 border-t pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-medium">Documentos adicionales por zona</h3>
+              <p className="text-sm text-gray-600">
+                Se solicitarán si el trabajador tiene asignada cualquiera de las zonas seleccionadas.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={!nextAvailableZoneRule}
+              onClick={() => nextAvailableZoneRule && setFormData(prev => ({
+                ...prev,
+                zoneDocumentations: [...prev.zoneDocumentations, { ...nextAvailableZoneRule, notes: '' }],
+              }))}
+              className="rounded border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Agregar requisito condicional
+            </button>
+          </div>
+
+          {formData.zoneDocumentations.length === 0 ? (
+            <p className="mt-3 text-sm text-gray-500">No hay documentos condicionales configurados.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {formData.zoneDocumentations.map((requirement, index) => (
+                <div key={`${requirement.zoneId}-${requirement.documentationId}-${index}`} className="grid gap-3 rounded border p-3 md:grid-cols-[1fr_1fr_1.5fr_auto]">
+                  <label className="text-sm">
+                    Zona
+                    <select
+                      value={requirement.zoneId}
+                      onChange={event => setFormData(prev => ({
+                        ...prev,
+                        zoneDocumentations: prev.zoneDocumentations.map((item, itemIndex) => itemIndex === index
+                          ? { ...item, zoneId: event.target.value }
+                          : item),
+                      }))}
+                      className="mt-1 w-full rounded border bg-background p-2"
+                    >
+                      {availableZones.map(zone => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    Documento requerido
+                    <select
+                      value={requirement.documentationId}
+                      onChange={event => setFormData(prev => ({
+                        ...prev,
+                        zoneDocumentations: prev.zoneDocumentations.map((item, itemIndex) => itemIndex === index
+                          ? { ...item, documentationId: event.target.value }
+                          : item),
+                      }))}
+                      className="mt-1 w-full rounded border bg-background p-2"
+                    >
+                      {availableDocumentations.map(documentation => <option key={documentation.id} value={documentation.id}>{documentation.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    Nota para el solicitante
+                    <input
+                      value={requirement.notes ?? ''}
+                      onChange={event => setFormData(prev => ({
+                        ...prev,
+                        zoneDocumentations: prev.zoneDocumentations.map((item, itemIndex) => itemIndex === index
+                          ? { ...item, notes: event.target.value }
+                          : item),
+                      }))}
+                      placeholder="Indica por qué aplica o qué debe incluir"
+                      className="mt-1 w-full rounded border bg-background p-2"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      zoneDocumentations: prev.zoneDocumentations.filter((_, itemIndex) => itemIndex !== index),
+                    }))}
+                    className="self-end rounded border px-3 py-2 text-sm text-red-700"
+                    aria-label="Quitar requisito condicional"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(availableDocumentations.length === 0 || availableZones.length === 0) && (
+            <p className="mt-2 text-sm text-amber-700">
+              Para configurar reglas, primero debe existir al menos una zona y un documento en sus respectivos catálogos.
+            </p>
           )}
         </div>
       </div>
